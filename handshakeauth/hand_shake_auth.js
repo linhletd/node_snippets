@@ -54,7 +54,7 @@ app.get('/login',(req, res) => {
             res.send('Successful')
         }
         else{
-            res.send('Failed')
+            res.send('Failed or challenge timed out')
         }
     })
 })
@@ -65,7 +65,10 @@ app.post('/check',async (req, res) =>{
             let randomKey = Math.random();
             let hash = crypto.createHash('sha256').update(randomKey.toString() + result[0].Password).digest('hex');
             db.query(`UPDATE users1 SET Challenge = "${hash}" WHERE Username = "${result[0].Username}"`,(err, result) =>{
-                res.send(randomKey.toString())
+                res.send(randomKey.toString());
+                setTimeout(() =>{
+                    db.query(`UPDATE users1 SET Challenge = NULL WHERE Username = "${result[0].Username}"`)
+                },3600*1000)
             });
         }
         else{
