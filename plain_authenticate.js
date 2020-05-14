@@ -21,13 +21,15 @@ let dbPromise = new Promise((resolve, reject) => {
         else {
             resolve(conn);
 
-            //     conn.query(`CREATE TABLE Users(
-            //       UserName VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
-            //       Password VARCHAR(50)
-            //     )`,(err, result) =>{
-            //       if (err) throw err;
-            //       console.log('table users created')
-            //     })
+        // conn.query(`CREATE TABLE Users(
+        //   Username VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+        //   Password CHAR(72),
+        //   SessionCookie CHAR(32),
+        //   Hash CHAR(64)
+        // )`,(err, result) =>{
+        //   if (err) throw err;
+        //   console.log('table users created')
+        // })
         }
     })
 })
@@ -52,7 +54,7 @@ http.createServer(async (req, res) =>{
         req.on('end',() =>{
             let formData = qs.parse(body);
             console.log(body,formData)
-            db.query(`SELECT UserName FROM users WHERE Username = ${db.escape(formData.username)}`,(err, result) =>{
+            db.query(`SELECT Username FROM users WHERE Username = ${db.escape(formData.username)}`,(err, result) =>{
                 console.log(result)
                 if(result.length){
                     res.end(`username ${formData.username} already exists, try other name`);
@@ -93,7 +95,7 @@ http.createServer(async (req, res) =>{
                 bcrypt.compare(formData.password, result[0]['Password'])
                 .then((bool) =>{
                     if(bool){
-                        res.writeHead(200,{'Set-Cookie': `session=${result[0].SessionCookie}; samesite=lax`})
+                        res.writeHead(200,{'Set-Cookie': `id=${result[0].SessionCookie}; samesite=true; httponly=true`})
                         res.end('login successfully')
                     }
                     else{
