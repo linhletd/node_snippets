@@ -89,6 +89,12 @@ class UserInfo extends React.Component{
 }
 
 class App extends React.Component{
+    constructor(props){
+        super(props)
+        this.state = {
+            timer: undefined,
+        }
+    }
     login(e){
         e.preventDefault();
         let form = new FormData(document.getElementById('login-form'));
@@ -118,7 +124,8 @@ class App extends React.Component{
         })
     }
     refreshToken(){
-        return fetch('/refresh_token',{
+        if(this.props.refresh){
+            return fetch('/refresh_token',{
                 method: 'post',
                 body: `refreshToken=${this.props.refresh}`,
                 headers: {
@@ -137,11 +144,31 @@ class App extends React.Component{
                 }
                 return result;
             })
+            //..
+        }
+
     }
-    componentDidMount(){
-        setInterval(() => {
+    setTimerToRefreshToken(){
+        let timer = setInterval(() => {
+            if(!this.props.refresh){
+                this.clearTimer.bind(this)()
+            }
             this.refreshToken.bind(this)()
         }, 80000);
+        this.setState({timer})
+    }
+    clearTimer(){
+        let timer = this.state.timer
+        if(timer){
+            clearInterval(timer);
+            this.setState({timer: undefined})
+        }
+    }
+    componentDidMount(){
+        this.setTimerToRefreshToken.bind(this)()
+    }
+    componentWillUnmount(){
+        this.clearTimer.bind(this)()
     }
     render(){
         return (
