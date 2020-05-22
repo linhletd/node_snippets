@@ -3,7 +3,6 @@ import {createStore} from 'redux';
 import {connect, Provider} from 'react-redux';
 import {render} from 'react-dom';
 import {Route, Redirect, BrowserRouter, NavLink, Switch, withRouter} from 'react-router-dom';
-import { urlencoded } from 'body-parser';
 
 const LOGIN = 'LOGIN';
 const REFRESH = 'REFRESH';
