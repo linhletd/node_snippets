@@ -4,7 +4,9 @@ let bodyParser = require('body-parser');
 let dotenv = require('dotenv').config({path: '../.env'});
 let {encrypt, decrypt} = require('./cryptoo.js');
 let MongoClient = require('mongodb').MongoClient;
-let app = express();
+let passport = require('passport');
+let {Strategy:JwtStrategy, ExtractJwt} = require('passport-jwt');
+
 let dbConnect = new Promise((resolve, reject) => {
     MongoClient.connect(process.env.MGDB,{ useUnifiedTopology: true }, (err, client) => {
         if(err){
@@ -19,7 +21,26 @@ let dbConnect = new Promise((resolve, reject) => {
 })
 let secret = process.env.JWT_SECRET;
 
+let app = express();
+let opts = {
+    jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+    secretOrKey: secret,
+    ignoreExpiration: true,
+    passReqToCallback: false,
+    audience: 'http://localhost'
+};
+passport.use(new JwtStrategy(opts, (payload, done) =>{
+    try {
+        let user = JSON.parse(decrypt(payload.sessionData));
+        return done(null,user);
+    }
+    catch(e){
+        return done(null, false)
+    }
+}))
+
 app.use(bodyParser.urlencoded({extended: true}))
+app.use(passport.initialize())
 app.post('/authenticate',async(req, res) =>{
     let db = await dbConnect;
     if(!db){
@@ -72,6 +93,16 @@ app.get('/userstory/hobby', async (req, res) => {
         console.log(e)
         return res.json({err: 'invalid token'})
     }
+})
+app.get('/userstory/hobbi',passport.authenticate('jwt',{session: false}),async (req, res) =>{
+    console.log(req)
+    let db = await dbConnect;
+    db.collection('users').findOne({username: 'linh'},(err,{username, hobby}) =>{
+        if(err){
+           return res.json({err: err.message})
+        }
+        return res.json({username, hobby})
+    })
 })
 app.post('/refresh_token',(req, res)=>{
     let refreshToken = req.body.refreshToken;
