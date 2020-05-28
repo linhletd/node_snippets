@@ -51,20 +51,21 @@ class UserInfo extends React.Component{
             document.getElementById('info').innerText = JSON.stringify(result);
         })
     }
-    getUserHobby(){
-        fetch('/userstory/hobby',{
+    getUserHobby(x){
+        fetch(`/userstory/${x}`,{
             method: 'get',
             headers:{
                 'authorization': `Bearer ${this.props.token}`
             }
         }).then((data) =>{
+            console.log(data)
             return Promise.resolve(data.json())
         }).catch((err) =>{
             return Promise.resolve({err})
         }).then((result) =>{
             document.getElementById('info').innerText = JSON.stringify(result);
         })
-    }
+    }   
     signout(){
         this.props.updateState({type: LOGOUT});
         this.props.history.push('/')
@@ -76,7 +77,8 @@ class UserInfo extends React.Component{
                     <button onClick = {this.getCurrentToken.bind(this)}>Current Token</button>
                     <button onClick = {this.getRefreshToken.bind(this)}>Current refresh token</button>
                     <button onClick = {this.getNewToken.bind(this)}>Get new token</button>
-                    <button onClick = {this.getUserHobby.bind(this)}>User Hobby</button>
+                    <button onClick = {this.getUserHobby.bind(this,'hobby')}>User Hobby</button>
+                    <button onClick = {this.getUserHobby.bind(this,'hobbi')}>User Hobbi</button>
                     <button onClick = {this.signout.bind(this)}>Logout</button>
                     <div id = "info"></div>
                 </div>
