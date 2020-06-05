@@ -2,10 +2,9 @@ const http = require('http');
 http.createServer((req, res) => {
     let cookies = req.headers.cookie;
     if(cookies){
-        let cooks = cookies.match(/(.*?)=(.*);(.*?)=(.*)/).slice(1,5).reduce((acc, cur, idx, arr) =>{
-            if(idx % 2 != 0){
-                acc[arr[idx-1].trim()] = cur.trim();
-            }
+        let cooks = cookies.split(';').reduce((acc, cur) =>{
+            let cok = cur.match(/(.*?)=(.*)/);
+            acc[cok[1].trim()] = cok[2].trim();
             return acc;
         },{});
         console.log(cooks)
