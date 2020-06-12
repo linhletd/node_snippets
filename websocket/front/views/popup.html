@@ -1,0 +1,7 @@
+<p>verifying...</p>
+<script>
+    let token = location.pathname.match(/(.*)\/(.*)$/)[2];
+    let bc = new BroadcastChannel('bc_token');
+    bc.postMessage(token);
+    close();
+</script>

@@ -63,7 +63,7 @@ http.createServer(async (req, res) =>{
                     bcrypt.hash(formData.password, 10)
                     .then((encryptedPW) => {
                         let sessionCookie = crypto.createHash('md5').update(formData.username).digest('hex');
-                        db.query(`INSERT INTO users VALUES (?)`, [[formData.username, encryptedPW, sessionCookie]],(err, result) =>{
+                        db.query(`INSERT INTO users VALUES (?)`, [[formData.username, encryptedPW, sessionCookie, null]],(err, result) =>{
                             console.log(err,result)
                             res.end('account created')
                         })
