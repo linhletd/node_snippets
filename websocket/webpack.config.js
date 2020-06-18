@@ -1,6 +1,6 @@
-const dotenv = require(dotenv).config();
+const dotenv = require('dotenv').config();
 module.exports = {
-    entry: './client.js',
+    entry: './websocket/client.js',
     output: {
         path: __dirname,
         filename: 'bundle.js'
@@ -12,7 +12,7 @@ module.exports = {
                 test: /\.js$/,
                 exclude: /node_module/,
                 use:{
-                    loader: babel-loader,
+                    loader: 'babel-loader',
                     options:{
                         presets: ['@babel/preset-env', '@babel/preset-react'],
                         plugins: [

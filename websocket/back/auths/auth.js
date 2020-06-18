@@ -1,13 +1,12 @@
 const passport = require('passport');
 const bcrypt = require('bcrypt');
+const dotenv = require('dotenv').config({path: '../../.env'});
 const LocalStrategy = require('passport-local').Strategy;
 const FbStrategy = require('passport-facebook').Strategy;
 const GithubStrategy = require('passport-github').Strategy;
-const dotenv = require('dotenv').config();
-
 
 module.exports = function(client, app){
-    let db = client.db(process.env.MG_BD_NAME)
+    let db = client.db(process.env.MG_DB_NAME)
     passport.serializeUser((user, done) =>{
         return done(null,user)
       })
@@ -24,7 +23,7 @@ module.exports = function(client, app){
         usernameField: 'login-email',
         passwordField: 'login-password'
     },(Email, password, done)=>{
-        console.log(done)
+        // console.log(done)
         db.collection('users').findOne({Email},(err, user) =>{
             if(err){
                 return done(err);
@@ -37,10 +36,12 @@ module.exports = function(client, app){
                     else if(!ok){
                         return done(null, false, 'incorrect password');
                     }
+                    let _id = user._id;
+                    delete user._id;
                     user.LastLogin = Date.now();
                     user.LoginCount += 1;
-                    db.collection('users').save(user);
-                    done(null, {email: user.Email, id: user._id, username: user.Username, avartar: user.Avartar});
+                    db.collection('users').updateOne({_id},{$set: user});
+                    done(null, {email: user.Email, id: _id.toString(), username: user.Username, avartar: user.Avartar});
                 })
             }
            return done(null, false, 'not registered');
@@ -53,7 +54,7 @@ module.exports = function(client, app){
         profileFields: ['id', 'emails', 'name', 'picture']
         
     },(accessToken, refreshToken, profile, done)=>{
-        console.log(accessToken, refreshToken, profile);
+        // console.log(accessToken, refreshToken, profile);
         let Email = profile.emails[0].value,
             Username = profile.name,
             FacebookID = profile.id,
@@ -67,8 +68,10 @@ module.exports = function(client, app){
                 user.LoginCount += 1;
                 user.FacebookID = FacebookID;
                 user.Avartar = Avartar;
-                db.collection('users').save(user);
-                return done(null,{id: user._id, username: user.username, email: user.Email, avartar: user.Avartar})
+                let _id = user._id;
+                delete user._id;
+                db.collection('users').updateOne({_id},{$set: user});
+                return done(null,{id: _id.toString(), username: user.username, email: user.Email, avartar: user.Avartar})
 
             }
             else {
@@ -85,7 +88,7 @@ module.exports = function(client, app){
                     if(err){
                         return done(err)
                     }
-                    done(null, {id: doc.insertedId, username: user.Username, email: user.Email, avartar: user.Avartar})
+                    done(null, {id: doc.insertedId.toString(), username: user.Username, email: user.Email, avartar: user.Avartar})
                 });
             }
         })
@@ -109,8 +112,11 @@ module.exports = function(client, app){
                 user.LoginCount += 1;
                 user.GithubID = GithubID;
                 user.Avartar = Avartar;
-                db.collection('users').save(user);
-                return done(null, {id: user._id, username: user.Username, email: user.Email, avartar: user.Avartar})
+                // console.log(user);
+                let _id = user._id;
+                delete user._id;
+                db.collection('users').updateOne({_id},{$set: user});
+                return done(null, {id: _id.toString(), username: user.Username, email: user.Email, avartar: user.Avartar})
             }
             else {
                 user = {
@@ -126,7 +132,7 @@ module.exports = function(client, app){
                     if(err){
                         return done(err)
                     }
-                    done(null, {id: doc.insertedId, username: user.Username, email: user.Email, avartar: user.Avartar})
+                    done(null, {id: doc.insertedId.toString(), username: user.Username, email: user.Email, avartar: user.Avartar})
                 });
             }
         })

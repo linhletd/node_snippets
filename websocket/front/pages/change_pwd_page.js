@@ -1,3 +1,4 @@
+import React from 'react';
 import {useHistory} from 'react-router-dom';
 const ChangePasswordPage = ()=>{
     let history = useHistory();
@@ -14,4 +15,4 @@ const ChangePasswordPage = ()=>{
         </div>
     )
 }
-module.exports = ChangePasswordPage;
+export default ChangePasswordPage;

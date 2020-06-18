@@ -1,3 +1,4 @@
+import React from 'react';
 import {useEffect} from 'react';
 import {useHistory} from 'react-router-dom'
 const UserNotePage = ()=>{
@@ -13,4 +14,4 @@ const UserNotePage = ()=>{
         </div>
     )
 }
-module.exports = UserNotePage;
+export default UserNotePage;

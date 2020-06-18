@@ -7,10 +7,10 @@ module.exports = function(app){
     app.use(helmet.ieNoOpen());
     app.use(helmet.hsts());
     app.use(helmet.dnsPrefetchControl());
-    app.use(helmet.noCache());
-    app.use(helmet.contentSecurityPolicy({
-        directives:{
-            scriptSrc: ["'self'"]
-        }
-    }))
+    // app.use(helmet.noCache());
+    // app.use(helmet.contentSecurityPolicy({
+    //     directives:{
+    //         scriptSrc: ["'self'"]
+    //     }
+    // }))
 }

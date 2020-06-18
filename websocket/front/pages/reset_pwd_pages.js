@@ -1,3 +1,4 @@
+import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 const ResetPassword = () =>{
@@ -15,4 +16,4 @@ const ResetPassword = () =>{
         </div>
     )
 }
-module.exports = ResetPassword;
+export default ResetPassword;

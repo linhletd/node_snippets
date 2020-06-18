@@ -1,3 +1,4 @@
+import React from 'react';
 import {useHistory} from 'react-router-dom';
 
 const ForgotPasswordPage = () =>{
@@ -18,4 +19,4 @@ const ForgotPasswordPage = () =>{
         </div>
     )
 }
-module.exports = ForgotPasswordPage;
+export default ForgotPasswordPage;

@@ -1,3 +1,4 @@
+import React from 'react';
 const BrowseQuestionPage = () =>{
 
     return (
@@ -9,4 +10,4 @@ const BrowseQuestionPage = () =>{
         </div>
     )
 }
-module.exports = BrowseQuestionPage
+export default BrowseQuestionPage

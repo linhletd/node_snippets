@@ -1,3 +1,4 @@
+import React from 'react';
 const HomePage = () =>{
 
     return (
@@ -6,4 +7,4 @@ const HomePage = () =>{
         </div>
     )
 }
-module.exports = HomePage;
+export default HomePage;

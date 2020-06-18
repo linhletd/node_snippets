@@ -1,3 +1,4 @@
+import React from 'react';
 import {useHistory} from 'react-router-dom'
 const VerifyResetTokenPage = () =>{
     let history = useHistory();
@@ -11,4 +12,4 @@ const VerifyResetTokenPage = () =>{
         </div>
     )
 }
-module.exports = VerifyResetTokenPage
+export default VerifyResetTokenPage

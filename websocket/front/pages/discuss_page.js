@@ -1,4 +1,4 @@
-
+import React from 'react';
 const DiscussPage = ()=>{
 
     return (
@@ -7,4 +7,4 @@ const DiscussPage = ()=>{
         </div>
     )
 }
-module.exports = DiscussPage
+export default DiscussPage

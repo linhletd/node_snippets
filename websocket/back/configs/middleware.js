@@ -1,14 +1,15 @@
-module.exports = function customMiddleware(app){
-    function ensureAuthenticated(req, res, next){
-        if(req.url.match(/^\/(.*?)\//)[1] === 'auth'){
+const { session } = require("passport");
+
+module.exports = {
+    ensureAuthenticated(req, res, next){
+        console.log(req.sessionID)
+        if(/^\/auth/.test(req.url)){
             return next();
         }
-        if(req.authenticated()){
+
+        if(req.isAuthenticated && req.isAuthenticated()){
             return next()
         }
         return res.redirect('/auth/login')
     }
-
-    app.use(ensureAuthenticated)
-
 }

@@ -1,5 +1,7 @@
-import {Link} from 'react-router-dom'
+import React from 'react';
+import {Link, useRouteMatch} from 'react-router-dom'
 const LoginPage = ()=>{
+    let match = useRouteMatch();
     function handleLogin(){
         //
     }
@@ -12,10 +14,15 @@ const LoginPage = ()=>{
             Password: <input type = "password" name = "login-password"/>
         </form>
         <button onClick = {handleLogin}>Submit</button>
-        <Link to = '/reset-password'>Need reset password</Link>
-        <Link to = '/register'>Sign up an account</Link> <br/>
-        <Link to = '/login-with-fb'>login with facebook</Link>
+        <Link to = {`/auth/reset-password`}>Need reset password</Link>
+        <Link to = {`/auth/register`}>Sign up an account</Link> <br/>
+        <Link to = {`/auth/fb`}>login with facebook</Link>
+        <a href = '/auth/github' onClick = {function(e){
+            e.preventDefault();
+            window.open('/auth/github','popup','width=600,height=600');}}>
+            login with github popup
+        </a>
         </div>
     )
 }
-module.exports = LoginPage;
+export default LoginPage;

@@ -1,21 +1,23 @@
-import {Switch, Route} from 'react-router-dom';
+import React from 'react';
+import {Switch, Route, useRouteMatch} from 'react-router-dom';
 import UserNotePage from '../pages/user_note_page.js';
-import UserNav from '../ui/user_nav';
+// import UserNav from '../ui/user_nav';
 import ChangePasswordPage from '../pages/change_pwd_page.js';
 const SubUserLayout = () =>{
-
+    let match = useRouteMatch();
     return(
         <div>
-            <UserNav/>
+            {/* <UserNav/> */}
+            <h1>Sub user layout</h1>
             <Switch>
-                <Route exact path = '/user/change-password'>
+                <Route exact path = {`${match.path}/change-password`}>
                     <ChangePasswordPage/>
                 </Route>
-                <Route exact path = '/user/note'>
+                <Route exact path = {`${match.path}/note`}>
                     <UserNotePage/>
                 </Route>
             </Switch>
         </div>
     )
 }
-module.exports = SubUserLayout
+export default SubUserLayout

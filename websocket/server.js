@@ -5,11 +5,12 @@ const express = require('express');
 const dotenv = require('dotenv').config({path: '../.env'});
 const uuid = require('uuid');
 const MongoClient = require('mongodb').MongoClient;
+const ObjectID = require('mongodb').ObjectID;
+const config = require('./back/configs/config');
+const { session } = require('passport');
+
 
 let map = new Map();
-map.set()
-const app = express();
-const map = new Map();
 const dbConnect = new Promise((resolve, reject) => {
   MongoClient.connect(process.env.MGDB,{ useUnifiedTopology: true }, (err, client) => {
       if(err){
@@ -22,16 +23,36 @@ const dbConnect = new Promise((resolve, reject) => {
 });
 const sessionParser = require('./back/auths/session')(dbConnect);
 dbConnect.then((client) => {
-    let db = client.db(process.env.MG_BD_NAME);
+    let db = client.db(process.env.MG_DB_NAME);
     let users = db.collection('users');
+    let sessions = db.collection('sessions')
+    users.updateMany({},{$set: {IsOnline: 0}});
+    sessions.find({session: {$regex:/"ws":\[.+?\]/}}).forEach((doc) =>{
+        let resetValue = doc.session.replace(/"ws":\[.+?\]/,'"ws":[]');
+        sessions.updateOne({_id: doc._id},{$set: {session: resetValue}})
+    })
+
+    const app = express();
+    app.get('/script',(req, res) => {
+        res.sendFile(__dirname + '/bundle.js')
+    })
+    config(client, app);
+    app.use((req, res) => {
+        res.sendFile(__dirname + '/index.html')
+    });
+
     const server = http.createServer(app);
     const wss = new WebSocket.Server({noServer: true});
     server.on('upgrade',(req, socket, head) =>{
+        console.log('client want to communicate via websocket');
         sessionParser(req, {}, function next(){
-            if(req.authenticated() && req.session.ws){
+            if(req.sessionID){
                 let socketID = uuid.v4();
                 let userID = req.session.passport.user.id;
-                req.session.ws.push(uuid);
+                req.session.ws.push(socketID);
+                req.sessionStore.set(req.sessionID, req.session,(err)=>{
+                    console.log(err,'save session');
+                })
                 wss.handleUpgrade(req, socket, head, (ws) =>{
                     wss.emit('connection', ws, socketID, userID)
                 })
@@ -44,11 +65,12 @@ dbConnect.then((client) => {
     
     })
     wss.on('connection', (ws, socketID, userID) =>{
+        ws.owner = userID;
         map.set(socketID, ws);
-        users.findOne({_id: userID},(err, user) => {
+        let _id = ObjectID(userID);
+        users.findOne({_id},(err, user) => {
             if(err){ return console.log('err when update online state')}
-            user.isOnline === undefined ? user.isOnline = 1 : ++user.isOnline;
-            users.save(user);
+            users.updateOne({_id},{$set: {IsOnline: user.IsOnline === undefined ? 1 : ++user.IsOnline}});
         })
         ws.isAlive = true;
         let itval = setInterval(() => {
@@ -66,10 +88,10 @@ dbConnect.then((client) => {
         ws.on('close',() => {
             map.delete(socketID);
             clearInterval(itval);
-            users.findOne({_id: userID},(err, user) => {
+            let _id = ObjectID(userID);
+            users.findOne({_id},(err, user) => {
                 if(err){ return console.log('err when update online state')}
-                user.isOnline === undefined ? user.isOnline = 0 : --user.isOnline;
-                users.save(user);
+                users.updateOne({_id},{$set: {IsOnline: user.IsOnline === undefined ? 0 : --user.IsOnline}});
             })
         });
     
@@ -78,5 +100,5 @@ dbConnect.then((client) => {
         console.log('server is listening on port 8080')
     })
 }).catch((err) => {
-    console.log('cannot connect to database: ', err.message)
+    console.log('cannot connect to database: ', err)
 })
