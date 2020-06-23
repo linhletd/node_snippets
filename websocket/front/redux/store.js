@@ -3,6 +3,7 @@ import {createStore} from 'redux';
 const LOGIN = 'LOGIN',
       LOGOUT = 'LOGOUT',
       SAVELOC = 'SAVELOC',
+      POSTTOPIC = 'POSTTOPIC',
       OPENSOCKET = 'OPENSOCKET';
 
 var user, socket;
@@ -16,13 +17,16 @@ const initialState = {user, socket}
 function reducer(state = initialState, action){
     switch(action.type){
         case LOGIN:
-            return Object.assign({user: action.data},state);
+            return {...state, user: action.data};
         case LOGOUT:
-            return Object.assign({user: undefined, state});
+            return {...state, user: undefined};
         case OPENSOCKET:
-            return Object.assign({socket: action.data}, state);
+            console.log('dispatch')
+            return {...state, socket: action.data};
         case SAVELOC:
-            return Object.assign({backUrl: action.data},state);
+            return {...state, backUrl: action.data};
+        // case POSTTOPIC:
+        //     return Object.assign({topics:})
         default:
             return state;
     }

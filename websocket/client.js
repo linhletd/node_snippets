@@ -5,12 +5,11 @@ import {BrowserRouter, Switch, Route, Redirect, NavLink, useHistory, useLocation
 import store from './front/redux/store.js';
 import AuthLayout from './front/layouts/auth_layout.js';
 import UnauthLayout from './front/layouts/unauth_layout.js'
-import WebSocket from 'ws';
 
 class App extends React.Component{
-    constructor(props){
+    constructor(props,context){
         super(props);
-        console.log(props);
+        this.state = {_ws: undefined}
         if(props.user && /\/auth/.test(props.location.pathname)){
             props.history.replace('/');
         }
@@ -20,12 +19,14 @@ class App extends React.Component{
         let bc = new BroadcastChannel('bc1');
         bc.onmessage = ((event) =>{
             this.props.updateState({type: 'LOGIN', data: JSON.parse(event.data)});
-            this.props.updateState({type: 'OPENSOCKET', data: new window.WebSocket('ws://localhost:8080')})
+            let ws = new window.WebSocket('ws://localhost:8080');
+            this.props.updateState({type: 'OPENSOCKET', data: ws});
             this.props.history.replace('/');
         }).bind(this)
     }
+
     componentDidMount(){
-        this.handleLoginEvent()
+        this.handleLoginEvent();
     }
     render(){
         return (
@@ -52,7 +53,9 @@ function mapDispatchToProps(dispatch){
 function mapStateToProps(state, ownProp){
     return {
         backUrl: state.backUrl,
-        user: state.user
+        user: state.user,
+        topics: state.topics,
+        socket: state.socket
     }
 }
 const ConnectedApp = withRouter(connect(mapStateToProps, mapDispatchToProps)(App));

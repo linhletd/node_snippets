@@ -3,9 +3,12 @@ const dotenv = require('dotenv').config({path: '../../../.env'});
 const assignIcon = require('../utils/avartar_factory');
 const sendEmail = require('../utils/send_email');
 const {generateToken, getPayloadFromToken} = require('../utils/generate_token');
-
-module.exports = function(client, app){
-    let auth = require('../auths/auth')(client, app);
+function encodeHTML(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
+module.exports = function(app){
+    let client = app.client;
+    let auth = require('../auths/auth')(app);
     let db = client.db(process.env.MG_DB_NAME);
     let apis = {
         register: (req, res, next)=>{
@@ -16,7 +19,7 @@ module.exports = function(client, app){
                     return next(err);
                 }
                 if(!user){
-                    let Username = req.body.regist_name,
+                    let Username = encodeHTML(req.body.regist_name),
                         StartJoining = Date.now(),
                         LastLogin = StartJoining,
                         LoginCount = 1,
@@ -66,9 +69,7 @@ module.exports = function(client, app){
                     if(err){
                         return next(err);
                     }
-                    req.session.ws = []; //create array for socket id
                     let obj = JSON.stringify(user);
-                    // console.log(obj, typeof obj)
                     let userCookie = Buffer.from(obj).toString('base64');
                     res.cookie('InVzZXIi', userCookie, {httpOnly: false, sameSite: 'strict'});
                     res.writeHead(200,{'Content-Type': 'text/html'});

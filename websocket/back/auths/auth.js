@@ -5,7 +5,8 @@ const LocalStrategy = require('passport-local').Strategy;
 const FbStrategy = require('passport-facebook').Strategy;
 const GithubStrategy = require('passport-github').Strategy;
 
-module.exports = function(client, app){
+module.exports = function(app){
+    let client = app.client;
     let db = client.db(process.env.MG_DB_NAME)
     passport.serializeUser((user, done) =>{
         return done(null,user)
@@ -53,10 +54,11 @@ module.exports = function(client, app){
         callbackURL: process.env.HOST +'/auth/fb/callback',
         profileFields: ['id', 'emails', 'name', 'picture']
         
-    },(accessToken, refreshToken, profile, done)=>{
-        // console.log(accessToken, refreshToken, profile);
-        let Email = profile.emails[0].value,
-            Username = profile.name,
+    },(accessToken, refreshToken, {_json}, done)=>{
+        let profile = _json;
+        console.log( profile.picture);
+        let Email = profile.email
+            Username = profile.first_name,
             FacebookID = profile.id,
             Avartar = profile.picture.data.url;
         db.collection('users').findOne({Email},(err, user) =>{

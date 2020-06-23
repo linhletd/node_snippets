@@ -19,6 +19,11 @@ const LoginPage = ()=>{
         <Link to = {`/auth/fb`}>login with facebook</Link>
         <a href = '/auth/github' onClick = {function(e){
             e.preventDefault();
+            window.open('/auth/fb','popup','width=600,height=600');}}>
+            login with facebook popup
+        </a>
+        <a href = '/auth/github' onClick = {function(e){
+            e.preventDefault();
             window.open('/auth/github','popup','width=600,height=600');}}>
             login with github popup
         </a>

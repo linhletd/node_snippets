@@ -2,8 +2,8 @@ const router = require('express').Router();
 const handlersf = require('../apis/handle_unath_routes.js');
 const dotenv = require('dotenv').config({path: '../../../.env'});
 
-module.exports = function(client, app){
-    let handlers = handlersf(client, app);
+module.exports = function(app){
+    let handlers = handlersf(app);
     router.post('/auth/register', handlers.register);
     router.post('/auth/verify/:type/:token', handlers.verifyToken);
 
@@ -13,7 +13,7 @@ module.exports = function(client, app){
     router.get('/auth/github', handlers.thirdPartyAuth('github'))
     router.get('/auth/github/callback',handlers.login('github'));
 
-    router.delete('user/logout',handlers.logout)
+    router.get('/user/logout',handlers.logout)
 
 
     app.use(router)

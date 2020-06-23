@@ -1,10 +1,10 @@
 import React from 'react';
 import DiscussPage from '../pages/discuss_page.js';
 import BrowseQuestionPage from '../pages/browse_question_page.js'
-const SubDiscussLayout = ()=>{
+const SubDiscussLayout = (props)=>{
     return (
         <div>
-            <DiscussPage/>
+            <DiscussPage {...props}/>
             <BrowseQuestionPage/>
         </div>
     )
