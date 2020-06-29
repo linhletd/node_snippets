@@ -1,71 +1,86 @@
 import React from 'react';
-class DiscussPage extends React.Component {
+class DiscussPage extends React.Component{
     constructor(props){
         super(props);
-        this.state = ""
     }
-    uploadTopic(e){
+    handleComment(e){
         e.preventDefault();
-        let form = new FormData(document.getElementById('create_topic'));
-        form.append('author', this.props.user);
-        let key = [...form.keys()][0];
-        let val = [...form.values()][0]
-        let body = {};
-        body[key] = val;
-        fetch('/discuss/post_topic',{
-            body: JSON.stringify(body),
+        let clickedButton = e.target;
+        let questionID = clickedButton.parentNode.parentNode.id;
+        let inputField = clickedButton.previousElementSibling;
+        let body = `comment=${inputField.value}&id=${questionID}`;
+        fetch('/discuss/comment',{
             method: 'post',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then((res) => {
-            console.log(res);
+            headers:{
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body
+        }).then((res) => {
             if(res.redirected){
                 return {err: 'session ended'}
             }
             return res.json();
         })
+        .catch(e =>({err: e.message}))
         .then((data) =>{
-            console.log(data)
-            this.setState({data: data});
+            if(data.err === 'session ended'){
+               return this.props.history.replace('/auth/login');
+            }
         })
     }
-    componentDidMount(){
+    handleInputChange(){
 
     }
-    render() {
-        let data = this.state;
-        // const BrowseTopic
+    componentDidMount(){
         
-        const Topic = function(props){
-            if(data){
-                return (
-                        <div id = 'topic_container'>
-                            <div>
-                                {/* <image src = {data.author.avartar} alt = {`${data.author.name} avartar`}></image>
-                                <a href ='#'>{data.author.name}</a>
-                                <p>{data.question}</p>
-                                {data.topic.attach_image ? <image src = {data.author.avartar} alt = {`${data.author.name} avartar`}></image> : ""}
-                                <p>{`Post by ${data.author.name} at ${(new Date(data.timestamp)).toString()}`}</p> */}
-                            </div>
-                            <input name = "comment" id = "comment" type ="text"/>
-                            <button id = "post_comment">submit</button>
-                        </div>
-                    )
-            }
-            return ""
-        }   
-        return (
-            <div id = 'topic'>
-                <form id = 'create_topic'>
-                    Question: <input type = 'text' name = 'question' />
-                    {/* file: <input id = 'file_upload' type = 'file' name = 'file' /> */}
-                </form>
-                <button id = 'post_topic' onClick = {this.uploadTopic.bind(this)} >Submit</button>
-                <Topic/>
+    }
+    render(){
+        let post = [...this.props.post.values()][0];
+        let author = post.Author
+        let user = this.props.user;
+
+        let main = (
+            <div>
+                <div className = 'author'>
+                    <img src = {author.Avartar} alt = {`${author.Username} avartar`} width = "45" heigh = "45"/>
+                    <a href = {`/user?id=${author._id}`}>{author.Username}</a>
+                    <p>{new Date(post.PostTime).toString()}</p>
+                </div>
+                <h4>{post.Question}</h4>
+            </div>
+        );
+        let comments = post.Comments.length ? post.Comments.map(comment =>(
+            <Comment comment = {comment} key = {comment._id.slice(18)}/>
+        )) : "";
+
+        let postNewComment = (
+            <div className = "write_comment">
+                <img src = {user.Avartar} alt = {`${user.Username} avartar`}  width = "45" heigh = "45"/>
+                <input type ="text" placeholder = "Write an answer..."/>
+                <button onClick = {this.handleComment.bind(this)}>Post</button>
             </div>
         )
+        return (
+            <div className = 'topic_container' id = {post._id}>
+                {main}
+                {comments}
+                {postNewComment}                
+            </div>
+        );
     }
+}
+var Comment = function (props){
+    let comment = props.comment;
+    let user = comment.PostBy;
+    return (
+        <div className = "displayed_comment">
+            <img src = {user.Avartar} alt = {`${user.Username} avartar`} width = "45" heigh = "45"/>
+            <div>
+                <a href = {`/user?id=${user._id}`}>{user.Username}</a>
+                <p>{comment.Content}</p>
+            </div>
+            <p>{new Date(comment.PostTime).toString()}</p>
+        </div>
+    )
 }
 export default DiscussPage

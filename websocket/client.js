@@ -9,20 +9,29 @@ import UnauthLayout from './front/layouts/unauth_layout.js'
 class App extends React.Component{
     constructor(props,context){
         super(props);
-        this.state = {_ws: undefined}
+        this.handleLoginEvent = this.handleLoginEvent.bind(this);
         if(props.user && /\/auth/.test(props.location.pathname)){
             props.history.replace('/');
         }
-
     }
-    handleLoginEvent(){
-        let bc = new BroadcastChannel('bc1');
-        bc.onmessage = ((event) =>{
-            this.props.updateState({type: 'LOGIN', data: JSON.parse(event.data)});
+    handleLoginEvent(data){
+        let handle = (userData) =>{
+            this.props.updateState({type: 'LOGIN', data: userData});
             let ws = new window.WebSocket('ws://localhost:8080');
             this.props.updateState({type: 'OPENSOCKET', data: ws});
             this.props.history.replace('/');
-        }).bind(this)
+        }
+        if(!data){
+            let bc = new BroadcastChannel('bc1');
+            bc.onmessage = ((event) =>{
+                let udata = JSON.parse(event.data);
+                handle(udata);
+            }).bind(this)
+        }
+        else {
+            handle(data)
+        }
+
     }
 
     componentDidMount(){
@@ -33,7 +42,7 @@ class App extends React.Component{
             <div id = 'app'>
                 <Switch>
                     <Route path = '/auth'>
-                        <UnauthLayout {...this.props}/>
+                        <UnauthLayout {...this.props} handleLogin = {this.handleLoginEvent}/>
                     </Route>
                     <Route path = '/'>
                         <AuthLayout {...this.props}/>

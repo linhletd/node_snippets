@@ -6,7 +6,7 @@ import ForgotPasswordPage from '../pages/forgot_pwd_page.js';
 import VerifyResetTokenPage from '../pages/verify_reset_token_page.js';
 import ResetPasswordPage from '../pages/reset_pwd_pages.js';
 
-const UnauthLayout = ()=>{
+const UnauthLayout = (props)=>{
     
     return(
         <div id = "unauth-layout">
@@ -15,7 +15,7 @@ const UnauthLayout = ()=>{
                     <LoginPage/>
                 </Route>
                 <Route exact path = '/auth/register'>
-                    <RegisterPage/>         
+                    <RegisterPage handleLogin = {props.handleLogin}/>         
                 </Route>
                 <Route exact path = '/auth/reset-request'>
                     <ForgotPasswordPage/>         

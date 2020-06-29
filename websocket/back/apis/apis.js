@@ -13,57 +13,78 @@ module.exports = function(app){
     let users = client.db(db).collection('users');
     let apiObject = {
         createTopic: function(req, res, next){
-            console.log(req.body)
-            let author = req.user;
-            let question = encodeHTML(req.body.question);
-            let post_time = Date.now();
-            author._id = ObjectId(author.id);
-            delete author.id;
+            let Author = req.user;
+            let Question = encodeHTML(req.body.question);
+            let PostTime = Date.now();
+            Author._id = ObjectId(Author._id);
             let newTopic = {
-                Question: question,
+                Question,
                 AttachImage: null,
-                Author: author,
-                PostTime: post_time,
-                Comments: []
+                Author,
+                PostTime,
+                Comments: [],
+                UpVote: 0,
+                DownVote: 0
             }
             topics.insertOne(newTopic,(err, doc) =>{
                 if(err) return res.json({err: err.message});
-                newTopic.id = doc.insertedId;
                 let message = {
-                    type: 'update topic title board',
+                    type: 'update board',
                     payload:{
-                        tid: doc.insertedId,
-                        question,
-                        post_time,
-                        author: req.user
+                        _id: doc.insertedId,
+                        Question,
+                        PostTime,
+                        Author,
+                        Upvote: 0,
+                        DownVote: 0,
+                        Comment: 0
                     }
                 }
                 app.idMap.forEach((socket) =>{
                     socket.send(JSON.stringify(message));
-                })
+                });
                 return res.json(newTopic)
             })
         },
         getTopicTitle: function(req, res, next){
-            let cursor = topics.find({_id},{Question: 1})
-                cursor.on('error',(err) =>{
-                    return res.json({err: err.message})
-                })
-                let check = false;
-                cursor.on('data',(doc) =>{
-                    if(!check){
-                        res.writeHead(200, 'Content-Type','application/json');
-                        res.write('[');
-                        check = true;
+            let cursor = topics.aggregate([
+                {
+                    $addFields: {
+                        Comment: {$size: "$Comments"}
                     }
+                },
+                {
+                    $project: {
+                        Comments: 0,
+                        AttachImage: 0
+                    },
+                },
+                {
+                    $sort: {
+                        PostTime: -1,
+                    }
+                }
+            ]);
+            cursor.on('error',(err) =>{
+                return res.json({err: err.message})
+            })
+            let checked = false;
+            cursor.on('data',(doc) =>{
+                if(!checked){
+                    res.write('{"data": [');
                     res.write(JSON.stringify(doc))
-                });
-                cursor.on('end',()=>{
-                    res.end(']');
-                })
+                    checked = true;
+                }
+                else if(checked){
+                    res.write(',' + JSON.stringify(doc))
+                }
+            });
+            cursor.on('end',()=>{
+                res.end(']}');
+            })
         },
         getTopicContentById: function(req, res, next){
-            let _id = ObjectId(req.params.topic_id);
+            let _id = new ObjectId(req.params.topic_id);
             topics.findOne({_id}, (err, topic) =>{
                 if(err) return res.json({err: err.message});
                 res.json(topic)
@@ -71,12 +92,16 @@ module.exports = function(app){
 
         },
         postComment: function(req, res, next){
-            console.log(req.url)
-            let newComment = Object.assign({
+            let newComment = {
                 _id: ObjectId(),
-                TimeStamp: Date.now()
-            }, {x: encodeHTML(req.body.comment)});
-            let topicId = ObjectId(req.body.id)
+                Content: encodeHTML(req.body.comment),
+                PostTime: Date.now(),
+                PostBy: req.user,
+                UpVote: 0,
+                DownVote: 0,
+                replies: []
+            }
+            let topicId = new ObjectId(req.body.id);
             topics.updateOne(
                 {_id: topicId},
                 {$push: {Comments: newComment}},
@@ -84,18 +109,44 @@ module.exports = function(app){
             ,(err, doc) =>{
                 if(err) return res.json({err: err.message});
                 else if(doc.modifiedCount !== 0){
+                    newComment.tid = req.body.id;
                     let message = {
-                        type: 'add comment',
-                        tid: req.body.id,
+                        type: 'update comment',
                         payload: newComment
                     }
                     app.idMap.forEach((socket) =>{
                         socket.send(JSON.stringify(message));
                     })
                 }
-                res.end()
+                res.json({})
+            })
+        },
+        getUserSignal: function(req, res, next){
+            let cursor = users.find({})
+            .project({
+                Username: 1,
+                Avartar: 1,
+            })
+            cursor.on('error',(err) =>{
+                return res.json({err: err.message})
+            })
+            let checked = false;
+            cursor.on('data',(doc) =>{
+                app.ownerMap.get(doc._id.toString()) ? doc.isOnline = true : doc.isOnline = false;
+                if(!checked){
+                    res.write('{"data": [');
+                    res.write(JSON.stringify(doc))
+                    checked = true;
+                }
+                else if(checked){
+                    res.write(',' + JSON.stringify(doc))
+                }
+            });
+            cursor.on('end',()=>{
+                res.end(']}');
             })
         }
+
     }
     return apiObject
 }

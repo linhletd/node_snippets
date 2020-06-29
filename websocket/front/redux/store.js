@@ -8,7 +8,7 @@ const LOGIN = 'LOGIN',
 
 var user, socket;
 if(window.atob && /^InVzZXIi=|;InVzZXIi=/.test(document.cookie)){
-    user = atob((';' + document.cookie +';').match(/;InVzZXIi=(.+?);/)[1].replace(/%2F/g,'/').replace(/%3D/g, '='));
+    user = JSON.parse(atob((';' + document.cookie +';').match(/;InVzZXIi=(.+?);/)[1].replace(/%2F/g,'/').replace(/%3D/g, '=')));
     socket = new window.WebSocket('ws://localhost:8080');
 }
 

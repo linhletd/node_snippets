@@ -12,6 +12,7 @@ module.exports = function(app){
     let db = client.db(process.env.MG_DB_NAME);
     let apis = {
         register: (req, res, next)=>{
+            console.log(req.body)
             let Email = req.body.regist_email;
             let users = db.collection('users');
             users.findOne({Email}, async (err, user) =>{
@@ -23,7 +24,7 @@ module.exports = function(app){
                         StartJoining = Date.now(),
                         LastLogin = StartJoining,
                         LoginCount = 1,
-                        Avartar = assignIcon(Email)
+                        Avartar = assignIcon(Email),
                         Password = await bcrypt.hash(req.body.regist_password, 10).catch((err) =>{
                             return err
                         });
@@ -41,9 +42,16 @@ module.exports = function(app){
                         Avartar
                     },(err, doc) =>{
                         if(err) return next(err);
-                        req.logIn({id: doc.insertedId, username: Username, email: Email, avartar: Avartar},(err) =>{
+                        let user = {_id: doc.insertedId, Username, Email, Avartar};
+                        req.logIn(user,(err) =>{
                             if(err) return next(err);
-                            return res.redirect(302, '/user')
+                            let obj = JSON.stringify(user);
+                            let userCookie = Buffer.from(obj).toString('base64');
+                            res.cookie('InVzZXIi', userCookie, {httpOnly: false, sameSite: 'strict'});
+                            res.json({
+                                result: 'ok',
+                                user
+                            })
                         })
                     })    
                 }

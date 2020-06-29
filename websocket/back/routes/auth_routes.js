@@ -9,6 +9,7 @@ module.exports = function(app){
     app.post('/discuss/post_topic',apis.createTopic);
     app.get('/discuss/data/titles', apis.getTopicTitle);
     app.get('/discuss/data/content/:topic_id', apis.getTopicContentById);
-    app.get('/discuss/comment', apis.postComment)
+    app.post('/discuss/comment', apis.postComment);
+    app.get('/users/status', apis.getUserSignal);
     // router here
 }

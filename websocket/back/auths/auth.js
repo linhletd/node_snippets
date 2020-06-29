@@ -21,8 +21,8 @@ module.exports = function(app){
     app.use(passport.session());
 
     const local = new LocalStrategy({
-        usernameField: 'login-email',
-        passwordField: 'login-password'
+        usernameField: 'login_email',
+        passwordField: 'login_password'
     },(Email, password, done)=>{
         // console.log(done)
         db.collection('users').findOne({Email},(err, user) =>{
@@ -42,7 +42,7 @@ module.exports = function(app){
                     user.LastLogin = Date.now();
                     user.LoginCount += 1;
                     db.collection('users').updateOne({_id},{$set: user});
-                    done(null, {email: user.Email, id: _id.toString(), username: user.Username, avartar: user.Avartar});
+                    done(null, {_id, Username: user.Username, Email: user.Email, Avartar: user.Avartar});
                 })
             }
            return done(null, false, 'not registered');
@@ -73,7 +73,7 @@ module.exports = function(app){
                 let _id = user._id;
                 delete user._id;
                 db.collection('users').updateOne({_id},{$set: user});
-                return done(null,{id: _id.toString(), username: user.username, email: user.Email, avartar: user.Avartar})
+                return done(null,{_id, Username: user.Username, Email: user.Email, Avartar: user.Avartar})
 
             }
             else {
@@ -90,7 +90,7 @@ module.exports = function(app){
                     if(err){
                         return done(err)
                     }
-                    done(null, {id: doc.insertedId.toString(), username: user.Username, email: user.Email, avartar: user.Avartar})
+                    done(null, {_id: doc.insertedId.toString(), Username: user.Username, Email: user.Email, Avartar: user.Avartar})
                 });
             }
         })
@@ -118,7 +118,7 @@ module.exports = function(app){
                 let _id = user._id;
                 delete user._id;
                 db.collection('users').updateOne({_id},{$set: user});
-                return done(null, {id: _id.toString(), username: user.Username, email: user.Email, avartar: user.Avartar})
+                return done(null, {_id, Username: user.Username, Email: user.Email, Avartar: user.Avartar})
             }
             else {
                 user = {
@@ -134,7 +134,7 @@ module.exports = function(app){
                     if(err){
                         return done(err)
                     }
-                    done(null, {id: doc.insertedId.toString(), username: user.Username, email: user.Email, avartar: user.Avartar})
+                    done(null, {_id: doc.insertedId, Username: user.Username, Email: user.Email, Avartar: user.Avartar})
                 });
             }
         })
