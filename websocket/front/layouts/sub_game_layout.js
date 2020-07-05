@@ -43,29 +43,58 @@ class ShootingGame extends React.Component{
             abooms: [],
             bbooms: []
         };
-        this.height = 68;
-        this.width = 98;
-        this.playerSize = 2;
+        this.unit = 'vmin';
+        this.hwratio = 0.6;
+        let vmin = Math.min(innerWidth, innerHeight),
+            vmax = Math.max(innerWidth, innerHeight);
+        this.height = Math.floor(this.hwratio * (vmax/vmin));
+        this.width = this.height * this.hwratio;
         this.xmin = 0; //left
         this.xmax = this.width; //left
         this.ymin = 0; //top
         this.ymax = this.height // top
         this.border = 0.5 * this.width; // left
+        this.playerSize = 2;
+        this.bulletSize = 0.5;
         this.playerStep = this.playerSize / 4;
         this.bulletStep = this.bulletSize / 4;
-        this.bulletSize = 0.5;
         this.bulletSpeed = 100 //ms
         this.mainPlayer = props.player;
 
+        this.socket = new WebSocket('ws://localhost:8080/')
+
     }
-    vmin(val){
-        return val + 'vmin'
+    instructClick(ev){
+        let vmin = Math.min(innerWidth, innerHeight);
+        let xc = ev.offsetX/vmin, yc = ev.offsetY/vmin, playerId = this.mainPlayer;
+        let player = this.state.playersList.get(playerId);
+        let deltaX = xc - x0;
+        let deltaY = yc - y0;
+        let dx, dy, x, y, alpha;
+        let step = this.playerStep;
+        let {sin, cos} = Math;
+        let _alpha = Math.atan(Math.abs((deltaY / deltaX)));
+        if(deltaX > 0){
+            deltaY > 0 ? (alpha = -_alpha, dx = step * cos(_alpha), dy = step * sin(_alpha)) :
+            (alpha = _alpha, dx = step * cos(_alpha), dy = -step * sin(_alpha));
+        }
+        else {
+            deltaY > 0 ? alpha = (_alpha - Math.PI, dx = -step * cos(_alpha), dy = step * sin(_alpha)) :
+            (alpha = Math.PI - _alpha, dx = -step * cos(_alpha), dy = -step * sin(_alpha));
+        }
+        //send alpha,'go'
+        let {xmin, xmax, ymin, playerSize, } = this;
+        x = x0 + dx;
+        y = y0 + dy;
+        if(x < xmin + playerSize/2 || x > xmax - playerSize/2 || y < ymin + playerSize/2 || y > ymax - playerSize/2){
+            x = x0; y = y0;
+        }
     }
-    percent(val){
-        return val + "%"
+    shootingClick(){
+
     }
 
-    playerGo(playerId, {x0, y0}, {xc, yc}){
+    playerGo(playerId){
         let deltaX = xc - x0;
         let deltaY = yc - y0;
         let dx, dy, x, y, alpha;
@@ -104,12 +133,12 @@ class ShootingGame extends React.Component{
         newBulletsList.push([key, newBullet]);
         this.setState({bulletsList: new Map(newBulletentries)}, this.bulletGo.bind(this, key))
     }
-    bulletDirect(x0, y0, alpha, step){
+    bulletDirect(alpha, step){
         if(!step){
             step = this.bulletStep;
         }
-        let type, _alpha, dx, dy, type;
-        let {PI, sin, cos, tan} = Math
+        let type, dx, dy, type;
+        let {PI, sin, cos} = Math
         alpha >= 0 && alpha <= PI/2 ? (dx = step * cos(alpha), dy = step * sin(alpha), type = 1) :
         alpha >= PI/2 && alpha <= PI ? (dx = step * -cos(PI - alpha), dy = step * sin(PI - alpha), type = 2) :
         alpha < -PI/2 && alpha > -PI ? (dx = step * -cos(PI + alpha), dy = step * -sin (PI + alpha), type = 3) :
@@ -175,7 +204,7 @@ class ShootingGame extends React.Component{
         }, this.bulletSpeed)
     }
     distance({x0, y0}, {x, y}){
-        let {sqrt, pow, abs} = Math
+        let {sqrt, pow} = Math
         return sqrt(pow(x - x0, 2) + pow(y - y0, 2));
     }
 
@@ -217,13 +246,24 @@ class ShootingGame extends React.Component{
             )
         }
         let Bullet = (props) =>{
-
+            let {key, x0, y0, isActive} = props;
+            let bulletStyle = {
+                position: 'absolute',
+                width: this.bulletSize,
+                height: this.bulletSize,
+                borderRadius: '50%',
+                left: x0,
+                top: y0,
+                backgroundColor: isActive ? 'red' : 'grey'
+            }
             return (
-                <div></div>
+                <div id = {key} style = {bulletStyle}/>
             )
         }
-        let bomm
-        // let abooms = this.state.length ?
+        let {playersList} = this.state
+        let players = playersList.map((player) => {
+            i
+        })
         return(
             <div id = 'shooting_game'>
                 <div id = 'azone'></div>
