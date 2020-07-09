@@ -7,7 +7,7 @@ class SubGameLayout extends React.Component{
         this.hwratio = 0.6;
         let vmin = Math.min(innerWidth, innerHeight),
             vmax = Math.max(innerWidth, innerHeight);
-        this.width = Math.floor((vmax/vmin) * 100 * 0.5);
+        this.width = Math.floor((vmax/vmin) * 100 * 0.8);
         this.height = this.width * this.hwratio;
         this.xmin = 0; //left
         this.xmax = this.width; //left
@@ -15,10 +15,11 @@ class SubGameLayout extends React.Component{
         this.ymax = this.height // top
         this.border = 0.5 * this.width; // left
         this.playerSize = 10;
-        this.bulletSize = 0.5;
+        this.bulletSize = 4;
         this.playerStep = this.playerSize / 4;
-        this.bulletStep = this.bulletSize / 4;
-        this.bulletSpeed = 100 //ms
+        this.bulletStep = this.bulletSize/4;
+        this.bulletSpeed = 50; //ms
+        this.playerSpeed = 150;
         this.mainPlayer = 'a' //props.player;
         this.subPlayer = this.mainPlayer === 'a' ? 'b' : 'a';
         this.socket = new WebSocket('ws://localhost:8080/')
@@ -44,51 +45,67 @@ class SubGameLayout extends React.Component{
                 }]
             ]),
             bulletsList: new Map(),
+            itv: {
+                mainGo: undefined
+            },
             abooms: [],
             bbooms: []
         };
     }
-    mainPlayerGo(ev){
-        let {playersList} = this.state;
+    handleMouseDown(ev){
+        let player = this.state.playersList.get(this.mainPlayer);
+        if(!player.isAlive){
+            return;
+        }
+        this.state.itv.mainGo && clearInterval(this.state.itv.mainGo);
         let vmin = Math.min(innerWidth, innerHeight);
         let rect = ev.currentTarget.getBoundingClientRect(),
         offsetX = ev.clientX - rect.left,
         offsetY = ev.clientY - rect.top;
-        let xc = offsetX/vmin * 100, yc = offsetY/vmin * 100, playerId = this.mainPlayer;
-        let player = playersList.get(playerId);
-        let {x, y, alpha} = player;
-        let deltaX = xc - x;
-        let deltaY = yc - y;
-        let dx, dy, alpha0 = alpha;
-        let step = this.playerStep;
-        let {sin, cos, PI} = Math;
-        let _alpha = Math.atan(Math.abs((deltaY / deltaX)));
-        if(deltaX > 0){
-            deltaY > 0 ? (alpha = _alpha, dx = step * cos(_alpha), dy = step * sin(_alpha)) :
-            (alpha = - _alpha, dx = step * cos(_alpha), dy = -step * sin(_alpha));
+        let xc = offsetX/vmin * 100, yc = offsetY/vmin * 100;
+        let mainPlayerGo = () => {
+            let {playersList} = this.state;
+            let playerId = this.mainPlayer;
+            let player = playersList.get(playerId);
+            let {x, y, alpha} = player;
+            let deltaX = xc - x;
+            let deltaY = yc - y;
+            let dx, dy, alpha0 = alpha;
+            let step = this.playerStep;
+            let {sin, cos, PI} = Math;
+            let _alpha = Math.atan(Math.abs((deltaY / deltaX)));
+            if(deltaX > 0){
+                deltaY > 0 ? (alpha = _alpha, dx = step * cos(_alpha), dy = step * sin(_alpha)) :
+                (alpha = - _alpha, dx = step * cos(_alpha), dy = -step * sin(_alpha));
+            }
+            else {
+                deltaY > 0 ? (alpha = PI -_alpha, dx = -step * cos(_alpha), dy = step * sin(_alpha)) :
+                (alpha = -PI + _alpha, dx = -step * cos(_alpha), dy = -step * sin(_alpha));
+            }
+            // send type: go, alpha
+            let x0 = x, y0 = y;
+            x = x + dx;
+            y = y + dy;
+            let {xmin, xmax, ymin, ymax, playerSize} = this;
+            if((x < xmin + playerSize/2 || x > xmax - playerSize/2 || y < ymin + playerSize/2 || y > ymax - playerSize/2)){
+                x = x0;
+                y = y0;
+            }
+            else if((this.distance({x0, y0}, {x:xc,y:yc}) <= this.playerStep)){
+                x = xc;
+                y = yc;
+                alpha = alpha0;
+            }
+            let newPlayerState = Object.assign({}, player, {x, y, alpha});
+            let newState = new Map([...playersList]);
+            newState.set(playerId, newPlayerState);
+            this.setState({playersList: newState})
         }
-        else {
-            deltaY > 0 ? (alpha = PI -_alpha, dx = -step * cos(_alpha), dy = step * sin(_alpha)) :
-            (alpha = -PI + _alpha, dx = -step * cos(_alpha), dy = -step * sin(_alpha));
-        }
-        // send type: go, alpha
-        let x0 = x, y0 = y;
-        x = x + dx;
-        y = y + dy;
-        let {xmin, xmax, ymin, ymax, playerSize} = this;
-        if((x < xmin + playerSize/2 || x > xmax - playerSize/2 || y < ymin + playerSize/2 || y > ymax - playerSize/2)){
-            x = x0;
-            y = y0;
-        }
-        else if((this.distance({x0, y0}, {x:xc,y:yc}) <= this.playerStep)){
-            x = xc;
-            y = yc;
-            alpha = alpha0;
-        }
-        let newPlayerState = Object.assign({}, player, {x, y, alpha});
-        let newState = new Map([...playersList]);
-        newState.set(playerId, newPlayerState);
-        this.setState({playersList: newState})
+        mainPlayerGo();
+        this.state.itv.mainGo = setInterval(mainPlayerGo,this.playerSpeed);
+    }
+    handleMouseUp(ev){
+        this.state.itv.mainGo && clearInterval(this.state.itv.mainGo);
     }
     shootingClick(ev){
         // e.preventDefault()
@@ -105,22 +122,24 @@ class SubGameLayout extends React.Component{
         newPlist.set(playerId, newPlayer);
         this.setState({playersList: newPlist})
     }
-    shoot(){
-        let playerId = this.mainPlayer;
+    shoot(playerId){
         let player = this.state.playersList.get(playerId);
-        let {x, y, alpha, bulletsQty} = player
+        if(!player.isAlive){
+            return;
+        }
+        let {x, y, alpha, bulletsQty} = player;
         if(bulletsQty === 0){
             return;
         }
-        console.log(x,y)
         let key = `${playerId}_${bulletsQty}`
-        let newBullet = {x0: x, y0: y, alpha, key, dxy: this.jump(alpha, this.bulletStep), isActive: true}
+        let newBullet = {x0: x, y0: y, alpha, key, dxy: this.jump.bind(this)(alpha), isActive: true, owner: playerId}
         let newBulletentries  = [...this.state.bulletsList];
         player.bulletsQty--;
         newBulletentries.push([key, newBullet]);
-        this.setState({bulletsList: new Map(newBulletentries)}) //, this.bulletGo.bind(this, key, playerId)
+        this.setState({bulletsList: new Map(newBulletentries)}, this.bulletGo.bind(this, key, this.subPlayer)) //, this.bulletGo.bind(this, key, playerId)
     }
-    jump(alpha, step){
+    jump(alpha){
+        let step = this.bulletStep;
         let dx, dy;
         let {PI, sin, cos} = Math
         alpha >= 0 && alpha <= PI/2 ? (dx = step * cos(alpha), dy = step * sin(alpha)) :
@@ -130,71 +149,97 @@ class SubGameLayout extends React.Component{
         return {dx, dy}
 
     }
-    bulletGo(key,playerId){
-        let {bulletsList, playersList} = this.state,
-        {xmin, ymin, xmax, ymax, bulletSize} = this;
+    bulletGo(key){
+        let {xmin, ymin, xmax, ymax, bulletSize} = this;
 
         function ifCollidePlayer(){
-            let distance = this.distance(bulletsList.get(key), playersList.get(playerId));
+        let {bulletsList, playersList} = this.state;
+        let checked = false;
+        playersList.forEach((player) => {
+            if(bulletsList.get(key).owner === player.id || !player.isAlive){
+                return;
+            }
+            let distance = this.distance(bulletsList.get(key), player);
             if(distance < (this.bulletSize + this.playerSize) / 2 ){
-                let targetBullet = Object.assign({},bulletsList.get(key));
-                let targetPlayer = Object.assign({}, playersList.get(playerId));
-                targetBullet.isActive = false;
+                checked = true;
+                let targetPlayer = Object.assign({}, playersList.get(player.id));
                 targetPlayer.isAlive = false;
                 let newPList = new Map([...playersList]);
-                let newBList =  new Map([...bulletsList]);
-                newPList.set(playerId, targetPlayer);
-                newBList.set(key, targetBullet);
-                this.setState({
-                        playersList: newPList,
-                        bulletsList: newBList
-                    })
-                return true;
+                newPList.set(player.id, targetPlayer);
+                this.setState({playersList: newPList})
             }
+        })
+        if(checked){
+            let targetBullet = Object.assign({},bulletsList.get(key));
+            targetBullet.isActive = false;
+            let newBList =  new Map([...bulletsList]);
+            newBList.set(key, targetBullet);
+            this.setState({bulletsList: newBList});
+            return true;
+        }
         }
         function reflect(type, mutate){
             let alpha = mutate.alpha;
             let {PI, abs, sign} = Math;
             let newAlpha;
-            switch(type){
-                case 1:
-                    newAlpha = sign(alpha) * PI - abs(alpha);
-                    break;
-                case 2:
-                    newAlpha = -alpha;
-                    break;
-                case 3:
-                    newAlpha = -sign(alpha) * PI - abs(alpha);
+            if(alpha === 0){
+                newAlpha = PI
             }
+            else {
+                switch(type){
+                    case 1:
+                        newAlpha = sign(alpha) * (PI - abs(alpha));
+                        break;
+                    case 2:
+                        newAlpha = -alpha;
+                        break;
+                    case 3:
+                        newAlpha = -sign(alpha) * (PI - abs(alpha));
+                }
+            }
+            mutate.owner = null;
             mutate.alpha = newAlpha;
-            mutate.dxy = jump(newAlpha, this.bulletStep);
+            mutate.dxy = this.jump.bind(this)(newAlpha);
         }
         let itv = setInterval(() =>{
-            console.log('go')
+            let {bulletsList} = this.state;
             let newBullet = Object.assign({}, bulletsList.get(key));
-            // if(ifCollidePlayer.bind(this)()){
-            //     console.log('collid')
-            //     clearInterval(itv);
-            //     return;
-            // }
-            let type, {x0,y0} = newBullet;
-            if(x0 < xmin + bulletSize/2 && (type = 1) || x0 > xmax - bulletSize/2 && (type = 1) || y0 < ymin + bulletSize/2 && (type = 2)|| y0 > ymax - bulletSize/2 && (type = 2)){
-                x0 === y0 ? type = 3: ""
-                reflect.bind(this)(type, newBullet);
+            if(ifCollidePlayer.bind(this)()){
+                console.log('collid')
+                clearInterval(itv);
+                return;
             }
-            let dxy = newBullet.dxy
-            newBullet.x0 += dxy.dx;
-            newBullet.y0 += dxy.dy;
+            let type;
+
+            let {dx, dy} = newBullet.dxy,
+                {x0, y0} = newBullet,
+                _x0 = newBullet.x0 + dx,
+                _y0 = newBullet.y0 + dy;
+            if (_x0 <= xmin + bulletSize/2 && (type = 1) && (_x0 = xmin + bulletSize/2) && (_y0 = y0 + (_x0 - x0) * dy/dx) ||
+                _x0 >= xmax - bulletSize/2 && (type = 1) && (_x0 = xmax - bulletSize/2) && (_y0 = y0 + (_x0 - x0) * dy/dx)  ||
+                _y0 <= ymin + bulletSize/2 && (type = 2) && (_y0 = ymin + bulletSize/2) && (_x0 = x0 + (_y0 - y0) * dx/dy) ||
+                _y0 >= ymax - bulletSize/2 && (type = 2) && (_y0 = ymax - bulletSize/2) && (_x0 = x0 + (_y0 - y0) * dx/dy) 
+                )
+              {
+                _x0 === _y0 ? type = 3: "";
+                reflect.bind(this)(type, newBullet);
+                newBullet.x0 = _x0;
+                newBullet.y0 = _y0;
+            }
+            else {
+                newBullet.x0 += dx;
+                newBullet.y0 += dy; 
+            }
             let newState = new Map([...bulletsList])
             newState.set(key, newBullet);
             this.setState({bulletsList: newState})
         }, this.bulletSpeed)
     }
     distance({x0, y0}, {x, y}){
-        let {sqrt, pow} = Math
+        let {sqrt, pow} = Math;
         return sqrt(pow(x - x0, 2) + pow(y - y0, 2));
     }
-    componentDidMount(){
+    handleSocket(){
         this.socket.onopen = (ev) =>{
             this.socket.onmessage = ({data}) => {
                 let {type, payload} = data;
@@ -207,6 +252,12 @@ class SubGameLayout extends React.Component{
                 }
             }
         }
+    }
+    componentDidMount(){
+        this.handleSocket.bind(this)()
+    }
+    componentWillUnmount(){
+        
     }
     render(){
         let Player = (props) =>{
@@ -230,7 +281,7 @@ class SubGameLayout extends React.Component{
                 borderRadius: '50%',
                 left: `-${this.playerSize/2}vmin`,
                 top: `-${this.playerSize/2}vmin`,
-                backgroundColor: 'green',
+                backgroundColor: player.isAlive ? 'green' : 'grey',
                 opacity: 0.7,
             }
             let hand = {
@@ -254,26 +305,33 @@ class SubGameLayout extends React.Component{
         }
         let Bullet = (props) =>{
             let {key, x0, y0, isActive} = props.bullet;
-            let bulletStyle = {
+            let bulletHeart = {
+                position: 'absolute',
+                width: '0.01px',
+                height: '0.01px',
+                left: `${x0}vmin`,
+                top: `${y0}vmin`,
+            }
+            let bulletBody = {
                 position: 'absolute',
                 width: `${this.bulletSize}vmin`,
                 height: `${this.bulletSize}vmin`,
                 borderRadius: '50%',
-                left: `${x0}vmin`,
-                top: `${y0}vmin`,
+                left: `-${this.bulletSize/2}vmin`,
+                top: `-${this.bulletSize/2}vmin`,
                 backgroundColor: isActive ? 'red' : 'grey'
             }
             return (
-                <div id = {key} style = {bulletStyle}/>
+                <div id = {key} style = {bulletHeart}>
+                    <div style = {bulletBody}/>
+                </div>
             )
         }
         let {playersList, bulletsList} = this.state;
-        console.log(bulletsList)
         let players = [...playersList.values()].map((player) =>{
             return  <Player player = {player} key = {player.id}/>
         })
         let bullets = [...bulletsList.values()].map((bullet) =>{ 
-            console.log(bullet)
            return <Bullet bullet = {bullet} key = {bullet.key}/>
         })
         let mainStyle = {
@@ -286,11 +344,11 @@ class SubGameLayout extends React.Component{
         }
         return(
             <div>
-                <div id = 'shooting_game' style = {mainStyle} onClick = {this.mainPlayerGo.bind(this)}>
+                <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.handleMouseDown.bind(this)} onMouseUp = {this.handleMouseUp.bind(this)} onMouseOut = {this.handleMouseUp.bind(this)} >
                     {players}
                     {bullets}
                 </div>
-                <button onClick = {this.shoot.bind(this)}>shoot</button>
+                <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button>
             </div>
 
         )

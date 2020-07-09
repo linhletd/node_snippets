@@ -86,7 +86,7 @@ class AuthLayout extends React.Component{
         return(
             <div>
                 <PrimaryHeader/>
-                {usersStatusBoard}
+                {/* {usersStatusBoard} */}
                 <Switch>
                     <Route exact path = '/'>
                         <HomePage/>
