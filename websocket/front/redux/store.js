@@ -1,9 +1,8 @@
-import {createStore} from 'redux';
+import {createStore, combineReducers} from 'redux';
 
 const LOGIN = 'LOGIN',
       LOGOUT = 'LOGOUT',
-      SAVELOC = 'SAVELOC',
-      POSTTOPIC = 'POSTTOPIC',
+      JOINGAME = 'ACCEPTGAME',
       OPENSOCKET = 'OPENSOCKET';
 
 var user, socket;
@@ -21,12 +20,9 @@ function reducer(state = initialState, action){
         case LOGOUT:
             return {...state, user: undefined};
         case OPENSOCKET:
-            console.log('dispatch')
             return {...state, socket: action.data};
-        case SAVELOC:
-            return {...state, backUrl: action.data};
-        // case POSTTOPIC:
-        //     return Object.assign({topics:})
+        case JOINGAME:
+            return {...state, mainpoong: action.data};
         default:
             return state;
     }

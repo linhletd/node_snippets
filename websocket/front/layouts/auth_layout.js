@@ -1,6 +1,6 @@
 import React from 'react';
 import HomePage from '../pages/home_page.js';
-import UserStatus from '../pages/user_status'
+import UserStatus from '../pages/user_status';
 import SubDiscussLayout from '../layouts/sub_discuss_layout';
 import PrimaryHeader from '../ui/primary_header.js';
 import SubUserLayout from '../layouts/sub_user_layout';
@@ -11,10 +11,20 @@ class AuthLayout extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            usersStatus: undefined
+            usersStatus: undefined,
+            notice: undefined
         }
         this.updateUsersStatusBoard = this.updateUsersStatusBoard.bind(this);
         this.getInitialUsersStatus();
+    }
+    handleNotice({payload}){
+        
+    }
+    handleAcceptGame(){
+        this.props.updateStore({
+            type: 'JOINGAME',
+            data: 'b'
+        }) 
     }
     handleIncomingMessage(){
         let socket = this.props.socket;
@@ -23,14 +33,21 @@ class AuthLayout extends React.Component{
             socket.onmessage = (event)=>{
                 let {type, payload} = JSON.parse(event.data);
                 document.getElementById('message').innerText = event.data;
-                switch(type){
-                    case 'update board': case 'update comment':
-                        return socket.discuss && socket.discuss({type, payload});
-                    case 'online': case 'offline':
-                        return this.updateUsersStatusBoard({type, payload})
-                    default:
-                        console.log('default: ', type);
-                }
+                (()=>{
+                    switch(type){
+                        case 'update board': case 'update comment':
+                            return socket.discuss && socket.discuss;
+                        case 'online': case 'offline':
+                            return this.updateUsersStatusBoard;
+                        case 'shoot': case 'go':
+                            return socket.handleGame && socket.handleGame;
+                        case 'notify':
+                            return this.handleNotice;
+                        default:
+                            return () =>{console.log('default: ', type)};
+                    }
+                })({type, payload})
+
             }
         }
     }
@@ -98,7 +115,7 @@ class AuthLayout extends React.Component{
                         <SubDiscussLayout {...this.props}/>
                     </Route>
                     <Route path = '/game'>
-                        <SubGameLayout/>
+                        <SubGameLayout usersStatus = {usersStatus}/>
                     </Route>
                 </Switch>
             </div>

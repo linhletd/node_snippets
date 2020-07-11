@@ -16,9 +16,9 @@ class App extends React.Component{
     }
     handleLoginEvent(data){
         let handle = (userData) =>{
-            this.props.updateState({type: 'LOGIN', data: userData});
+            this.props.updateStore({type: 'LOGIN', data: userData});
             let ws = new window.WebSocket('ws://localhost:8080');
-            this.props.updateState({type: 'OPENSOCKET', data: ws});
+            this.props.updateStore({type: 'OPENSOCKET', data: ws});
             this.props.history.replace('/');
         }
         if(!data){
@@ -54,14 +54,13 @@ class App extends React.Component{
 }
 function mapDispatchToProps(dispatch){
     return {
-        updateState: function(action){
+        updateStore: function(action){
             dispatch(action);
         }
     }
 }
 function mapStateToProps(state, ownProp){
     return {
-        backUrl: state.backUrl,
         user: state.user,
         topics: state.topics,
         socket: state.socket
