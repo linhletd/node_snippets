@@ -40,6 +40,7 @@ module.exports = function applyWebsocket(server, app){
         let userID = user._id;
         ws.owner = userID;
         ws.id = socketID;
+        ws.ref = {};
         idMap.set(socketID, ws);
         let uid = ownerMap.get(userID);
         let sid = sessionMap.get(sessionID);
@@ -72,7 +73,10 @@ module.exports = function applyWebsocket(server, app){
             this.isAlive = true;
         })
         ws.on('close',() => {
-            console.log('close')
+            console.log('close');
+            let partner = ws.ref.game;
+            partner ? (delete partner.ref.game, partner.send(JSON.stringify({type: 'leave', payload: ws.owner}))) : "";
+            delete ws.ref.game
             idMap.delete(socketID);
             if(ownerMap.get(userID).size === 1){
                 ownerMap.delete(userID);
@@ -88,13 +92,61 @@ module.exports = function applyWebsocket(server, app){
 
         });
         ws.on('message', function incoming(message){
-            console.log(`client say ${message}`)
+            // console.log(`client say ${message}`)
+            let {type, payload} = JSON.parse(message);
+            console.log(type);
+            (()=>{
+                switch(type){
+                    case 'invite':
+                        return ()=>{
+                            let {_id} = payload;
+                            let msg = {
+                                type: 'invite',
+                                payload:{
+                                    socketId: this.id,
+                                    originator: this.owner
+                                }
+                            }
+                            ownerMap.get(_id).forEach((socket) =>{
+                                socket.send(JSON.stringify(msg))
+                            })
+                        }
+                    case 'accept':
+                        return ()=>{
+                            console.log(111,payload.socketId)
+                            let partnerSocket = idMap.get(payload.socketId)
+                            this.ref.game = partnerSocket;
+                            partnerSocket.ref.game = this;
+                            let msg = {
+                                type: 'accept',
+                                payload: {
+                                    _id: this.owner
+                                }
+                            }
+                            partnerSocket.send(JSON.stringify(msg))
+                        }
+                    case 'go': case 'shoot':
+                        return () =>{
+                            this.ref.game.send(message)
+                        }
+                    case 'leave':
+                        return () =>{
+                            let partnerSocket = this.ref.game;
+                            delete partnerSocket.ref.game;
+                            delete this.ref.game;
+                            partnerSocket.send(message);
+                        }
+                    default:
+                        return ()=>{}
+                }
+            })()()
+
             if(Date.now() >= ws.expires){
                 return ws.close(4000, 'session terminated')
             }
-            idMap.forEach((socket) =>{
-                socket.send(JSON.stringify({type: 'server hello',payload: {}}))
-            })
+            // idMap.forEach((socket) =>{
+            //     socket.send(JSON.stringify({type: 'server hello',payload: {}}))
+            // })
 
         })
     

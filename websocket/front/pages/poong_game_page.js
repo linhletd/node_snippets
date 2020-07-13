@@ -4,7 +4,6 @@ import {connect} from 'react-redux';
 class PoongGame extends React.Component{
     constructor(props){
         super(props);
-
         this.unit = 'vmin';
         this.hwratio = 0.6;
         let vmin = Math.min(innerWidth, innerHeight),
@@ -16,13 +15,13 @@ class PoongGame extends React.Component{
         this.ymin = 0; //top
         this.ymax = this.height // top
         this.border = 0.5 * this.width; // left
-        this.playerSize = 10;
-        this.bulletSize = 4;
+        this.playerSize = 0.05 * this.width;
+        this.bulletSize = 0.02 * this.width;
         this.playerStep = this.playerSize / 4;
         this.bulletStep = this.bulletSize/4;
         this.bulletSpeed = 50; //ms
         this.playerSpeed = 150;
-        this.mainPlayer = 'a';
+        this.mainPlayer = props.main;
         this.subPlayer = this.mainPlayer === 'a' ? 'b' : 'a';
         this.state = {
             freeze: false,
@@ -60,6 +59,7 @@ class PoongGame extends React.Component{
             return;
         }
         let player = this.state.playersList.get(this.mainPlayer);
+        console.log(11111,this.mainPlayer)
         if(!player.isAlive){
             return;
         }
@@ -101,13 +101,18 @@ class PoongGame extends React.Component{
                 y = yc;
                 alpha = alpha0;
             }
+            let msg = {
+                type: 'go',
+                payload: {x: x/this.width, y: y/this.width, alpha}
+            }
+            this.props.socket.send(JSON.stringify(msg))
             let newPlayerState = Object.assign({}, player, {x, y, alpha});
             let newState = new Map([...playersList]);
             newState.set(playerId, newPlayerState);
             this.setState({playersList: newState})
         }
         mainPlayerGo();
-        this.state.itv.mainGo = setInterval(mainPlayerGo,this.playerSpeed);
+        this.state.itv.mainGo = setInterval(mainPlayerGo, this.playerSpeed);
     }
     handleMouseUp(ev){
         if(this.state.freeze){
@@ -120,17 +125,14 @@ class PoongGame extends React.Component{
 
     }
 
-    subPlayerGo(alpha){
+    subPlayerGo = ({x, y, alpha}) =>{
         let playerId = this.mainPlayer === 'a' ? 'b' : 'a';
-        let newPlayer = Object.assign({},this.playersList.get(playerId));
-        let {dx, dy} = jump(alpha, this.playerStep)
-        newPlayer.x += dx;
-        newPlayer.y += dy;
+        let newPlayer = {...this.state.playersList.get(playerId), x: x * this.width, y: y * this.width, alpha};
         let newPlist = new Map([...this.state.playersList]);
         newPlist.set(playerId, newPlayer);
         this.setState({playersList: newPlist})
     }
-    shoot(playerId){
+    shoot = (playerId) => {
         if(this.state.freeze){
             return;
         }
@@ -142,6 +144,13 @@ class PoongGame extends React.Component{
         if(bulletsQty === 0){
             return;
         }
+        if(playerId === this.mainPlayer){
+            let msg = {
+                type: 'shoot'
+            }
+            this.props.socket.send(JSON.stringify(msg))
+        }
+
         let key = `${playerId}_${bulletsQty}`
         let newBullet = {x0: x, y0: y, alpha, key, dxy: this.jump.bind(this)(alpha), isActive: true, owner: playerId}
         let newBulletentries  = [...this.state.bulletsList];
@@ -255,9 +264,11 @@ class PoongGame extends React.Component{
         socket.handleGame = ({type, payload}) => {
             switch(type){
                 case 'go':
-                    return this.subPlayerGo(payload.alpha);
+                    return this.subPlayerGo(payload);
                 case 'shoot':
                     return this.shoot(this.subPlayer);
+                case 'leave':
+                    
                 
             }
         }
@@ -367,7 +378,15 @@ class PoongGame extends React.Component{
 function mapStateToProps(state, ownProp){
     return {
         user: state.user,
-        socket: state.socket
+        socket: state.socket,
+        main: state.poong.main,
     }
 }
-export default withRouter(connect(mapStateToProps, null)(PoongGame));
+function mapDispatchToProps(dispatch){
+    return {
+        updateStore: function(action){
+            dispatch(action);
+        }
+    }
+}
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(PoongGame));

@@ -21,9 +21,9 @@ class SubGameLayout extends React.Component{
         this.setState({poong: newPoong})
     }
     invite(e){
-        let _id = e.target.id.slice(0, 18);
+        let _id = e.target.id.slice(0, 24);
         let message = {
-            type: 'invite game',
+            type: 'invite',
             payload: {
                 _id,
             }
@@ -78,9 +78,9 @@ class SubGameLayout extends React.Component{
                         <button>game of life</button>
                     </Route>
                     {/* <Route exact path = '/game/life' component = {LifeGame}/> */}
-                    {this.props.main ? 
+                    {this.props.active ? 
                     <Route path = {`${path}/poong`}>
-                        <PoongGame user = {this.props.user} main = {this.state.poong.main}/>
+                        <PoongGame/>
                     </Route> :
                     <Redirect to = {`${path}`}/>
                      } 
@@ -93,7 +93,7 @@ function mapStateToProps(state, ownProp){
     return {
         user: state.user,
         socket: state.socket,
-        main: state.mainpoong
+        active: state.poong.active
     }
 }
 function mapDispatchToProps(dispatch){

@@ -14,22 +14,47 @@ class AuthLayout extends React.Component{
             usersStatus: undefined,
             notice: undefined
         }
-        this.updateUsersStatusBoard = this.updateUsersStatusBoard.bind(this);
+        this.inviteId = undefined;
         this.getInitialUsersStatus();
     }
-    handleNotice({payload}){
-        
+    handleNotice = ({type, payload}) =>{
+        this.inviteId = payload.socketId;
+        let notice = {
+            user: this.state.usersStatus.get(payload._id),
+            info: 'invite game',
+            time: new Date()
+        }
+        this.setState({notice})
     }
-    handleAcceptGame(){
+    handleAcceptGame = () =>{
+        this.setState({notice: undefined})
+        let msg = {
+            type: 'accept',
+            payload: {
+                socketId: this.inviteId
+            }
+        };
+        this.props.socket.send(JSON.stringify(msg));
         this.props.updateStore({
             type: 'JOINGAME',
             data: 'b'
-        }) 
+        });
+        this.activeGame()
+        this.props.history.push('/game/poong') 
     }
-    handleIncomingMessage(){
+    activeGame = () =>{
+        this.props.updateStore({
+            type: 'ACTIVEGAME',
+        });
+        this.props.history.push('/game/poong');
+    }
+    handleIncomingMessage = () =>{
         let socket = this.props.socket;
         socket.onopen = (e) =>{
-            socket.send('hello');
+            socket.send(JSON.stringify({
+                type: 'hello',
+                payload: {}
+            }));
             socket.onmessage = (event)=>{
                 let {type, payload} = JSON.parse(event.data);
                 document.getElementById('message').innerText = event.data;
@@ -39,19 +64,21 @@ class AuthLayout extends React.Component{
                             return socket.discuss && socket.discuss;
                         case 'online': case 'offline':
                             return this.updateUsersStatusBoard;
-                        case 'shoot': case 'go':
-                            return socket.handleGame && socket.handleGame;
-                        case 'notify':
+                        case 'invite':
                             return this.handleNotice;
-                        default:
+                        case 'accept':
+                            return this.activeGame;
+                        case 'shoot': case 'go': case 'leave':
+                            return socket.handleGame && socket.handleGame;
+                        default: 
                             return () =>{console.log('default: ', type)};
                     }
-                })({type, payload})
+                })()({type, payload})
 
             }
         }
     }
-    updateUsersStatusBoard({type, payload}){
+    updateUsersStatusBoard = ({type, payload}) =>{
         let {usersStatus} = this.state;
         if(!usersStatus) return;
         let user = usersStatus.get(payload._id);
@@ -99,10 +126,18 @@ class AuthLayout extends React.Component{
     }
     render(){
         let usersStatus = this.state.usersStatus && [...this.state.usersStatus.values()];
-        let usersStatusBoard = usersStatus ? usersStatus.map(status => <UserStatus key = {status._id} status = {status}/>) : ""
+        let usersStatusBoard = usersStatus ? usersStatus.map(status => <UserStatus key = {status._id} status = {status}/>) : "";
+        let notice = this.state.notice ? 
+            <div>
+                <p>{this.state.notice.Username} invite join poong game</p>
+                <button><i className="fa fa-window-close"></i></button>
+                <button onClick = {this.handleAcceptGame}>join</button>
+            </div> : ""
         return(
+            usersStatus ?
             <div>
                 <PrimaryHeader/>
+                {notice}
                 {/* {usersStatusBoard} */}
                 <Switch>
                     <Route exact path = '/'>
@@ -118,7 +153,7 @@ class AuthLayout extends React.Component{
                         <SubGameLayout usersStatus = {usersStatus}/>
                     </Route>
                 </Switch>
-            </div>
+            </div>:""
         )
     }
 
