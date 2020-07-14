@@ -104,7 +104,7 @@ module.exports = function applyWebsocket(server, app){
                                 type: 'invite',
                                 payload:{
                                     socketId: this.id,
-                                    originator: this.owner
+                                    originatorId: this.owner
                                 }
                             }
                             ownerMap.get(_id).forEach((socket) =>{
@@ -131,10 +131,12 @@ module.exports = function applyWebsocket(server, app){
                         }
                     case 'leave':
                         return () =>{
-                            let partnerSocket = this.ref.game;
-                            delete partnerSocket.ref.game;
-                            delete this.ref.game;
-                            partnerSocket.send(message);
+                            if(this.ref.game){
+                                let partnerSocket = this.ref.game;
+                                delete partnerSocket.ref.game;
+                                delete this.ref.game;
+                                partnerSocket.send(message);
+                            }
                         }
                     default:
                         return ()=>{}

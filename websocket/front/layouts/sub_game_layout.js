@@ -11,7 +11,6 @@ class SubGameLayout extends React.Component{
             life: "",
             poong: {
                 showList: false,
-                busy: false,
             }
         }  
         
@@ -29,12 +28,7 @@ class SubGameLayout extends React.Component{
             }
         }
         this.props.socket.send(JSON.stringify(message))
-        this.props.updateStore({
-            type: 'JOINGAME',
-            data: 'a'
-        })
         this.closeInviteBoard.bind(this)();
-        this.props.history.push(`${this.props.match.path}/poong`);
     }
     closeInviteBoard(){
         let newPoong = Object.assign({},this.state.poong,{showList: false})
@@ -58,7 +52,7 @@ class SubGameLayout extends React.Component{
             }
             return (
                 <div id = 'invite_list' style = {listStyle} onMouseLeave = {this.closeInviteBoard.bind(this)}>
-                    {usersStatus ? usersStatus.filter(cur =>(cur._id !== this.props.user._id)).map(status => <UserStatus key = {status._id} status = {status}
+                    {usersStatus ? [...usersStatus.values()].filter(cur =>(cur._id !== this.props.user._id)).map(status => <UserStatus key = {status._id} status = {status}
                      children = {<InviteButton id = {status._id} isOnline = {status.isOnline}/>}/>) : ""}
                 </div> 
             )
@@ -80,7 +74,7 @@ class SubGameLayout extends React.Component{
                     {/* <Route exact path = '/game/life' component = {LifeGame}/> */}
                     {this.props.active ? 
                     <Route path = {`${path}/poong`}>
-                        <PoongGame/>
+                        <PoongGame {...this.props}/>
                     </Route> :
                     <Redirect to = {`${path}`}/>
                      } 
@@ -93,7 +87,10 @@ function mapStateToProps(state, ownProp){
     return {
         user: state.user,
         socket: state.socket,
-        active: state.poong.active
+        active: state.poong.active,
+        mainSide: state.poong.mainSide,
+        sideList: state.poong.sideList,
+        usersStatus: state.usersStatus
     }
 }
 function mapDispatchToProps(dispatch){

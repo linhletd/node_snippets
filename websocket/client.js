@@ -45,7 +45,7 @@ class App extends React.Component{
                         <UnauthLayout {...this.props} handleLogin = {this.handleLoginEvent}/>
                     </Route>
                     <Route path = '/'>
-                        <AuthLayout {...this.props}/>
+                        <AuthLayout/>
                     </Route>
                 </Switch>
             </div>
@@ -59,12 +59,5 @@ function mapDispatchToProps(dispatch){
         }
     }
 }
-function mapStateToProps(state, ownProp){
-    return {
-        user: state.user,
-        topics: state.topics,
-        socket: state.socket
-    }
-}
-const ConnectedApp = withRouter(connect(mapStateToProps, mapDispatchToProps)(App));
-render(<BrowserRouter><Provider store = {store}><ConnectedApp/></Provider></BrowserRouter>, document.getElementById('root'))
+const RoutedApp = withRouter(connect(null, mapDispatchToProps)(App));
+render(<BrowserRouter><Provider store = {store}><RoutedApp/></Provider></BrowserRouter>, document.getElementById('root'))

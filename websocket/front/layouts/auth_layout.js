@@ -1,50 +1,58 @@
 import React from 'react';
+import {connect} from 'react-redux';
 import HomePage from '../pages/home_page.js';
 import UserStatus from '../pages/user_status';
 import SubDiscussLayout from '../layouts/sub_discuss_layout';
 import PrimaryHeader from '../ui/primary_header.js';
 import SubUserLayout from '../layouts/sub_user_layout';
 import SubGameLayout from '../layouts/sub_game_layout'
-import {Route, Switch} from 'react-router-dom';
+import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
 class AuthLayout extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            usersStatus: undefined,
             notice: undefined
         }
-        this.inviteId = undefined;
         this.getInitialUsersStatus();
     }
     handleNotice = ({type, payload}) =>{
-        this.inviteId = payload.socketId;
         let notice = {
-            user: this.state.usersStatus.get(payload._id),
+            inviteId: payload.socketId,
+            user: this.props.usersStatus.get(payload.originatorId),
             info: 'invite game',
             time: new Date()
         }
         this.setState({notice})
     }
     handleAcceptGame = () =>{
-        this.setState({notice: undefined})
+        let subId = this.state.notice.user._id;
         let msg = {
             type: 'accept',
             payload: {
-                socketId: this.inviteId
+                socketId: this.state.notice.inviteId
             }
         };
         this.props.socket.send(JSON.stringify(msg));
-        this.props.updateStore({
-            type: 'JOINGAME',
-            data: 'b'
-        });
-        this.activeGame()
-        this.props.history.push('/game/poong') 
+        this.setState({notice: undefined});
+        this.activeGame('b', subId);
     }
-    activeGame = () =>{
+    handleAcceptMessage = ({payload})=>{
+        this.activeGame('a', payload._id)
+    }
+    activeGame = (mainSide, subPlayerId) =>{
+        let subSide = mainSide == 'a' ? 'b' : 'a',
+            s = {side: mainSide, _id: this.props.user._id},
+            m = {side: subSide, _id: subPlayerId},
+            sideList = [m, s].sort((a,b) =>{
+                return (a.side.codePointAt(0) - b.side.codePointAt(0))
+              })
         this.props.updateStore({
             type: 'ACTIVEGAME',
+            data: {
+                mainSide,
+                sideList
+            }
         });
         this.props.history.push('/game/poong');
     }
@@ -61,15 +69,15 @@ class AuthLayout extends React.Component{
                 (()=>{
                     switch(type){
                         case 'update board': case 'update comment':
-                            return socket.discuss && socket.discuss;
+                            return socket.discuss && socket.discuss || (()=>{});
                         case 'online': case 'offline':
                             return this.updateUsersStatusBoard;
                         case 'invite':
                             return this.handleNotice;
                         case 'accept':
-                            return this.activeGame;
+                            return this.handleAcceptMessage;
                         case 'shoot': case 'go': case 'leave':
-                            return socket.handleGame && socket.handleGame;
+                            return socket.handleGame && socket.handleGame || (()=>{});
                         default: 
                             return () =>{console.log('default: ', type)};
                     }
@@ -79,28 +87,32 @@ class AuthLayout extends React.Component{
         }
     }
     updateUsersStatusBoard = ({type, payload}) =>{
-        let {usersStatus} = this.state;
-        if(!usersStatus) return;
-        let user = usersStatus.get(payload._id);
-        if(user && payload.isOnline == user.isOnline){
-            return;
-        }
-        let newState = new Map([...usersStatus]);
-        let newUser = Object.assign({}, user);
-        if(user){
-            newUser.isOnline = true;
-            if(user.isOnline && type === 'offline'){
-                newUser.isOnline = false; 
-            }
-            newState.set(newUser._id, newUser);
-        }
-        else {
-            newUser = payload;
-        }
-
-        this.setState((prevState) => {
-            return {usersStatus: newState}
+        this.props.updateStore({
+            type: 'UPDATEUSERSTATUS',
+            data: payload
         })
+        // let {usersStatus} = this.state;
+        // if(!usersStatus) return;
+        // let user = usersStatus.get(payload._id);
+        // if(user && payload.isOnline == user.isOnline){
+        //     return;
+        // }
+        // let newState = new Map([...usersStatus]);
+        // let newUser = Object.assign({}, user);
+        // if(user){
+        //     newUser.isOnline = true;
+        //     if(user.isOnline && type === 'offline'){
+        //         newUser.isOnline = false; 
+        //     }
+        // }
+        // else {
+        //     newUser = payload;
+        // }
+        // newState.set(newUser._id, newUser);
+
+        // this.setState((prevState) => {
+        //     return {usersStatus: newState}
+        // })
     }
     getInitialUsersStatus(){
         fetchReq('/users/status', {
@@ -111,9 +123,13 @@ class AuthLayout extends React.Component{
                     return [cur._id, cur];
                 })
                 let map = new Map(entries);
-                this.setState((prevState) => {
-                    return {usersStatus: map}
+                this.props.updateStore({
+                    type: 'LOADUSERSTATUS',
+                    data: map
                 })
+                // this.setState((prevState) => {
+                //     return {usersStatus: map}
+                // })
             }
             else {
                 console.log(data);
@@ -125,7 +141,7 @@ class AuthLayout extends React.Component{
         this.handleIncomingMessage();
     }
     render(){
-        let usersStatus = this.state.usersStatus && [...this.state.usersStatus.values()];
+        let usersStatus = this.props.usersStatus && [...this.props.usersStatus.values()];
         let usersStatusBoard = usersStatus ? usersStatus.map(status => <UserStatus key = {status._id} status = {status}/>) : "";
         let notice = this.state.notice ? 
             <div>
@@ -150,7 +166,7 @@ class AuthLayout extends React.Component{
                         <SubDiscussLayout {...this.props}/>
                     </Route>
                     <Route path = '/game'>
-                        <SubGameLayout usersStatus = {usersStatus}/>
+                        <SubGameLayout/>
                     </Route>
                 </Switch>
             </div>:""
@@ -158,4 +174,18 @@ class AuthLayout extends React.Component{
     }
 
 }
-export default AuthLayout;
+function mapDispatchToProps(dispatch){
+    return {
+        updateStore: function(action){
+            dispatch(action);
+        }
+    }
+}
+function mapStateToProps(state, ownProp){
+    return {
+        user: state.user,
+        socket: state.socket,
+        usersStatus: state.usersStatus
+    }
+}
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AuthLayout));

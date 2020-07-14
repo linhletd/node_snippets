@@ -1,6 +1,5 @@
 import React from 'react';
-import {withRouter} from 'react-router-dom';
-import {connect} from 'react-redux';
+import UserStatus from '../pages/user_status';
 class PoongGame extends React.Component{
     constructor(props){
         super(props);
@@ -18,10 +17,10 @@ class PoongGame extends React.Component{
         this.playerSize = 0.05 * this.width;
         this.bulletSize = 0.02 * this.width;
         this.playerStep = this.playerSize / 4;
-        this.bulletStep = this.bulletSize/4;
-        this.bulletSpeed = 50; //ms
-        this.playerSpeed = 150;
-        this.mainPlayer = props.main;
+        this.bulletStep = this.bulletSize;
+        this.bulletSpeed = 300; //ms
+        this.playerSpeed = 500;
+        this.mainPlayer = props.mainSide;
         this.subPlayer = this.mainPlayer === 'a' ? 'b' : 'a';
         this.state = {
             freeze: false,
@@ -54,12 +53,11 @@ class PoongGame extends React.Component{
         };
     }
     handleMouseDown(ev){
-        this.state.itv.mainGo && clearInterval(this.state.itv.mainGo);
+        this.state.itv.mainGo && clearInterval(this.state.itv.mainGo) && (this.state.itv.mainGo = undefined);
         if(this.state.freeze){
             return;
         }
         let player = this.state.playersList.get(this.mainPlayer);
-        console.log(11111,this.mainPlayer)
         if(!player.isAlive){
             return;
         }
@@ -118,7 +116,7 @@ class PoongGame extends React.Component{
         if(this.state.freeze){
             return;
         }
-        this.state.itv.mainGo && clearInterval(this.state.itv.mainGo);
+        this.state.itv.mainGo && clearInterval(this.state.itv.mainGo) && (this.state.itv.mainGo = undefined);
     }
     shootingClick(ev){
         // e.preventDefault()
@@ -126,7 +124,7 @@ class PoongGame extends React.Component{
     }
 
     subPlayerGo = ({x, y, alpha}) =>{
-        let playerId = this.mainPlayer === 'a' ? 'b' : 'a';
+        let playerId = this.subPlayer;
         let newPlayer = {...this.state.playersList.get(playerId), x: x * this.width, y: y * this.width, alpha};
         let newPlist = new Map([...this.state.playersList]);
         newPlist.set(playerId, newPlayer);
@@ -227,6 +225,7 @@ class PoongGame extends React.Component{
             if(ifCollidePlayer.bind(this)()){
                 console.log('collid')
                 clearInterval(itv);
+                this.state.itv.mainGo && clearInterval(this.state.itv.mainGo) && (this.state.itv.mainGo = undefined);
                 return;
             }
             let type;
@@ -259,6 +258,13 @@ class PoongGame extends React.Component{
         let {sqrt, pow} = Math;
         return sqrt(pow(x - x0, 2) + pow(y - y0, 2));
     }
+    leaveGame = () =>{
+        let msg = {
+            type: 'leave',
+            payload: {}
+        }
+        this.props.socket.send(JSON.stringify(msg))
+    }
     handleSocket(){
         let socket = this.props.socket;
         socket.handleGame = ({type, payload}) => {
@@ -268,7 +274,7 @@ class PoongGame extends React.Component{
                 case 'shoot':
                     return this.shoot(this.subPlayer);
                 case 'leave':
-                    
+                    this.setState({freeze: true})
                 
             }
         }
@@ -278,6 +284,7 @@ class PoongGame extends React.Component{
     }
     componentWillUnmount(){
         delete this.props.socket.handleGame;
+        this.leaveGame();
     }
     render(){
         let Player = (props) =>{
@@ -347,13 +354,38 @@ class PoongGame extends React.Component{
                 </div>
             )
         }
+        let PlayerBoard = () => {
+            let sideList = this.props.sideList.map((side) =>{
+                side = {...side};
+                side.user = this.props.usersStatus.get(side._id);
+                let player = this.state.playersList.get(side.side);
+                side.bulletNum = player.bulletsQty;
+                side.isAlive = player.isAlive;
+                return side;
+            })
+            console.log(sideList)
+            let ScoreStatus = (props) =>{
+                return (
+                    <ul className = 'score_status'>
+                        <li>Remaining bullets: {props.bulletNum}</li>
+                        <li>Status: {props.isAlive}</li>
+                    </ul>
+                )
+            }
+            return (
+                <div id = 'player_board'>
+                    {sideList.map(side => <UserStatus key = {side.user._id} status = {side.user}
+                     children = {<ScoreStatus bulletNum = {side.bulletNum} isAlive = {side.isAlive}/>}/>)}
+                </div>
+            )
+        }
         let {playersList, bulletsList} = this.state;
         let players = [...playersList.values()].map((player) =>{
             return  <Player player = {player} key = {player.id}/>
         })
         let bullets = [...bulletsList.values()].map((bullet) =>{ 
            return <Bullet bullet = {bullet} key = {bullet.key}/>
-        })
+        });
         let mainStyle = {
             backgroundColor: 'pink',
             border: '1px solid grey',
@@ -364,7 +396,7 @@ class PoongGame extends React.Component{
         }
         return(
             <div>
-                <p>{this.props.main}</p>
+                <PlayerBoard/>
                 <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.handleMouseDown.bind(this)} onMouseUp = {this.handleMouseUp.bind(this)} onMouseLeave = {this.handleMouseUp.bind(this)} >
                     {players}
                     {bullets}
@@ -375,18 +407,4 @@ class PoongGame extends React.Component{
         )
     }
 }
-function mapStateToProps(state, ownProp){
-    return {
-        user: state.user,
-        socket: state.socket,
-        main: state.poong.main,
-    }
-}
-function mapDispatchToProps(dispatch){
-    return {
-        updateStore: function(action){
-            dispatch(action);
-        }
-    }
-}
-export default withRouter(connect(mapStateToProps, mapDispatchToProps)(PoongGame));
+export default PoongGame;
