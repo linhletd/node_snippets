@@ -40,7 +40,7 @@ function reducer(state = initialState, {type, data}){
             let newUser = Object.assign({}, user);
             if(user){
                 newUser.isOnline = true;
-                if(user.isOnline && type === 'offline'){
+                if(user.isOnline && data.isOnline === false){
                     newUser.isOnline = false; 
                 }
             }
@@ -49,6 +49,8 @@ function reducer(state = initialState, {type, data}){
             }
             newState.set(newUser._id, newUser);
             return {...state, usersStatus: newState}
+        case 'WAITPLAYER':
+            
         default:
             return state;
     }

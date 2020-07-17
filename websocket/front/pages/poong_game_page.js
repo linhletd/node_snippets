@@ -1,5 +1,6 @@
 import React from 'react';
 import UserStatus from '../pages/user_status';
+
 class PoongGame extends React.Component{
     constructor(props){
         super(props);
@@ -18,52 +19,45 @@ class PoongGame extends React.Component{
         this.bulletSize = 0.02 * this.width;
         this.playerStep = this.playerSize / 4;
         this.bulletStep = this.bulletSize / 4;
-        this.bulletSpeed = 50; //ms
+        this.bulletSpeed = 30; //ms
         this.playerSpeed = 150;
-        this.state = undefined
+        this.bulletsStock = 10;
+        this.x = <div></div>;
         this.startGame();
+        // this.changeChildState
     }
     startGame(){
         this.mainPlayer = this.props.mainSide;
         this.subPlayer = this.mainPlayer === 'a' ? 'b' : 'a';
-        this.freeze = false;
+        this.freezed = false;
         this.playersList = new Map([
             ['a', {
                 isAlive: true,
                 x: this.xmin + 5,
                 y: this.height / 2,
                 alpha: 0,
-                bulletsQty: 10,
+                bulletsQty: this.bulletsStock,
                 secret: undefined,
-                id: 'a'
+                id: 'a',
             }],
             ['b', {
                 isAlive: true,
                 x: this.xmax - 5,
                 y: this.height / 2,
                 alpha: Math.PI,
-                bulletsQty: 10,
+                bulletsQty: this.bulletsStock,
                 secret: undefined,
-                id: 'b'  
+                id: 'b',
             }]
         ]);
         this.itv = {
-            mainGo: undefined
+            mainGoing: undefined
         }
-        if(this.state){
-            this.setState({
-                bulletsList: new Map()
-            }) 
-        }
-        else {
-            this.state = {
-                bulletsList: new Map()
-            }
-        }
+        this.bulletsList = new Map();
     }
-    handleMouseDown(ev){
-        this.itv.mainGo && clearInterval(this.itv.mainGo) && (this.itv.mainGo = undefined);
-        if(this.freeze){
+    mainGo(ev){
+        this.itv.mainGoing && clearInterval(this.itv.mainGoing) && (this.itv.mainGoing = undefined);
+        if(this.freezed){
             return;
         }
         let player = this.playersList.get(this.mainPlayer);
@@ -94,7 +88,6 @@ class PoongGame extends React.Component{
                 deltaY > 0 ? (alpha = PI -_alpha, dx = -step * cos(_alpha), dy = step * sin(_alpha)) :
                 (alpha = -PI + _alpha, dx = -step * cos(_alpha), dy = -step * sin(_alpha));
             }
-            // send type: go, alpha
             let x0 = x, y0 = y;
             x = x + dx;
             y = y + dy;
@@ -116,39 +109,26 @@ class PoongGame extends React.Component{
             player.x = x; player.y = y; player.alpha = alpha;
             let elem = document.getElementById('shooting_game').querySelector(`#${this.mainPlayer}`);
             elem.style.left = `${x}vmin`; elem.style.top = `${y}vmin`; elem.style.transform = `rotate(${alpha}rad)`;
-
-            // let newPlayerState = Object.assign({}, player, {x, y, alpha});
-            // let newState = new Map([...playersList]);
-            // newState.set(playerId, newPlayerState);
-            // this.setState({playersList: newState})
         }
         mainPlayerGo();
-        this.itv.mainGo = setInterval(mainPlayerGo, this.playerSpeed);
+        this.itv.mainGoing = setInterval(mainPlayerGo, this.playerSpeed);
     }
-    handleMouseUp(ev){
-        if(this.freeze){
-            return;
-        }
-        this.itv.mainGo && clearInterval(this.itv.mainGo) && (this.itv.mainGo = undefined);
-    }
-    shootingClick(ev){
-        // e.preventDefault()
-
+    mainStop(ev){
+        this.itv.mainGoing && clearInterval(this.itv.mainGoing) && (this.itv.mainGoing = undefined);
     }
 
     subPlayerGo = ({x, y, alpha}) =>{
+        if(this.freezed){
+            return;
+        }
         let playerId = this.subPlayer;
         let player = this.playersList.get(playerId);
         player.x = x * this.width; player.y = y * this.width; player.alpha = alpha;
         let elem = document.getElementById('shooting_game').querySelector(`#${playerId}`);
         elem.style.left = `${player.x}vmin`; elem.style.top = `${player.y}vmin`; elem.style.transform = `rotate(${alpha}rad)`;
-        // let newPlayer = {...this.playersList.get(playerId), x: x * this.width, y: y * this.width, alpha};
-        // let newPlist = new Map([...this.playersList]);
-        // newPlist.set(playerId, newPlayer);
-        // this.setState({playersList: newPlist})
     }
     shoot = (playerId) => {
-        if(this.freeze){
+        if(this.freezed){
             return;
         }
         let player = this.playersList.get(playerId);
@@ -167,13 +147,23 @@ class PoongGame extends React.Component{
         }
 
         let key = `${playerId}_${bulletsQty}`;
-        console.log(player, key);
-        let newBullet = {x0: x, y0: y, alpha, key, dxy: this.jump.bind(this)(alpha), isActive: true, owner: playerId}
-        let newBulletentries  = [...this.state.bulletsList];
+        let newBullet = {x0: x, y0: y, alpha, key, dxy: this.jump.bind(this)(alpha), isActive: true, owner: playerId};
         player.bulletsQty--;
-        // console.log('shoot')
-        newBulletentries.push([key, newBullet]);
-        this.setState({bulletsList: new Map(newBulletentries)}, this.bulletGo.bind(this, key)) //, this.bulletGo.bind(this, key, playerId)
+        this.bulletsList.set(key, newBullet);
+        this.setBoardState((prevState) =>{
+            let newState = new Map(prevState.sideList), newSide = {...newState.get(player.id)};
+            newSide.bulletNum = player.bulletsQty;
+            newState.set(player.id,newSide);
+            return {sideList: newState};
+        });
+        let bullet = this.sampleBullet.cloneNode(true);
+        bullet.style.left = `${x}vmin`;
+        bullet.style.top =  `${y}vmin`;
+        bullet.style.display = 'block';
+        bullet.id = key;
+        document.getElementById('bullets').appendChild(bullet);
+        this.bulletGo.bind(this, key)();
+        // this.setBulletsState(this.bulletGo.bind(this, key)) //, this.bulletGo.bind(this, key, playerId)
     }
     jump(alpha){
         let step = this.bulletStep;
@@ -187,8 +177,11 @@ class PoongGame extends React.Component{
 
     }
     bulletGo(key){
+        if(this.freezed){
+            return;
+        }
         let {xmin, ymin, xmax, ymax, bulletSize} = this;
-        let {playersList} = this, {bulletsList} = this.state;
+        let {playersList,bulletsList} = this;
         let bullet = bulletsList.get(key)
         function ifCollidePlayer(){
             let checked = false;
@@ -198,24 +191,22 @@ class PoongGame extends React.Component{
                 }
                 let distance = this.distance(bullet, player);
                 if(distance < (this.bulletSize + this.playerSize) / 2 ){
-                    console.log(222,bullet, player)
                     checked = true;
                     player.isAlive = false;
-                    let elem = document.getElementById('shooting_game').querySelector(`#${player.id}`);
-                    elem.style.backgroundColor = 'grey';
-
-                    // let newPList = new Map([...playersList]);
-                    // newPList.set(player.id, targetPlayer);
-                    // this.setState({playersList: newPList})
+                    let elem1 = document.getElementById('shooting_game').querySelector(`#${player.id}`);
+                    elem1.style.backgroundColor = 'grey';
+                    this.setBoardState((prevState) =>{
+                        let newState = new Map(prevState.sideList), newSide = {...newState.get(player.id)};
+                        newSide.isAlive = player.isAlive;
+                        newState.set(player.id,newSide);
+                        return {sideList: newState};
+                    })
                 }
             })
             if(checked){
                 bullet.isActive = false;
                 let elem = document.getElementById('shooting_game').querySelector(`#${key}`);
                 elem.style.backgroundColor = 'grey';
-                // let newBList =  new Map([...bulletsList]);
-                // newBList.set(key, targetBullet);
-                // this.setState({bulletsList: newBList});
                 return true;
             }
         }
@@ -243,10 +234,11 @@ class PoongGame extends React.Component{
             bullet.dxy = this.jump.bind(this)(newAlpha);
         }
         let itv = setInterval(() =>{
+            if(this.freezed) return clearInterval(itv);
             if(ifCollidePlayer.bind(this)()){
                 console.log('collid')
                 clearInterval(itv);
-                this.itv.mainGo && clearInterval(this.itv.mainGo) && (this.itv.mainGo = undefined);
+                this.itv.mainGoing && clearInterval(this.itv.mainGoing) && (this.itv.mainGoing = undefined);
                 return;
             }
             let type;
@@ -273,9 +265,6 @@ class PoongGame extends React.Component{
             let elem = document.getElementById('shooting_game').querySelector(`#${key}`);
             elem.style.left = `${bullet.x0}vmin`;
             elem.style.top = `${bullet.y0}vmin`
-            // let newState = new Map([...bulletsList])
-            // newState.set(key, newBullet);
-            // this.setState({bulletsList: newState})
         }, this.bulletSpeed)
     }
     distance({x0, y0}, {x, y}){
@@ -283,6 +272,9 @@ class PoongGame extends React.Component{
         return sqrt(pow(x - x0, 2) + pow(y - y0, 2));
     }
     leaveGame = () =>{
+        if(this.freezed){
+            return;
+        }
         let msg = {
             type: 'leave',
             payload: {}
@@ -290,6 +282,9 @@ class PoongGame extends React.Component{
         this.props.socket.send(JSON.stringify(msg))
     }
     handleSocket(){
+        if(this.freezed){
+            return;
+        }
         let socket = this.props.socket;
         socket.handleGame = ({type, payload}) => {
             switch(type){
@@ -298,71 +293,138 @@ class PoongGame extends React.Component{
                 case 'shoot':
                     return this.shoot(this.subPlayer);
                 case 'leave':
-                    return this.freeze = true
+                    return this.freezed = true
                 
             }
         }
     }
+    freeze = () =>{
+        this.freezed = true;
+        Object.keys(this.itv).map(cur =>{
+            cur && clearInterval(cur)
+        })
+    }
     componentDidMount(){
         this.handleSocket.bind(this)();
+        this.sampleBullet = document.getElementById('shooting_game').querySelector('#b_sample');
     }
     componentWillUnmount(){
         delete this.props.socket.handleGame;
         this.leaveGame();
     }
     render(){
-        console.log(this.playersList)
-        let Player = (props) =>{
-            let {player} = props;
-            let heart = {
-                position: 'absolute',
-                left: `${player.x}vmin`,
-                top: `${player.y}vmin`,
-                transform: `rotate(${player.alpha}rad)`,
-                width: '0.01px',
-                height: '0.01px',
-                backgroundColor: 'blue',
-                margin: '0px 0px',
-                padding: '0px 0px'
-
+        let self = this;
+        // class Bullets extends React.Component{
+        //     constructor(props){
+        //         super(props);
+        //         this.state = {
+        //             shooted: 0
+        //         }
+        //     self.setBulletsState = (cb)=>{
+        //         if(self.isBulletsMounted){
+        //             let shooted = this.state.shooted++
+        //             this.setState({shooted}, cb)
+        //         }
+        //     }
+        //     }
+        //     componentDidMount(){
+        //         self.isBulletsMounted = true;
+        //     }
+        //     componentWillUnmount(){
+        //         self.isBulletsMounted = false;
+        //     }
+        //     render(){
+        //         let Bullet = (props) =>{
+        //             let {key, x0, y0, isActive} = props.bullet;
+        //             let bulletHeart = {
+        //                 position: 'absolute',
+        //                 width: '0.01px',
+        //                 height: '0.01px',
+        //                 left: `${x0}vmin`,
+        //                 top: `${y0}vmin`,
+        //                 backgroundColor: 'red'
+        
+        //             }
+        //             let bulletBody = {
+        //                 position: 'absolute',
+        //                 width: `${self.bulletSize}vmin`,
+        //                 height: `${self.bulletSize}vmin`,
+        //                 borderRadius: '50%',
+        //                 left: `-${self.bulletSize/2}vmin`,
+        //                 top: `-${self.bulletSize/2}vmin`,
+        //                 backgroundColor: 'inherit'
+        //             }
+        //             return (
+        //                 <div id = {key} style = {bulletHeart}>
+        //                     <div style = {bulletBody}/>
+        //                 </div>
+        //             )
+        //         }
+        //         let bullets = [...self.bulletsList.values()].map((bullet) =>{ 
+        //             console.log(bullet.key)
+        //             return <Bullet bullet = {bullet} key = {bullet.key}/>
+        //          });
+        //         return (
+        //             <div id = 'bullets'>
+        //                 {bullets}
+        //             </div>
+        //         )
+        //     }
+        // }
+        class PlayerBoard extends React.Component{
+            constructor(props){
+                super(props);
+                let state = new Map();
+                self.props.sideList.map((side) =>{
+                    side = {...side};
+                    side.user = self.props.usersStatus.get(side._id);
+                    let player = self.playersList.get(side.side);
+                    side.bulletNum = player.bulletsQty;
+                    side.isAlive = player.isAlive;
+                    state.set(side.side, side)
+                })
+                this.state = {
+                    sideList: state
+                };
+                self.setBoardState = (obj,cb) =>{
+                    if(self.isBoardMounted){
+                        this.setState(obj, cb);
+                    }
+                };
             }
-            let body = {
-                position: 'absolute',
-                width: `${this.playerSize}vmin`,
-                height: `${this.playerSize}vmin`,
-                borderRadius: '50%',
-                left: `-${this.playerSize/2}vmin`,
-                top: `-${this.playerSize/2}vmin`,
-                backgroundColor: 'inherit',
-                opacity: 0.7,
+            componentDidMount(){
+                self.isBoardMounted = true;
             }
-            let hand = {
-                position: 'absolute',
-                width: '0vmin',
-                height: '0vmin',
-                borderTop: `${this.playerSize/4}vmin solid transparent`,
-                borderBottom: `${this.playerSize/4}vmin solid transparent`,
-                borderLeft: `${this.playerSize/2}vmin solid #555`,
-                top: `-${this.playerSize/4}vmin`,
-                left: `${this.playerSize/4}vmin`,
-                opacity: 0.7,
-
+            componentWillUnmount(){
+                self.isBoardMounted = false;
             }
-            return (
-                <div className = 'player' id = {player.id} style = {heart}>
-                    <div style = {body}></div>
-                    <div style = {hand}></div>
-                </div>
-            )
+            render(){
+                let ScoreStatus = (props) =>{
+                    return (
+                        <ul className = 'score_status'>
+                            <li id = {`bullnum_${props.side}`}>Remaining bullets: {props.bulletNum}</li>
+                            <li id = {`status_${props.side}`}>Status: {props.isAlive ? 'Alive' : 'Dead'}</li>
+                        </ul>
+                    )
+                }
+                return (
+                    <div id = 'player_board'>
+                        {[...this.state.sideList.values()].map(side => <UserStatus key = {side.user._id} status = {side.user}
+                         children = {ScoreStatus.bind(this,{bulletNum: side.bulletNum, isAlive: side.isAlive, side: side.side})}/>)}
+                    </div>
+                )
+            }
         }
-        let Bullet = (props) =>{
-            let {key, x0, y0, isActive} = props.bullet;
+        let SampleBullet = () =>{
             let bulletHeart = {
                 position: 'absolute',
                 width: '0.01px',
                 height: '0.01px',
-                left: `${x0}vmin`,
-                top: `${y0}vmin`,
+                left: `0vmin`,
+                top: `0vmin`,
+                backgroundColor: 'red',
+                display: 'none'
+
             }
             let bulletBody = {
                 position: 'absolute',
@@ -371,46 +433,67 @@ class PoongGame extends React.Component{
                 borderRadius: '50%',
                 left: `-${this.bulletSize/2}vmin`,
                 top: `-${this.bulletSize/2}vmin`,
-                backgroundColor: 'red'
+                backgroundColor: 'inherit'
             }
             return (
-                <div id = {key} style = {bulletHeart}>
+                <div id = 'b_sample' style = {bulletHeart}>
                     <div style = {bulletBody}/>
                 </div>
             )
-        }
-        let PlayerBoard = () => {
-            let sideList = this.props.sideList.map((side) =>{
-                side = {...side};
-                side.user = this.props.usersStatus.get(side._id);
-                let player = this.playersList.get(side.side);
-                side.bulletNum = player.bulletsQty;
-                side.isAlive = player.isAlive;
-                return side;
-            })
-            let ScoreStatus = (props) =>{
+        };
+        let Players = () => {
+            let {playersList} = this;
+            let Player = (props) =>{
+                let {player} = props;
+                let heart = {
+                    position: 'absolute',
+                    left: `${player.x}vmin`,
+                    top: `${player.y}vmin`,
+                    transform: `rotate(${player.alpha}rad)`,
+                    width: '0.01px',
+                    height: '0.01px',
+                    backgroundColor: player.isAlive ? player.id === 'a' ? 'green' : 'blue' : 'grey',
+                    margin: '0px 0px',
+                    padding: '0px 0px'
+    
+                }
+                let body = {
+                    position: 'absolute',
+                    width: `${this.playerSize}vmin`,
+                    height: `${this.playerSize}vmin`,
+                    borderRadius: '50%',
+                    left: `-${this.playerSize/2}vmin`,
+                    top: `-${this.playerSize/2}vmin`,
+                    backgroundColor: 'inherit',
+                    opacity: 0.7,
+                }
+                let hand = {
+                    position: 'absolute',
+                    width: '0vmin',
+                    height: '0vmin',
+                    borderTop: `${this.playerSize/4}vmin solid transparent`,
+                    borderBottom: `${this.playerSize/4}vmin solid transparent`,
+                    borderLeft: `${this.playerSize/2}vmin solid #555`,
+                    top: `-${this.playerSize/4}vmin`,
+                    left: `${this.playerSize/4}vmin`,
+                    opacity: 0.7,
+    
+                }
                 return (
-                    <ul className = 'score_status'>
-                        <li>Remaining bullets: {props.bulletNum}</li>
-                        <li>Status: {props.isAlive}</li>
-                    </ul>
+                    <div className = 'player' id = {player.id} style = {heart}>
+                        <div style = {body}></div>
+                        <div style = {hand}></div>
+                    </div>
                 )
             }
             return (
-                <div id = 'player_board'>
-                    {sideList.map(side => <UserStatus key = {side.user._id} status = {side.user}
-                     children = {<ScoreStatus bulletNum = {side.bulletNum} isAlive = {side.isAlive}/>}/>)}
+                <div id = 'players'>
+                    {[...playersList.values()].map((player) =>{
+                        return  <Player player = {player} key = {player.id}/>
+                    })}
                 </div>
             )
         }
-        let {playersList} = this, {bulletsList} = this.state;
-        console.log(111,playersList)
-        let players = [...playersList.values()].map((player) =>{
-            return  <Player player = {player} key = {player.id}/>
-        })
-        let bullets = [...bulletsList.values()].map((bullet) =>{ 
-           return <Bullet bullet = {bullet} key = {bullet.key}/>
-        });
         let mainStyle = {
             backgroundColor: 'pink',
             border: '1px solid grey',
@@ -422,9 +505,10 @@ class PoongGame extends React.Component{
         return(
             <div>
                 <PlayerBoard/>
-                <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.handleMouseDown.bind(this)} onMouseUp = {this.handleMouseUp.bind(this)} onMouseLeave = {this.handleMouseUp.bind(this)} >
-                    {players}
-                    {bullets}
+                <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.mainGo.bind(this)} onMouseUp = {this.mainStop.bind(this)} onMouseLeave = {this.mainStop.bind(this)} >
+                    <Players/>
+                    <SampleBullet/>
+                    <div id = 'bullets'/>
                 </div>
                 <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button>
             </div>

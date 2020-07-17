@@ -87,6 +87,12 @@ class AuthLayout extends React.Component{
         }
     }
     updateUsersStatusBoard = ({type, payload}) =>{
+        if(type === 'online'){
+            payload.isOnline = true;
+        }
+        else{
+            payload.isOnline = false;
+        }
         this.props.updateStore({
             type: 'UPDATEUSERSTATUS',
             data: payload
