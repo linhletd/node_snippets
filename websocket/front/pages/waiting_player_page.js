@@ -1,42 +1,64 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import {useHistory} from 'react-router-dom';
 import UserStatus from '../pages/user_status';
-const WaitingPlayer = (props) => {
-    let {waitingfor, updateStore, user, socket} = props;
-    let history = useHistory();
+const WaitingPlayer = (props) =>{
+    let {waitingfor, updateStore, socket, user} = props;
     let handleCancel = () =>{
         updateStore({
-            type: 'CANCELWAITGAME',
+            type: 'CANCELWAIT',
             data: {}
         });
         let msg = {
-            type: 'cancel wait',
-            payload: waitingfor
+            type: 'cancel',
+            payload: {_id: waitingfor._id}
         }
         socket.send(JSON.stringify(msg));
-        history.replace('/game');
     }
     if(waitingfor){
+        socket.handleDeclineMsg = ({type, payload})=>{
+            if(payload._id === waitingfor._id){
+                let elem = document.getElementById('game_layout')
+                elem.querySelector('#w_msg').innerHTML = `<p style = 'color: red'>Player declined your request: ${payload.reason}</p>`;
+                elem.querySelector('#w_btn').disabled = true;
+
+                setTimeout(()=>{
+                    updateStore({
+                        type: 'CANCELWAIT',
+                        data: {}
+                    })
+                },2000)
+            }
+        }
+        let style = {
+            width: '300px',
+            height: '200px',
+            border: '1px solid yellow',
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            backgroundColor: 'cyan'
+        }
         return (
-            <div >
+            <div style = {style}>
                 <UserStatus status = {user}/>
                 <div>Wait for ...</div>
                 <UserStatus status = {waitingfor}/>
-                <button onClick = {handleCancel}>cancel</button>
+                <div id = 'w_msg'/>
+                <button id = 'w_btn' onClick = {handleCancel}>cancel</button>
             </div>
         )
     }
     else{
-        return ""
+        socket.handleDeclineMsg ? delete socket.handleDeclineMsg : "";
+        return "";
     }
 
 }
 function mapStateToProps(state, ownProp){
     return {
-        waitingfor: state.waitingfor,
-        socket: state.socket,
-        user: state.user
+        waitingfor: state.poong.waitingfor,
+        socket: state.main.socket,
+        user: state.main.user
     }
 }
 function mapDispatchToProps(dispatch){

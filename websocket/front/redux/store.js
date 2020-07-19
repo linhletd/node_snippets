@@ -2,21 +2,24 @@ import {createStore, combineReducers} from 'redux';
 
 const LOGIN = 'LOGIN',
       LOGOUT = 'LOGOUT',
-      JOINGAME = 'JOINGAME',
       OPENSOCKET = 'OPENSOCKET',
-      ACTIVEGAME = 'ACTIVEGAME',
       LOADUSERSTATUS = 'LOADUSERSTATUS',
-      UPDATEUSERSTATUS = 'UPDATEUSERSTATUS';
-
-var user, socket , poong = {}, usersStatus = undefined;
+      UPDATEUSERSTATUS = 'UPDATEUSERSTATUS',
+      WAITPLAYER = 'WAITPLAYER',
+      INVITENOTICE = 'INVITENOTICE',
+      CANCELWAIT = 'CANCELWAIT',
+      CANCELMSG = 'CANCELMSG',
+      ACTIVEGAME = 'ACTIVEGAME',
+      DECLINEGAME = 'DECLINEGAME',
+      SOMEWHERE = 'SOMEWHERE';
+    
+var user, socket, usersStatus = undefined;
 if(window.atob && /^InVzZXIi=|;InVzZXIi=/.test(document.cookie)){
     user = JSON.parse(atob((';' + document.cookie +';').match(/;InVzZXIi=(.+?);/)[1].replace(/%2F/g,'/').replace(/%3D/g, '=')));
     socket = new window.WebSocket('ws://localhost:8080');
 }
 
-const initialState = {user, socket, poong, usersStatus}
-
-function reducer(state = initialState, {type, data}){
+function main(state = {user, socket, usersStatus},{type, data}){
     switch(type){
         case LOGIN:
             return {...state, user: data};
@@ -24,9 +27,6 @@ function reducer(state = initialState, {type, data}){
             return {...state, user: undefined};
         case OPENSOCKET:
             return {...state, socket: data};
-        case ACTIVEGAME:
-            data.active = true;
-            return {...state, poong: data};
         case LOADUSERSTATUS:
             return {...state, usersStatus: data};
         case UPDATEUSERSTATUS:
@@ -45,15 +45,59 @@ function reducer(state = initialState, {type, data}){
                 }
             }
             else {
-                newUser = data;
+                newUser = {...data};
             }
             newState.set(newUser._id, newUser);
             return {...state, usersStatus: newState}
-        case 'WAITPLAYER':
-            
         default:
             return state;
     }
 }
+function poong(state = {noticeList: new Map()}, {type, data}){
+    switch(type){
+        case ACTIVEGAME:
+            {
+                let {mainSide, mainUId, subUId, inviteId} = data;
+                let subSide = mainSide == 'a' ? 'b' : 'a',
+                    s = {side: mainSide, _id: mainUId},
+                    m = {side: subSide, _id: subUId},
+                    sideList = [m, s].sort((a,b) =>{
+                        return (a.side.codePointAt(0) - b.side.codePointAt(0))
+                    })
+                return {...state, mainSide, sideList, active: true, waitingfor: null, noticeList: null};
+            }
+        case WAITPLAYER:
+            return {...state, waitingfor: {_id: data._id}};
+        case CANCELWAIT:
+            return {...state, waitingfor: null};
+        //notice
+        case INVITENOTICE:
+            {
+                let newEntries = [...state.noticeList];
+                newEntries.unshift([data.inviteId, data]);
+                return {...state, noticeList: new Map(newEntries)};
+            }
+
+        case DECLINEGAME: case CANCELMSG:
+            {
+                let newNoticeList = new Map(state.noticeList);
+                newNoticeList.delete(data.inviteId);
+                return {...state, noticeList: newNoticeList}
+            }
+        case SOMEWHERE:
+            {
+                return {...state, noticeList: new Map()}
+            }
+        default:
+            return state;
+    }
+}
+let reducer = combineReducers({
+    main,
+    poong
+})
 const store = createStore(reducer);
+store.subscribe(()=>{
+    console.log('dispatch')
+})
 export default store;

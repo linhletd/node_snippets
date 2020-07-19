@@ -1,7 +1,6 @@
 import React from 'react';
 import {Route, Switch, NavLink, withRouter, Redirect} from 'react-router-dom';
 import {connect} from 'react-redux';
-import UserStatus from '../pages/user_status';
 import PoongGame from '../pages/poong_game_page';
 import BrowseUserPage from '../pages/browse_user_page';
 import WaitingPlayer from '../pages/waiting_player_page';
@@ -46,10 +45,10 @@ class SubGameLayout extends React.Component{
     }
     render(){
         let {path} = this.props.match;
-        let {usersStatus} = this.props;
-        let InviteButton = (props) =>(
-            <button disabled ={!props.isOnline} onClick = {this.invite.bind(this)}>Invite</button>
-        )
+        let InviteButton = (props) =>{
+            return <button disabled ={!props.isOnline} onClick = {this.invite.bind(this)}>Invite</button>
+        }
+        InviteButton.attr = 'isOnline';//parent will pass this attribute
         let listStyle = {
             position: 'absolute',
             top: '50%',
@@ -86,12 +85,12 @@ class SubGameLayout extends React.Component{
 }
 function mapStateToProps(state, ownProp){
     return {
-        user: state.user,
-        socket: state.socket,
+        user: state.main.user,
+        socket: state.main.socket,
+        usersStatus: state.main.usersStatus,
         active: state.poong.active,
         mainSide: state.poong.mainSide,
         sideList: state.poong.sideList,
-        usersStatus: state.usersStatus
     }
 }
 function mapDispatchToProps(dispatch){

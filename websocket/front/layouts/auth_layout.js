@@ -2,6 +2,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import HomePage from '../pages/home_page.js';
 import UserStatus from '../pages/user_status';
+import InviteBoard from '../pages/notify_page';
 import SubDiscussLayout from '../layouts/sub_discuss_layout';
 import PrimaryHeader from '../ui/primary_header.js';
 import SubUserLayout from '../layouts/sub_user_layout';
@@ -11,52 +12,39 @@ import fetchReq from '../utils/xhr.js';
 class AuthLayout extends React.Component{
     constructor(props){
         super(props);
-        this.state = {
-            notice: undefined
-        }
         this.getInitialUsersStatus();
     }
-    handleNotice = ({type, payload}) =>{
+    handleInviteMsg = ({type, payload}) =>{
         let notice = {
             inviteId: payload.socketId,
-            user: this.props.usersStatus.get(payload.originatorId),
+            userId: payload.originatorId,
+            raceId: payload.raceId,
             info: 'invite game',
-            time: new Date()
+            time: new Date(),
         }
-        this.setState({notice})
+        this.props.updateStore({
+            type: 'INVITENOTICE',
+            data: notice
+        })
     }
-    handleAcceptGame = () =>{
-        let subId = this.state.notice.user._id;
-        let msg = {
-            type: 'accept',
-            payload: {
-                socketId: this.state.notice.inviteId
-            }
-        };
-        this.props.socket.send(JSON.stringify(msg));
-        this.setState({notice: undefined});
-        this.activeGame('b', subId);
-    }
-    handleAcceptMessage = ({payload})=>{
-        this.activeGame('a', payload._id)
-    }
-    activeGame = (mainSide, subPlayerId) =>{
-        let subSide = mainSide == 'a' ? 'b' : 'a',
-            s = {side: mainSide, _id: this.props.user._id},
-            m = {side: subSide, _id: subPlayerId},
-            sideList = [m, s].sort((a,b) =>{
-                return (a.side.codePointAt(0) - b.side.codePointAt(0))
-              })
+    handleAcceptMsg = ({payload})=>{
         this.props.updateStore({
             type: 'ACTIVEGAME',
             data: {
-                mainSide,
-                sideList
+                mainSide: 'a',
+                mainUId: this.props.user._id,
+                subUId: payload._id
             }
         });
         this.props.history.push('/game/poong');
     }
-    handleIncomingMessage = () =>{
+    // requestTouchedSomeWhere = ()=>{
+    //     this.props.updateStore({
+    //         type: 'SOMEWHERE',
+    //         data: {inviteId: ''}
+    //     })
+    // }
+    handleIncomingMsg = () =>{
         let socket = this.props.socket;
         socket.onopen = (e) =>{
             socket.send(JSON.stringify({
@@ -65,7 +53,7 @@ class AuthLayout extends React.Component{
             }));
             socket.onmessage = (event)=>{
                 let {type, payload} = JSON.parse(event.data);
-                document.getElementById('message').innerText = event.data;
+                document.getElementById('message').innerText = type + JSON.stringify(payload);
                 (()=>{
                     switch(type){
                         case 'update board': case 'update comment':
@@ -73,11 +61,30 @@ class AuthLayout extends React.Component{
                         case 'online': case 'offline':
                             return this.updateUsersStatusBoard;
                         case 'invite':
-                            return this.handleNotice;
+                            return this.handleInviteMsg;
                         case 'accept':
-                            return this.handleAcceptMessage;
+                            return this.handleAcceptMsg;
+                        case 'decline':
+                            {
+                                let handleDeclineMsg = socket.handleDeclineMsg
+                                return handleDeclineMsg && handleDeclineMsg || (()=>{});
+                            }
+                        case 'somewhere':
+                            {
+                                let notify = socket.notify
+                                return notify && notify.handleTouchedSomewhere || (()=>{})
+                            }
+                        case 'cancel':
+                            {
+                                let notify = socket.notify
+                                return notify && notify.handleCancelMsg || (()=>{})
+                            }                    
                         case 'shoot': case 'go': case 'leave':
-                            return socket.handleGame && socket.handleGame || (()=>{});
+                            {
+                                let handleGame = socket.handleGame
+                                return handleGame && handleGame || (()=>{});
+                            }
+
                         default: 
                             return () =>{console.log('default: ', type)};
                     }
@@ -97,28 +104,6 @@ class AuthLayout extends React.Component{
             type: 'UPDATEUSERSTATUS',
             data: payload
         })
-        // let {usersStatus} = this.state;
-        // if(!usersStatus) return;
-        // let user = usersStatus.get(payload._id);
-        // if(user && payload.isOnline == user.isOnline){
-        //     return;
-        // }
-        // let newState = new Map([...usersStatus]);
-        // let newUser = Object.assign({}, user);
-        // if(user){
-        //     newUser.isOnline = true;
-        //     if(user.isOnline && type === 'offline'){
-        //         newUser.isOnline = false; 
-        //     }
-        // }
-        // else {
-        //     newUser = payload;
-        // }
-        // newState.set(newUser._id, newUser);
-
-        // this.setState((prevState) => {
-        //     return {usersStatus: newState}
-        // })
     }
     getInitialUsersStatus(){
         fetchReq('/users/status', {
@@ -133,9 +118,6 @@ class AuthLayout extends React.Component{
                     type: 'LOADUSERSTATUS',
                     data: map
                 })
-                // this.setState((prevState) => {
-                //     return {usersStatus: map}
-                // })
             }
             else {
                 console.log(data);
@@ -144,22 +126,15 @@ class AuthLayout extends React.Component{
         })
     }
     componentDidMount(){
-        this.handleIncomingMessage();
+        this.handleIncomingMsg();
     }
     render(){
         let usersStatus = this.props.usersStatus && [...this.props.usersStatus.values()];
-        let usersStatusBoard = usersStatus ? usersStatus.map(status => <UserStatus key = {status._id} status = {status}/>) : "";
-        let notice = this.state.notice ? 
-            <div>
-                <p>{this.state.notice.Username} invite join poong game</p>
-                <button><i className="fa fa-window-close"></i></button>
-                <button onClick = {this.handleAcceptGame}>join</button>
-            </div> : ""
+        // let usersStatusBoard = usersStatus ? usersStatus.map(status => <UserStatus key = {status._id} status = {status}/>) : "";
         return(
             usersStatus ?
             <div>
                 <PrimaryHeader/>
-                {notice}
                 {/* {usersStatusBoard} */}
                 <Switch>
                     <Route exact path = '/'>
@@ -175,6 +150,7 @@ class AuthLayout extends React.Component{
                         <SubGameLayout/>
                     </Route>
                 </Switch>
+                <InviteBoard/>
             </div>:""
         )
     }
@@ -189,9 +165,9 @@ function mapDispatchToProps(dispatch){
 }
 function mapStateToProps(state, ownProp){
     return {
-        user: state.user,
-        socket: state.socket,
-        usersStatus: state.usersStatus
+        user: state.main.user,
+        socket: state.main.socket,
+        usersStatus: state.main.usersStatus
     }
 }
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AuthLayout));

@@ -10,6 +10,14 @@ const UserStatus = (props) => {
         status = props.status;
     }
     let Child = props.children;
+    if(Child){
+        if(typeof Child === 'function'){
+            let attr = {};
+            let a = Child.attr;
+            a && status.hasOwnProperty(a) ? (attr[a] = status[a], Child = <Child {...attr}/>): Child = <Child/>;
+        }
+    }
+    else Child = "";
     return (
         <div className = {status._id + " " + style}>
             <div className = "icon">
@@ -17,13 +25,13 @@ const UserStatus = (props) => {
                 <div className = {status.isOnline ? "signal online" : "signal offline"}/>
             </div>
             <a href = {`/user?id=${status._id}`}>{status.Username}</a>
-            {Child ? <Child isOnline = {status.isOnline}/> : ""}
+            {Child}
         </div>
     )
 }
 function mapStateToProps(state, ownProp){
     return {
-        usersStatus: state.usersStatus
+        usersStatus: state.main.usersStatus
     }
 }
 export default connect(mapStateToProps, null)(UserStatus);

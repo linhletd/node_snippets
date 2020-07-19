@@ -13,7 +13,7 @@ const BrowseUserPage = (props) =>{
 }
 function mapStateToProps(state, ownProp){
     return {
-        usersStatus: state.usersStatus
+        usersStatus: state.main.usersStatus
     }
 }
 export default connect(mapStateToProps, null)(BrowseUserPage);

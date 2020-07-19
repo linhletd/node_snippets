@@ -72,11 +72,32 @@ module.exports = function applyWebsocket(server, app){
         ws.on('pong', function(){
             this.isAlive = true;
         })
+        let utils = {
+            discardSomeWhere(ownerId, expt){
+                ownerMap.get(ownerId).forEach(socket => {
+                    if(socket.id === expt) return;
+                    socket.send(JSON.stringify({
+                        type: 'somewhere',
+                        payload: {}
+                    }))
+                })
+            },
+            needReceiveLeave(socket){
+                let partnerSocket = socket.ref.game;
+                if(partnerSocket){
+                    delete partnerSocket.ref.game;
+                    delete socket.ref.game;
+                    let msg = {
+                        type: 'leave',
+                        payload: {_id: this.owner}
+                    }
+                    partnerSocket.send(JSON.stringify(msg));
+                }
+            }
+        }
         ws.on('close',() => {
             console.log('close');
-            let partner = ws.ref.game;
-            partner ? (delete partner.ref.game, partner.send(JSON.stringify({type: 'leave', payload: ws.owner}))) : "";
-            delete ws.ref.game
+            utils.needReceiveLeave(ws);
             idMap.delete(socketID);
             if(ownerMap.get(userID).size === 1){
                 ownerMap.delete(userID);
@@ -91,6 +112,7 @@ module.exports = function applyWebsocket(server, app){
             clearInterval(itval);
 
         });
+
         ws.on('message', function incoming(message){
             // console.log(`client say ${message}`)
             let {type, payload} = JSON.parse(message);
@@ -100,11 +122,14 @@ module.exports = function applyWebsocket(server, app){
                     case 'invite':
                         return ()=>{
                             let {_id} = payload;
+                            let raceId = uuid.v4();
+                            this.waittingFor = raceId;
                             let msg = {
                                 type: 'invite',
                                 payload:{
                                     socketId: this.id,
-                                    originatorId: this.owner
+                                    originatorId: this.owner,
+                                    raceId
                                 }
                             }
                             ownerMap.get(_id).forEach((socket) =>{
@@ -113,33 +138,70 @@ module.exports = function applyWebsocket(server, app){
                         }
                     case 'accept':
                         return ()=>{
-                            console.log(111,payload.socketId)
-                            let partnerSocket = idMap.get(payload.socketId)
+                            let {socketId: sid, declined, raceId} = payload;
+                            if(this.waittingFor !== raceId){
+                                return utils.needReceiveLeave(this)
+                            }
+                            let {owner:_id, id} = this
+                            let partnerSocket = idMap.get(sid)
                             this.ref.game = partnerSocket;
                             partnerSocket.ref.game = this;
                             let msg = {
                                 type: 'accept',
                                 payload: {
-                                    _id: this.owner
+                                    _id
                                 }
                             }
-                            partnerSocket.send(JSON.stringify(msg))
+                            partnerSocket.send(JSON.stringify(msg));
+                            declined.length && declined.map(id => {
+                                let msg = {
+                                    type: 'decline',
+                                    payload: {_id: this.owner, reason: 'playing with somebody'}
+                                }
+                                idMap.get(id).send(JSON.stringify(msg));
+                            })
+                            utils.discardSomeWhere(_id, id);
+                        }
+                    case 'decline':
+                        return ()=>{
+                            let {inviteId} = payload, {id, owner: _id} = this;
+                            console.log(payload)
+                            let msg = {
+                                type: 'decline',
+                                payload: {_id, reason: 'can not play now'}
+                            }
+                            idMap.get(inviteId).send(JSON.stringify(msg));
+                            utils.discardSomeWhere(_id, id);
+                        }
+                    case 'cancel': case 'leave':
+                        delete this.waittingFor;
+                        return ()=>{
+                            let partnerSocket = this.ref.game
+                            if(partnerSocket){
+                                utils.needReceiveLeave(this)
+                            }
+                            else if(type === 'cancel') {
+                                let {_id} = payload;
+                                ownerMap.get(_id).forEach((socket) =>{
+                                    socket.send(JSON.stringify({
+                                        type: 'cancel',
+                                        payload: {inviteId: this.id}
+                                    }))
+                                })
+                            }
                         }
                     case 'go': case 'shoot':
                         return () =>{
-                            this.ref.game.send(message)
+                            this.ref.game.send(message);
                         }
                     case 'leave':
                         return () =>{
-                            if(this.ref.game){
-                                let partnerSocket = this.ref.game;
-                                delete partnerSocket.ref.game;
-                                delete this.ref.game;
-                                partnerSocket.send(message);
-                            }
+                            utils.needReceiveLeave(this);
                         }
                     default:
-                        return ()=>{}
+                        return ()=>{
+
+                        }
                 }
             })()()
 
