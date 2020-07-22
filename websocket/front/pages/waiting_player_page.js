@@ -1,7 +1,10 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import UserStatus from '../pages/user_status';
+import {useHistory} from 'react-router-dom';
 const WaitingPlayer = (props) =>{
+    let history = useHistory();
+
     let {waitingfor, updateStore, socket, user} = props;
     let handleCancel = () =>{
         updateStore({
@@ -15,8 +18,8 @@ const WaitingPlayer = (props) =>{
         socket.send(JSON.stringify(msg));
     }
     if(waitingfor){
-        socket.handleDeclineMsg = ({type, payload})=>{
-            if(payload._id === waitingfor._id){
+        socket.waitinfo = {
+            handleDeclineMsg: ({type, payload})=>{
                 let elem = document.getElementById('game_layout')
                 elem.querySelector('#w_msg').innerHTML = `<p style = 'color: red'>Player declined your request: ${payload.reason}</p>`;
                 elem.querySelector('#w_btn').disabled = true;
@@ -26,9 +29,22 @@ const WaitingPlayer = (props) =>{
                         type: 'CANCELWAIT',
                         data: {}
                     })
-                },2000)
+                },1500)
+            },
+            handleAcceptMsg: ({payload})=>{
+                updateStore({
+                    type: 'ACTIVEGAME',
+                    data: {
+                        inviteId: waitingfor.inviteId,
+                        mainSide: 'a',
+                        mainUId: user._id,
+                        subUId: payload._id
+                    }
+                });
+                history.push('/game/poong');
             }
         }
+
         let style = {
             width: '300px',
             height: '200px',

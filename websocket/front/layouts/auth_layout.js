@@ -16,9 +16,9 @@ class AuthLayout extends React.Component{
     }
     handleInviteMsg = ({type, payload}) =>{
         let notice = {
-            inviteId: payload.socketId,
+            inviteId: payload.inviteId,
             userId: payload.originatorId,
-            raceId: payload.raceId,
+            socketId: payload.socketId,
             info: 'invite game',
             time: new Date(),
         }
@@ -27,23 +27,6 @@ class AuthLayout extends React.Component{
             data: notice
         })
     }
-    handleAcceptMsg = ({payload})=>{
-        this.props.updateStore({
-            type: 'ACTIVEGAME',
-            data: {
-                mainSide: 'a',
-                mainUId: this.props.user._id,
-                subUId: payload._id
-            }
-        });
-        this.props.history.push('/game/poong');
-    }
-    // requestTouchedSomeWhere = ()=>{
-    //     this.props.updateStore({
-    //         type: 'SOMEWHERE',
-    //         data: {inviteId: ''}
-    //     })
-    // }
     handleIncomingMsg = () =>{
         let socket = this.props.socket;
         socket.onopen = (e) =>{
@@ -60,33 +43,46 @@ class AuthLayout extends React.Component{
                             return socket.discuss && socket.discuss || (()=>{});
                         case 'online': case 'offline':
                             return this.updateUsersStatusBoard;
-                        case 'invite':
-                            return this.handleInviteMsg;
-                        case 'accept':
-                            return this.handleAcceptMsg;
-                        case 'decline':
-                            {
-                                let handleDeclineMsg = socket.handleDeclineMsg
-                                return handleDeclineMsg && handleDeclineMsg || (()=>{});
-                            }
                         case 'somewhere':
                             {
                                 let notify = socket.notify
                                 return notify && notify.handleTouchedSomewhere || (()=>{})
                             }
+                        default:
+                            console.log(payload, this.props)
+                            if(payload.inviteId !== this.props.mutateData.inviteId){
+                                console.log('different inviteId');
+                                return ()=>{}
+                            }
+                            //all method below is for handle game message
+                        case 'invite':
+                            return this.handleInviteMsg;
+                            //method below come from waiting_player_page
+                        case 'accept':
+                            {
+                                let handleAcceptMsg = socket.waitinfo.handleAcceptMsg
+                                return handleAcceptMsg && handleAcceptMsg || (()=>{});
+                            }
+                        case 'decline':
+                            {
+                                let handleDeclineMsg = socket.waitinfo.handleDeclineMsg
+                                return handleDeclineMsg && handleDeclineMsg || (()=>{});
+                            }
+                            //method below come from notify_page
                         case 'cancel':
                             {
                                 let notify = socket.notify
                                 return notify && notify.handleCancelMsg || (()=>{})
-                            }                    
-                        case 'shoot': case 'go': case 'leave':
+                            }
+                            //method below come from poong_game_page                    
+                        case 'shoot': case 'go': case 'leave': case 'continue':
                             {
                                 let handleGame = socket.handleGame
                                 return handleGame && handleGame || (()=>{});
                             }
 
-                        default: 
-                            return () =>{console.log('default: ', type)};
+                        // default: 
+                        //     return () =>{console.log('default: ', type)};
                     }
                 })()({type, payload})
 
@@ -129,10 +125,9 @@ class AuthLayout extends React.Component{
         this.handleIncomingMsg();
     }
     render(){
-        let usersStatus = this.props.usersStatus && [...this.props.usersStatus.values()];
+        // let usersStatus = this.props.usersStatus && [...this.props.usersStatus.values()];
         // let usersStatusBoard = usersStatus ? usersStatus.map(status => <UserStatus key = {status._id} status = {status}/>) : "";
         return(
-            usersStatus ?
             <div>
                 <PrimaryHeader/>
                 {/* {usersStatusBoard} */}
@@ -151,7 +146,7 @@ class AuthLayout extends React.Component{
                     </Route>
                 </Switch>
                 <InviteBoard/>
-            </div>:""
+            </div>
         )
     }
 
@@ -167,7 +162,8 @@ function mapStateToProps(state, ownProp){
     return {
         user: state.main.user,
         socket: state.main.socket,
-        usersStatus: state.main.usersStatus
+        // usersStatus: state.main.usersStatus,
+        mutateData: state.poong.mutateData //never change but mutable
     }
 }
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AuthLayout));

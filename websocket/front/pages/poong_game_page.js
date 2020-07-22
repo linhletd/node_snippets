@@ -1,5 +1,8 @@
 import React from 'react';
 import UserStatus from '../pages/user_status';
+import {Redirect, withRouter} from 'react-router-dom';
+import {connect} from 'react-redux';
+import PoongPopup from '../pages/poong_popup_page'
 
 class PoongGame extends React.Component{
     constructor(props){
@@ -26,8 +29,8 @@ class PoongGame extends React.Component{
         this.startGame();
         // this.changeChildState
     }
-    startGame(){
-        this.mainPlayer = this.props.mainSide;
+    startGame(nextProps){
+        !nextProps ? this.mainPlayer = this.props.gameStatus.mainSide : this.mainPlayer = nextProps.gameStatus.mainSide;
         this.subPlayer = this.mainPlayer === 'a' ? 'b' : 'a';
         this.freezed = false;
         this.playersList = new Map([
@@ -103,7 +106,7 @@ class PoongGame extends React.Component{
             }
             let msg = {
                 type: 'go',
-                payload: {x: x/this.width, y: y/this.width, alpha}
+                payload: {x: x/this.width, y: y/this.width, alpha, inviteId: this.props.mutateData.inviteId}
             }
             this.props.socket.send(JSON.stringify(msg));
             player.x = x; player.y = y; player.alpha = alpha;
@@ -141,7 +144,10 @@ class PoongGame extends React.Component{
         }
         if(playerId === this.mainPlayer){
             let msg = {
-                type: 'shoot'
+                type: 'shoot',
+                payload: {
+                    inviteId: this.props.mutateData.inviteId
+                }
             }
             this.props.socket.send(JSON.stringify(msg))
         }
@@ -195,6 +201,13 @@ class PoongGame extends React.Component{
                     player.isAlive = false;
                     let elem1 = document.getElementById('shooting_game').querySelector(`#${player.id}`);
                     elem1.style.backgroundColor = 'grey';
+                    this.freezed = true;
+                    this.props.updateStore({
+                        type: 'FINISHGAME',
+                        data:{
+                            result: player.id === this.mainPlayer ? 'You lose :(' : 'Congratulation! You win :)'
+                        }
+                    })
                     this.setBoardState((prevState) =>{
                         let newState = new Map(prevState.sideList), newSide = {...newState.get(player.id)};
                         newSide.isAlive = player.isAlive;
@@ -272,14 +285,30 @@ class PoongGame extends React.Component{
         return sqrt(pow(x - x0, 2) + pow(y - y0, 2));
     }
     leaveGame = () =>{
-        if(this.freezed){
-            return;
-        }
+        let {socket, updateStore} = this.props, {inviteId} = this.props.mutateData;
         let msg = {
             type: 'leave',
-            payload: {}
+            payload: {inviteId}
         }
-        this.props.socket.send(JSON.stringify(msg))
+        socket.send(JSON.stringify(msg));
+        updateStore({
+            type: 'ENDGAME',
+            data: {}
+        })
+        this.props.history.replace('/game')
+    }
+    handleLeaveMsg = () =>{
+        this.freezed = true;
+        this.props.updateStore({
+            type: 'LEAVEGAME',
+            data: {}
+        })
+    }
+    handleContinueMsg = () =>{
+        this.props.updateStore({
+            type: 'CONTINUEMSG',
+            data: {}
+        })
     }
     handleSocket(){
         if(this.freezed){
@@ -293,7 +322,9 @@ class PoongGame extends React.Component{
                 case 'shoot':
                     return this.shoot(this.subPlayer);
                 case 'leave':
-                    return this.freezed = true
+                    return this.handleLeaveMsg();
+                case 'continue':
+                    return this.handleContinueMsg()
                 
             }
         }
@@ -304,6 +335,11 @@ class PoongGame extends React.Component{
             cur && clearInterval(cur)
         })
     }
+    shouldComponentUpdate(nextProps){
+        console.log('update')
+        this.startGame(nextProps);
+        return true
+    }
     componentDidMount(){
         this.handleSocket.bind(this)();
         this.sampleBullet = document.getElementById('shooting_game').querySelector('#b_sample');
@@ -313,71 +349,15 @@ class PoongGame extends React.Component{
         this.leaveGame();
     }
     render(){
+        console.log('render')
         let self = this;
-        // class Bullets extends React.Component{
-        //     constructor(props){
-        //         super(props);
-        //         this.state = {
-        //             shooted: 0
-        //         }
-        //     self.setBulletsState = (cb)=>{
-        //         if(self.isBulletsMounted){
-        //             let shooted = this.state.shooted++
-        //             this.setState({shooted}, cb)
-        //         }
-        //     }
-        //     }
-        //     componentDidMount(){
-        //         self.isBulletsMounted = true;
-        //     }
-        //     componentWillUnmount(){
-        //         self.isBulletsMounted = false;
-        //     }
-        //     render(){
-        //         let Bullet = (props) =>{
-        //             let {key, x0, y0, isActive} = props.bullet;
-        //             let bulletHeart = {
-        //                 position: 'absolute',
-        //                 width: '0.01px',
-        //                 height: '0.01px',
-        //                 left: `${x0}vmin`,
-        //                 top: `${y0}vmin`,
-        //                 backgroundColor: 'red'
-        
-        //             }
-        //             let bulletBody = {
-        //                 position: 'absolute',
-        //                 width: `${self.bulletSize}vmin`,
-        //                 height: `${self.bulletSize}vmin`,
-        //                 borderRadius: '50%',
-        //                 left: `-${self.bulletSize/2}vmin`,
-        //                 top: `-${self.bulletSize/2}vmin`,
-        //                 backgroundColor: 'inherit'
-        //             }
-        //             return (
-        //                 <div id = {key} style = {bulletHeart}>
-        //                     <div style = {bulletBody}/>
-        //                 </div>
-        //             )
-        //         }
-        //         let bullets = [...self.bulletsList.values()].map((bullet) =>{ 
-        //             console.log(bullet.key)
-        //             return <Bullet bullet = {bullet} key = {bullet.key}/>
-        //          });
-        //         return (
-        //             <div id = 'bullets'>
-        //                 {bullets}
-        //             </div>
-        //         )
-        //     }
-        // }
         class PlayerBoard extends React.Component{
             constructor(props){
                 super(props);
                 let state = new Map();
-                self.props.sideList.map((side) =>{
+                self.props.gameStatus.sideList.map((side) =>{
                     side = {...side};
-                    side.user = self.props.usersStatus.get(side._id);
+                    side.user = {_id: side._id};
                     let player = self.playersList.get(side.side);
                     side.bulletNum = player.bulletsQty;
                     side.isAlive = player.isAlive;
@@ -502,18 +482,42 @@ class PoongGame extends React.Component{
             width: `${this.width}vmin`,
             height: `${this.height}vmin`,
         }
+        const Game = () =>{
+            console.log('run')
+            return (
+                <div>
+                    <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.mainGo.bind(this)} onMouseUp = {this.mainStop.bind(this)} onMouseLeave = {this.mainStop.bind(this)} >
+                        <Players/>
+                        <SampleBullet/>
+                        <div id = 'bullets'/>
+                    </div>
+                    <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button>                    
+                </div>
+
+            )
+        }
         return(
             <div>
                 <PlayerBoard/>
-                <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.mainGo.bind(this)} onMouseUp = {this.mainStop.bind(this)} onMouseLeave = {this.mainStop.bind(this)} >
-                    <Players/>
-                    <SampleBullet/>
-                    <div id = 'bullets'/>
-                </div>
-                <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button>
+                <Game/>
+                <PoongPopup leaveGame = {this.leaveGame}/>
             </div>
-
         )
     }
 }
-export default PoongGame;
+function mapStateToProps(state, ownProp){
+    return {
+        user: state.main.user,
+        socket: state.main.socket,
+        gameStatus: state.poong.gameStatus,
+        mutateData: state.poong.mutateData
+    }
+}
+function mapDispatchToProps(dispatch){
+    return {
+        updateStore: function(action){
+            dispatch(action);
+        }
+    }
+}
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(PoongGame));

@@ -82,22 +82,34 @@ module.exports = function applyWebsocket(server, app){
                     }))
                 })
             },
-            needReceiveLeave(socket){
-                let partnerSocket = socket.ref.game;
-                if(partnerSocket){
-                    delete partnerSocket.ref.game;
-                    delete socket.ref.game;
-                    let msg = {
+            // needSendLeaveToPartner(socket){
+            //     utils.needClearCurrentGameRef.bind(socket)()
+            // },
+            needReceiveLeave(inviteId){
+                let msg = {
+                    type: 'leave',
+                    payload: {inviteId}
+                }
+                this.send(JSON.stringify(msg));
+            },
+            needClearCurrentGameRef(socket){
+                let oldRef = socket.ref && socket.ref.game;
+                if(oldRef){
+                    console.log('send leave')
+                    oldRef.send(JSON.stringify({
                         type: 'leave',
-                        payload: {_id: this.owner}
-                    }
-                    partnerSocket.send(JSON.stringify(msg));
+                        payload: {inviteId: socket.inviteId}
+                    }))
+                    delete socket.inviteId
+                    delete oldRef.inviteId
+                    delete socket.ref.game;
+                    delete oldRef.ref.game;
                 }
             }
         }
         ws.on('close',() => {
             console.log('close');
-            utils.needReceiveLeave(ws);
+            utils.needClearCurrentGameRef(ws);
             idMap.delete(socketID);
             if(ownerMap.get(userID).size === 1){
                 ownerMap.delete(userID);
@@ -121,15 +133,15 @@ module.exports = function applyWebsocket(server, app){
                 switch(type){
                     case 'invite':
                         return ()=>{
-                            let {_id} = payload;
-                            let raceId = uuid.v4();
-                            this.waittingFor = raceId;
+                            utils.needClearCurrentGameRef(this)
+                            let {_id, inviteId} = payload;
+                            this.inviteId = inviteId;
                             let msg = {
                                 type: 'invite',
                                 payload:{
                                     socketId: this.id,
                                     originatorId: this.owner,
-                                    raceId
+                                    inviteId
                                 }
                             }
                             ownerMap.get(_id).forEach((socket) =>{
@@ -138,25 +150,25 @@ module.exports = function applyWebsocket(server, app){
                         }
                     case 'accept':
                         return ()=>{
-                            let {socketId: sid, declined, raceId} = payload;
-                            if(this.waittingFor !== raceId){
-                                return utils.needReceiveLeave(this)
+                            let {socketId: sid, declined, inviteId} = payload;
+                            let {owner:_id, id} = this;
+                            let partnerSocket = idMap.get(sid);
+                            if(!partnerSocket || partnerSocket.inviteId !== inviteId){
+                                return //utils.needReceiveLeave(inviteId)
                             }
-                            let {owner:_id, id} = this
-                            let partnerSocket = idMap.get(sid)
+                            utils.needClearCurrentGameRef(this)
                             this.ref.game = partnerSocket;
+                            this.inviteId = inviteId;
                             partnerSocket.ref.game = this;
                             let msg = {
                                 type: 'accept',
-                                payload: {
-                                    _id
-                                }
+                                payload: {_id, inviteId}
                             }
                             partnerSocket.send(JSON.stringify(msg));
-                            declined.length && declined.map(id => {
+                            declined.length && declined.map(({socketId: id, inviteId}) => {
                                 let msg = {
                                     type: 'decline',
-                                    payload: {_id: this.owner, reason: 'playing with somebody'}
+                                    payload: {_id: this.owner, reason: 'playing with somebody', inviteId}
                                 }
                                 idMap.get(id).send(JSON.stringify(msg));
                             })
@@ -164,39 +176,35 @@ module.exports = function applyWebsocket(server, app){
                         }
                     case 'decline':
                         return ()=>{
-                            let {inviteId} = payload, {id, owner: _id} = this;
-                            console.log(payload)
-                            let msg = {
-                                type: 'decline',
-                                payload: {_id, reason: 'can not play now'}
-                            }
-                            idMap.get(inviteId).send(JSON.stringify(msg));
+                            let {socketId, inviteId} = payload, {id, owner: _id} = this;
                             utils.discardSomeWhere(_id, id);
+                            let intendPartner = idMap.get(socketId);
+                            if(intendPartner && intendPartner.inviteId === inviteId){
+                                let msg = {
+                                    type: 'decline',
+                                    payload: {_id, reason: 'can not play now', inviteId}
+                                }
+                                intendPartner.send(JSON.stringify(msg));
+                            }
+
                         }
                     case 'cancel': case 'leave':
-                        delete this.waittingFor;
                         return ()=>{
-                            let partnerSocket = this.ref.game
-                            if(partnerSocket){
-                                utils.needReceiveLeave(this)
-                            }
-                            else if(type === 'cancel') {
+                            let inviteId = this.inviteId;
+                            if(type === 'cancel' && !this.ref.game) {
                                 let {_id} = payload;
                                 ownerMap.get(_id).forEach((socket) =>{
                                     socket.send(JSON.stringify({
                                         type: 'cancel',
-                                        payload: {inviteId: this.id}
+                                        payload: {inviteId}
                                     }))
                                 })
                             }
+                            utils.needClearCurrentGameRef(this)
                         }
-                    case 'go': case 'shoot':
+                    case 'go': case 'shoot': case 'continue':
                         return () =>{
-                            this.ref.game.send(message);
-                        }
-                    case 'leave':
-                        return () =>{
-                            utils.needReceiveLeave(this);
+                            this.ref.game && this.ref.game.send(message);
                         }
                     default:
                         return ()=>{
