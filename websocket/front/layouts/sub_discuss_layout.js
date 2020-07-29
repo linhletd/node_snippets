@@ -9,9 +9,6 @@ class SubDiscussLayout extends React.Component{
             displayingPosts: new Map(),
             questionsList: new Map(),
         }
-        this.addToDisplay = this.addToDisplay.bind(this);
-        this.addToTitleBoard = this.addToTitleBoard.bind(this);
-        this.addComment = this.addComment.bind(this);
     }
     static timer = undefined
     postTopic(e){
@@ -39,7 +36,7 @@ class SubDiscussLayout extends React.Component{
             this.addToDisplay(question, true);
         })
     }
-    addToDisplay(question, isNew){
+    addToDisplay = (question, isNew) => {
         this.setState((prevState) => {
             if(!isNew){
                 prevState.displayingPosts.delete(question._id);
@@ -50,7 +47,7 @@ class SubDiscussLayout extends React.Component{
 
         });
     }
-    addComment(comment){
+    addComment = (comment) =>{
         let id = comment.tid;
         let val = this.state.displayingPosts.get(id);
         val ? this.setState((prevState) => {
@@ -69,7 +66,7 @@ class SubDiscussLayout extends React.Component{
             return {questionsList: newState}
         }) : ""
     }
-    addToTitleBoard(data){
+    addToTitleBoard = (data) =>{
         if(Array.isArray(data)){
             this.setState((prevState => {
                 let entries = [];

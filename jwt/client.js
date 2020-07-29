@@ -16,10 +16,21 @@ const Navbar = (props) =>{
         </div>
     )
 }
-const Home = () =>{
-    return (
-        <h1>Home Sweet Home</h1>
-    )
+class Home extends React.Component{
+    constructor(){
+        super();
+        console.log('construct')
+    }
+    render(){
+        console.log('test')
+        return (
+            <h1>Home Sweet Home</h1>
+        )
+    }
+    componentWillUnmount(){
+        console.log('unmount')
+    }
+
 }
 let Login = (props) => {
   return (
@@ -94,6 +105,7 @@ class App extends React.Component{
     constructor(props){
         super(props)
         this.state = {
+            test: 1,
             timer: undefined,
         }
     }
@@ -167,7 +179,12 @@ class App extends React.Component{
         }
     }
     componentDidMount(){
-        this.setTimerToRefreshToken.bind(this)()
+        this.setTimerToRefreshToken.bind(this)();
+        setTimeout(()=>{
+            this.setState({
+                test: 2
+            })
+        }, 3000)
     }
     componentWillUnmount(){
         this.clearTimer.bind(this)()

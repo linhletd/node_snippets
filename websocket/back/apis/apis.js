@@ -11,6 +11,9 @@ module.exports = function(app){
     let db = process.env.MG_DB_NAME
     let topics = client.db(db).collection('topics');
     let users = client.db(db).collection('users');
+    let addOnOffStatus = (user) =>{
+        app.ownerMap.get(user._id.toString()) ? user.isOnline = true : user.isOnline = false;
+    }
     let apiObject = {
         createTopic: function(req, res, next){
             let Author = req.user;
@@ -87,6 +90,7 @@ module.exports = function(app){
             let _id = new ObjectId(req.params.topic_id);
             topics.findOne({_id}, (err, topic) =>{
                 if(err) return res.json({err: err.message});
+                addOnOffStatus(topic.Author)
                 res.json(topic)
             })
 

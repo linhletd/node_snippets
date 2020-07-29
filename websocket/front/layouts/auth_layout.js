@@ -6,7 +6,8 @@ import InviteBoard from '../pages/notify_page';
 import SubDiscussLayout from '../layouts/sub_discuss_layout';
 import PrimaryHeader from '../ui/primary_header.js';
 import SubUserLayout from '../layouts/sub_user_layout';
-import SubGameLayout from '../layouts/sub_game_layout'
+import SubGameLayout from '../layouts/sub_game_layout';
+import EditorApp from '../pages/editor_page'
 import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
 class AuthLayout extends React.Component{
@@ -143,6 +144,9 @@ class AuthLayout extends React.Component{
                     </Route>
                     <Route path = '/game'>
                         <SubGameLayout/>
+                    </Route>
+                    <Route path = '/editor'>
+                        <EditorApp/>
                     </Route>
                 </Switch>
                 <InviteBoard/>

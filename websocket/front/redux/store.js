@@ -1,4 +1,6 @@
 import {createStore, combineReducers} from 'redux';
+import HistoryStackManager from '../utils/editor_history_manager'
+
 
 const LOGIN = 'LOGIN',
       LOGOUT = 'LOGOUT',
@@ -142,9 +144,26 @@ function poong(state = initialPoong, {type, data}){
             return state;
     }
 }
+
+let editorNode = document.createElement('div');
+editorNode.contentEditable = true;
+editorNode.style.color = 'orange';
+// editorNode.style.backgroundColor = 'grey';
+editorNode.style.border = '2px solid blue';
+editorNode.style.height = '100vh'
+
+let initialEditor = {
+    editorNode,
+    historyManager: new HistoryStackManager(editorNode)
+}
+function editor(state = initialEditor){
+    return state;
+}
+
 let reducer = combineReducers({
     main,
-    poong
+    poong,
+    editor
 })
 const store = createStore(reducer);
 store.subscribe(()=>{

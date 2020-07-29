@@ -36,6 +36,11 @@ class App extends React.Component{
 
     componentDidMount(){
         this.handleLoginEvent();
+        let tempContainer = document.createElement('div');
+        tempContainer.id = 'temp_container';
+        tempContainer.style.display = 'none';
+        document.getElementsByTagName('body')[0].appendChild(tempContainer);
+
     }
     render(){
         return (
