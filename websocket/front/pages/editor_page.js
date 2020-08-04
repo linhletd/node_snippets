@@ -1,140 +1,13 @@
-import React from 'react';
+import React, { createElement } from 'react';
 import {connect} from 'react-redux';
+import EditorNodeTraveler from '../utils/editor_node_traveler'
 class EditorApp extends React.Component{
     constructor(props){
         super(props);
         this.setToolbarState = undefined;
         this.currentRange = undefined;
+        this.traveler = new EditorNodeTraveler(props.editorNode);
     }
-    modifyExistingRangeStyle(range, style){
-        let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range,
-            {prop, val} = style,
-            nodeList1 = [], nodeList2 = [], nodeList3 = [],
-            d = document;
-        function replaceWithSpanFromLeft(node, updateList = nodeList1){
-            if(node.nodeType === 3){
-                let value = node.nodeValue;
-                if(node === start && value.length > startOffset){
-                    let head = d.createTextNode(value.slice(0, startOffset)),
-                        tail = d.createTextNode(value.slice(startOffset)),
-                        parentSpan = d.createElement('span'),
-                        childSpan = d.createElement('span');
-                        childSpan.appendChild(tail);
-                        childSpan.style[prop] = val;
-                        parentSpan.appendChild(head);
-                        parentSpan.appendChild(childSpan);
-    
-                    node.parentNode.replaceChild(parentSpan, node);
-                    updateList.push(parentNode);
-                    return parentSpan;
-                }
-                else {
-                    let text = d.createTextNode(value),
-                        span = d.createElement('span');
-                    span.appendChild(text);
-                    span.style[prop] = val;
-                    node.parentNode.replaceChild(span, node);
-                    return span;
-                }
-    
-            }
-            else node.style[prop] = val;
-            return node;
-        }
-        function replaceWithSpanFromRight(node){
-            if(node.nodeType === 3){
-                let value = node.nodeValue;
-                if(node === end && value.length > endOffset){
-                    let head = d.createTextNode(value.slice(0, endOffset)),
-                        tail = d.createTextNode(value.slice(endOffset))
-                        parentSpan = d.createElement('span'),
-                        childSpan = d.createElement('span');
-                        childSpan.appendChild(head);
-                        childSpan.style[prop] = val;
-                        parentSpan.appendChild(childSpan);
-                        parentSpan.appendChild(tail);
-    
-                    node.parentNode.replaceChild(parentSpan, node);
-                    nodeList3.push(parentNode);
-                    return parentSpan;
-                }
-                else {
-                    let text = d.createTextNode(value),
-                        span = d.createElement('span');
-                    span.appendChild(text);
-                    span.style[prop] = val;
-                    node.parentNode.replaceChild(span, node);
-                    return span;
-                }
-    
-            }
-            else node.style[prop] = val;
-            return node;
-        }
-        function traverseFromLeft(cur){
-            let par = cur.parentNode;
-            let pre = cur.previousSibling;
-            if(par === common){
-                !nodeList1.length && nodeList1.push(cur) && (cur = replaceWithSpanFromLeft(cur))
-                return {
-                    nodeList1,
-                    bigStart: cur
-                };
-            } 
-            if(!pre && nodeList1.length === 0){
-                return traverseFromLeft(par);
-            }
-            if(pre && nodeList1.length === 0) {
-                nodeList1.push(cur) && (cur = replaceWithSpanFromLeft(cur))
-            }
-            let next = cur.nextSibling;
-            while(next){
-                nodeList1.push(next)&& (next = replaceWithSpanFromLeft(next));
-                next = next.nextSibling;
-            }
-            return traverseFromLeft(par);
-        }
-        function traverseFromRight(cur){
-            let par = cur.parentNode;
-            let next = cur.nextSibling;
-            if(par === common){
-                !nodeList3.length && nodeList3.push(cur) && (cur = replaceWithSpanFromRight(cur))
-                return {
-                    nodeList3,
-                    bigEnd: cur
-                }
-            } 
-            if(!next && nodeList3.length === 0){
-                return traverseFromRight(par);
-            }
-            if(next && nodeList3.length === 0) {
-                nodeList3.push(cur) && (cur = replaceWithSpanFromRight(cur))
-            }
-            let pre = cur.previousSibling;
-            while(pre){
-                nodeList3.push(pre)&& (pre = replaceWithSpanFromRight(pre));
-                pre = pre.previousSibling;
-            }
-            return traverseFromRight(par);
-        }
-        function traverseThroughMiddleNodes(start, end){
-            let next = start.nextSibling;
-            while(next && next !== end){
-                nodeList2.push(next) && (next = replaceWithSpanFromLeft(next, nodeList2));
-                next = next.nextSibling;
-            }
-        }
-        traverseThroughMiddleNodes(traverseFromLeft(start).bigStart,traverseFromRight(end).bigEnd);
-    }
-    isBelongTag = (nodeName, node) =>{
-        let editorNode = this.props.editorNode;
-        if(node.nodeNome == nodeName) return true;
-        while(node != editorNode && node.parentNode.nodeName == nodeName){
-            node = node.parentNode;
-        }
-        return node.parentNode.nodeName == nodeName ? true : false;
-    }
-
     handlePasteData = (e) => {
         let clipboard = e.clipboarData
     }
@@ -142,6 +15,7 @@ class EditorApp extends React.Component{
         this.currentRange = window.getSelection().getRangeAt(0);
         let {startContainer} = this.currentRange;
         if(e.keyCode === 13  && !this.isBelongTag('LI', startContainer)){
+            console.log('enter');
             e.preventDefault();
             if(!this.currentRange.collapsed){
                 this.currentRange.deleteContents();
@@ -149,13 +23,15 @@ class EditorApp extends React.Component{
             let br1 = document.createElement('br');
             let br2 = document.createElement('br');
             this.currentRange.insertNode(br1);
-            this.currentRange.setEndAfter(br1);
+            this.currentRange.setStartAfter(br1);
             if(br1.nextSibling.nodeName != 'BR' || br1.previousSibling.nodeName != 'BR'){
                 this.currentRange.insertNode(br2);
             }
-            let s = document.getSelection();
-            s.removeAllRanges();
-            s.addRange(this.currentRange);
+            this.currentRange.collapse(true);
+            console.log(this.props.editorNode)
+            // let s = document.getSelection();
+            // s.removeAllRanges();
+            // s.addRange(this.currentRange);
         }
     }
     handleEditorMouseUp = (e) =>{
@@ -171,15 +47,32 @@ class EditorApp extends React.Component{
         editor.removeEventListener('mouseup', this.handleEditorMouseUp);
         editor.removeEventListener('paste', this.handlePastData)
     }
+    repopulateSelection = () =>{
+        this.editorNode.focus();
+        let s = document.getSelection().removeAllRanges();
+        s.addRange(this.currentRange);
+    }
+    handleClickBold = (e) =>{
+        // let r = new Range();
+        // r.selectNodeContents(this.props.editorNode);
+        // let content = r.extractContents();
+        // r.insertNode(content)
+        this.traveler.modify(this.currentRange,{
+            prop: 'color',
+            val: 'red'
+        });
+        console.log(this.props.editorNode)
+    }
     componentDidMount(){
         let {editorNode: editor} = this.props;
         let app = document.getElementById('editor_app');
+        let toolbar = document.getElementById('tool_bar');
+        toolbar.onselectstart = (e) =>{
+            e.preventDefault();
+        }
         app.appendChild(editor);
         this.addEventListenerForEditor(editor);
         this.props.historyManager.startObserving();
-
-
-        // this.handleEditAction();
     }
     componentWillUnmount(){
         this.removeEventListenerForEditor(this.props.editorNode);
@@ -209,7 +102,7 @@ class EditorApp extends React.Component{
                         <button onClick = {self.props.historyManager.undo}>undo</button>
                         <button onClick = {self.props.historyManager.redo}>redo</button>
                         <button>order list</button>
-                        <button>bold</button>
+                        <button onClick = {self.handleClickBold}>bold</button>
                         <label>font</label>
                         <select>
                             <option value = '1'>1</option>

@@ -26,31 +26,36 @@ class HistoryStackManager {
                         type,
                         target,
                         oldValue,
-                        newValue: target.data
+                        newValue: target.nodeValue
                     }
                 }
                 case 'childList':{
                     if(addedNodes.length && removedNodes.length){
                         return {
                             type: 'replaceNode',
-                            addedNode: addedNodes[0],
-                            removedNode: removedNodes[0],
-                            target
+                            addedNodes,
+                            removedNodes,
+                            target,
+                            previousSibling,
+                            nextSibling
                         }
                     }
                     else if(addedNodes.length){
                         return {
                             type: 'addNode',
-                            addedNode: addedNodes[0],
-                            nextSibling,
-                            target
+                            addedNodes,
+                            target,
+                            previousSibling,
+                            nextSibling
                         }
                     }
                     else{
                         return {
                             type: 'removeNode',
-                            removedNode: removedNodes[0],
-                            target
+                            removedNodes,
+                            target,
+                            previousSibling,
+                            nextSibling
                         }
                     } 
                 }
@@ -66,11 +71,11 @@ class HistoryStackManager {
             this.observer.observe(this.trackedNode, {
                 attributes: true,
                 childList: true,
-                subtree: true,
+                subtree: false,
                 characterData: true,
                 attributeOldValue: true,
                 characterDataOldValue: true
-              });
+            });
         }
     }
     stopObserving = ()=>{
@@ -126,7 +131,31 @@ class HistoryStackManager {
         this.current.next = node;
         this.current = node;
     }
-    
+    setRange(target, prev, next){
+        let r = new Range();
+        if(prev && next){
+            r.setStartAfter(prev);
+            r.setEndBefore(next);
+        }
+        else if(prev){
+            r.setStartAfter(prev);
+            r.setEndAfter(target.lastChild);
+        }
+        else if(next){
+            r.setStartBefore(target.firstChild);
+            r.setEndBefore(next);
+        }
+        else{
+            r.selectNodeContents(target);
+        }
+        return r;
+    }
+    replaceWithNodeList(r, list){
+        r.deleteContents();
+        let fragment = new DocumentFragment();
+        list.forEach(node => {fragment.appendChild(node)});
+        r.insertNode(fragment);
+    }
     redo = () =>{
         if(!this.current.next){
             console.log('stop')
@@ -146,24 +175,16 @@ class HistoryStackManager {
                     target.nodeValue = newValue;
                     break;
                 }
-                case 'replaceNode': {
-                    let {addedNode, removedNode, target} = action;
-                    target.replaceChild(addedNode, removedNode);
-                    break;
-                }
-                case 'addNode': {
-                    let {nextSibling: next, target, addedNode} = action;
-                    if(next){
-                        target.insertBefore(addedNode, next);
-                    }
-                    else {
-                        target.appendChild(addedNode)
-                    }
+                case 'replaceNode': case 'addNode': {
+                    let {addedNodes, target, previousSibling: prev, nextSibling: next} = action;
+                    let r = this.setRange(target, prev, next);
+                    this.replaceWithNodeList(r, addedNodes);
                     break;
                 }
                 case 'removeNode': {
-                    let {target, removedNode} = action;
-                    target.removeChild(removedNode);
+                    let {target, previousSibling: prev, nextSibling: next} = action;
+                    let r = this.setRange(target, prev, next);
+                    r.deleteContents();
                     break;
                 }    
             }
@@ -172,6 +193,7 @@ class HistoryStackManager {
         this.startObserving();
     }
     undo = ()=>{
+        console.log(this.current.change)
         if(!this.current.change){
             console.log('stop');
             return;
@@ -191,24 +213,17 @@ class HistoryStackManager {
                     target.nodeValue = oldValue;
                     continue;
                 }
-                case 'replaceNode': {
-                    let {addedNode, removedNode, target} = action;
-                    target.replaceChild(removedNode, addedNode);
+                case 'replaceNode': case 'removeNode': {
+                    let {removedNodes, target, previousSibling: prev, nextSibling: next} = action;
+                    let r = this.setRange(target, prev, next);
+                    this.replaceWithNodeList(r, removedNodes);
                     continue;
                 }
                 case 'addNode': {
-                    let {target, addedNode} = action;
-                    target.removeChild(addedNode);
+                    let {target, previousSibling: prev, nextSibling: next} = action;
+                    let r = this.setRange(target, prev, next);
+                    r.deleteContents();
                     continue;
-                }
-                case 'removeNode': {
-                    let {nextSibling: next, target, removedNode} = action;
-                    if(next){
-                        target.insertBefore(removedNode, next);
-                    }
-                    else {
-                        target.appendChild(removedNode)
-                    }
                 }    
             }
         }

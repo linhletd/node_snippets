@@ -147,7 +147,7 @@ function poong(state = initialPoong, {type, data}){
 
 let editorNode = document.createElement('div');
 editorNode.contentEditable = true;
-editorNode.style.color = 'orange';
+// editorNode.style.color = 'orange';
 // editorNode.style.backgroundColor = 'grey';
 editorNode.style.border = '2px solid blue';
 editorNode.style.height = '100vh'
