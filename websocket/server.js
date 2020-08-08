@@ -15,7 +15,7 @@ const dbConnect = new Promise((resolve, reject) => {
           resolve(client);
       }
   })
-});
+}).finally(()=>{});
 dbConnect.then((client) => {
     console.log('database connected');
 try{

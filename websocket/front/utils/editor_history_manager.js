@@ -3,67 +3,126 @@ class HistoryStackManager {
         this.observer = new MutationObserver(this.observerCallback);
         this.trackedNode = domNode;
         this.isObserving = false;
-        this.head = this.createNewHistoryNode(null);
+        this.head = this.createNewHistoryNode({});
         this.current = this.head;
         this.size = 100;
         this.length = 0;
+        this.data = {
+            textTimer: undefined,
+            waitState: undefined,
+            waitRecord: undefined,
+        }
     }
     observerCallback = (mutations, observer) =>{
-        let change = mutations.map(m =>{
+        let record = [];
+        if(this.data.mergeHistory){
+            let m = mutations[0];
+            let {addedNodes, nextSibling, previousSibling, target} = m;
+            this.current.record.push({
+                type: 'addNode',
+                addedNodes,
+                target,
+                previousSibling,
+                nextSibling
+            });
+            this.data.mergeHistory = undefined;
+            return;
+        }
+        mutations.map((m) =>{
             let {addedNodes, attributeName, nextSibling, oldValue, previousSibling, removedNodes, target, type } = m;
             switch(type){
                 case 'attributes':{
-                    return {
+                    record.push({
                         type,
                         target,
                         attributeName,
                         oldValue,
                         newValue: target.attributes[attributeName].value
-                    }
+                    });
+                    break;
                 }
                 case 'characterData':{
-                    return {
-                        type,
-                        target,
-                        oldValue,
-                        newValue: target.nodeValue
+                    let prevChange;
+                    this.current.change.record && (prevChange = this.current.change.record) 
+                    // console.log(prevChange, prevChange.length == 1, prevChange[0].type == type, prevChange[0].target == target, this.data.textTimer, mutations.length == 1)
+                    if(prevChange && prevChange.length == 1 && prevChange[0].type == type && prevChange[0].target == target && this.data.textTimer && mutations.length == 1) {
+                        prevChange[0].newValue = target.nodeValue;
+                        return;
                     }
+                    else {
+                        record.push({
+                            type,
+                            target,
+                            oldValue,
+                            newValue: target.nodeValue
+                        })  
+                    this.setTextTimeOut();
+                    }
+                    break;
                 }
                 case 'childList':{
                     if(addedNodes.length && removedNodes.length){
-                        return {
+                        record.push({
                             type: 'replaceNode',
                             addedNodes,
                             removedNodes,
                             target,
                             previousSibling,
                             nextSibling
-                        }
+                        });
                     }
                     else if(addedNodes.length){
-                        return {
+                        record.push({
                             type: 'addNode',
                             addedNodes,
                             target,
                             previousSibling,
                             nextSibling
-                        }
+                        })
                     }
                     else{
-                        return {
+                        record.push({
                             type: 'removeNode',
                             removedNodes,
                             target,
                             previousSibling,
                             nextSibling
-                        }
-                    } 
+                        })
+                    }
+                    break; 
                 }
             }
         });
-        console.log(change)
-        let newNode = this.createNewHistoryNode(change);
+        console.log('recorded');
+        let change, newNode;
+        record.length && (change = {range: undefined, record}) && (newNode = this.createNewHistoryNode(change));
         this.addNewHistoryNode(newNode);
+
+    }
+    updateRange = (range) =>{
+        this.current.change.range = range;
+    };
+    updatePendingState = (type) =>{
+        this.data.waitState = type;
+    }
+    reApplyRange = (range) =>{
+        let {startContainer, startOffset, endContainer, endOffset} = range;
+        let r = new Range();
+        r.setStart(startContainer, startOffset);
+        r.setEnd(endContainer, endOffset);
+        let sel = document.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+    }
+    clearTextTimeOut = () =>{
+        this.data.textTimer && clearTimeout(this.data.textTimer);
+        this.data.textTimer = undefined;
+    }
+    setTextTimeOut = () =>{
+        this.clearTextTimeOut()
+        this.data.textTimer = setTimeout(() => {
+            this.clearTextTimeOut();
+        }, 5000);
     }
     startObserving = ()=>{
         if(!this.isObserving){
@@ -71,7 +130,7 @@ class HistoryStackManager {
             this.observer.observe(this.trackedNode, {
                 attributes: true,
                 childList: true,
-                subtree: false,
+                subtree: true,
                 characterData: true,
                 attributeOldValue: true,
                 characterDataOldValue: true
@@ -92,12 +151,13 @@ class HistoryStackManager {
         };
     }
     addNewHistoryNode = (node) =>{
+        if(!node) return;
         if(this.current && this.current.next){
             return this.changeDirection(node);
         }
         if(this.length === this.size){
             this.head = this.head.next;
-            this.head.change = null;
+            this.head.change.record = null;
             this.head.prev = null;
         }
         this.current.next = node;
@@ -127,8 +187,9 @@ class HistoryStackManager {
         this.current = this.current.next;
     }
     changeDirection = (node) => {
-        this.length = this.distanceFromCurrentToTail() + 1;
+        this.length = this.length - this.distanceFromCurrentToTail() + 1;
         this.current.next = node;
+        node.prev = this.current;
         this.current = node;
     }
     setRange(target, prev, next){
@@ -156,13 +217,13 @@ class HistoryStackManager {
         list.forEach(node => {fragment.appendChild(node)});
         r.insertNode(fragment);
     }
-    redo = () =>{
+    redo = (sub) =>{
         if(!this.current.next){
             console.log('stop')
             return;
         }
         this.stopObserving();
-        let actions = this.current.next.change;
+        let actions = this.current.next.change.record;
         actions.map(action => {
             switch(action.type){
                 case 'attributes':{
@@ -189,17 +250,18 @@ class HistoryStackManager {
                 }    
             }
         })
-        this.current = this.current.next;
         this.startObserving();
+        this.reApplyRange(this.current.next.change.range);
+        this.current = this.current.next;
+
     }
-    undo = ()=>{
-        console.log(this.current.change)
-        if(!this.current.change){
+    undo = (sub)=>{
+        if(!this.current.change.record){
             console.log('stop');
             return;
         }
         this.stopObserving();
-        let actions = this.current.change;
+        let actions = this.current.change.record;
         for(let i = actions.length - 1; i >= 0; i--){
             let action = actions[i];
             switch(action.type){
@@ -227,8 +289,9 @@ class HistoryStackManager {
                 }    
             }
         }
-        this.current = this.current.prev;
         this.startObserving();
+        this.current = this.current.prev;
+        this.reApplyRange(this.current.change.range);
     }
 }
 export default HistoryStackManager;

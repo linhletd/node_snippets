@@ -5,66 +5,113 @@ class EditorApp extends React.Component{
     constructor(props){
         super(props);
         this.setToolbarState = undefined;
-        this.currentRange = undefined;
+        this.currentRange = new Range();
+        this.data = {
+            waitRange: undefined,
+        }
         this.traveler = new EditorNodeTraveler(props.editorNode);
+        this.undo = props.historyManager.undo.bind(props.historyManager, this);
+        this.redo = props.historyManager.redo.bind(props.historyManager, this);
+
     }
+
     handlePasteData = (e) => {
         let clipboard = e.clipboarData
     }
-    handleEditorKeyDown = (e) =>{
-        this.currentRange = window.getSelection().getRangeAt(0);
-        let {startContainer} = this.currentRange;
-        if(e.keyCode === 13  && !this.isBelongTag('LI', startContainer)){
-            console.log('enter');
+    isBelongTag = (nodeName, node) =>{
+        if(node.nodeNome == nodeName) return true;
+        while(node != this.root && node.parentNode.nodeName == nodeName){
+            node = node.parentNode;
+        }
+        return node.parentNode.nodeName == nodeName ? true : false;
+    }
+    restoreRange = ({startContainer, endContainer, startOffset, endOffset}) =>{
+        this.currentRange.setStart(startContainer, startOffset);
+        this.currentRange.setEnd(endContainer, endOffset);
+    }
+    preserveRange(){
+        let {startContainer, endContainer, startOffset, endOffset, commonAncestorContainer} = this.currentRange;
+        this.preserveRange = {startContainer, endContainer, startOffset, endOffset, commonAncestorContainer};
+    }
+    handleEditorKeyPress = (e) =>{
+        if(this.data.waitRange && this.data.waitRange != window.getSelection().getRangeAt(0)){
+            let {startContainer} = this.data.waitRange;
+            startContainer.remove();
+        }
+        let r = this.data.waitRange || window.getSelection().getRangeAt(0);
+        if(this.data.waitRange == window.getSelection().getRangeAt(0) && e.keyCode !== 13){
             e.preventDefault();
-            if(!this.currentRange.collapsed){
-                this.currentRange.deleteContents();
+            let char = String.fromCodePoint(e.charCode);
+            r.insertNode(document.createTextNode(char));
+            r.collapse(false);
+        }
+        if(e.keyCode === 13  && !this.isBelongTag('LI', startContainer)){
+            e.preventDefault();
+            if(!r.collapsed){
+                r.deleteContents();
             }
             let br1 = document.createElement('br');
             let br2 = document.createElement('br');
-            this.currentRange.insertNode(br1);
-            this.currentRange.setStartAfter(br1);
-            if(br1.nextSibling.nodeName != 'BR' || br1.previousSibling.nodeName != 'BR'){
-                this.currentRange.insertNode(br2);
+            r.insertNode(br1);
+            r.setStartAfter(br1);
+            if(br1.nextSibling && br1.nextSibling.nodeName != 'BR' || br1.previousSibling && br1.previousSibling.nodeName != 'BR'){
+                r.insertNode(br2);
             }
-            this.currentRange.collapse(true);
-            console.log(this.props.editorNode)
-            // let s = document.getSelection();
-            // s.removeAllRanges();
-            // s.addRange(this.currentRange);
+            r.collapse(true);
         }
+        this.data.waitRange && (this.data.waitRange = undefined);
     }
     handleEditorMouseUp = (e) =>{
-        this.currentRange = window.getSelection().getRangeAt(0);
+        this.currentRange = this.rememberRange();
+    }
+    rememberRange = ()=>{
+        let sel = document.getSelection().getRangeAt(0);
+        let {startContainer, startOffset, endContainer, endOffset} = sel
+        this.props.historyManager.updateRange({startContainer, startOffset, endContainer, endOffset});
+        return sel;
+    }
+    handleInputData = () =>{
+        this.rememberRange();
+        setTimeout(this.rememberRange,0)
+    }
+    spaceAround = () =>{
+        
+    }
+    reassignRange = () =>{
+        if(!this.currentRange.collapsed) return;
+
     }
     addEventListenerForEditor = (editor) =>{
-        editor.addEventListener('keydown', this.handleEditorKeyDown);
+        editor.addEventListener('keydown', this.handleEditorKeyPress);
         editor.addEventListener('mouseup',this.handleEditorMouseUp);
-        editor.addEventListener('paste', this.handlePasteData);
+        editor.addEventListener('keypress', this.handleInputData);
+        // editor.addEventListener('paste', this.handlePasteData);
     }
     removeEventListenerForEditor = (editor) =>{
-        editor.removeEventListener('keydown', this.handleEditorKeyDown);
+        editor.removeEventListener('keydown', this.handleEditorKeyPress);
         editor.removeEventListener('mouseup', this.handleEditorMouseUp);
-        editor.removeEventListener('paste', this.handlePastData)
+        editor.removeEventListener('keypress', this.handleInputData);
+        // editor.removeEventListener('paste', this.handlePastData)
     }
     repopulateSelection = () =>{
-        this.editorNode.focus();
-        let s = document.getSelection().removeAllRanges();
+        this.props.editorNode.focus();
+        let s = document.getSelection()
+        s.removeAllRanges();
         s.addRange(this.currentRange);
     }
     handleClickBold = (e) =>{
-        // let r = new Range();
-        // r.selectNodeContents(this.props.editorNode);
-        // let content = r.extractContents();
-        // r.insertNode(content)
-        this.traveler.modify(this.currentRange,{
+        this.rememberRange();
+        this.currentRange = this.traveler.modify(this.currentRange,{
             prop: 'color',
             val: 'red'
         });
+        this.repopulateSelection()
+        this.rememberRange();
         console.log(this.props.editorNode)
     }
     componentDidMount(){
         let {editorNode: editor} = this.props;
+        editor.style.paddingLeft = '5px';
         let app = document.getElementById('editor_app');
         let toolbar = document.getElementById('tool_bar');
         toolbar.onselectstart = (e) =>{
@@ -99,8 +146,8 @@ class EditorApp extends React.Component{
             render(){
                 return (
                     <div id = 'tool_bar'>
-                        <button onClick = {self.props.historyManager.undo}>undo</button>
-                        <button onClick = {self.props.historyManager.redo}>redo</button>
+                        <button onClick = {self.undo}>undo</button>
+                        <button onClick = {self.redo}>redo</button>
                         <button>order list</button>
                         <button onClick = {self.handleClickBold}>bold</button>
                         <label>font</label>
