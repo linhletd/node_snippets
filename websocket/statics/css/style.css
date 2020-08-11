@@ -12,8 +12,15 @@
     background-color: green;
 }
 .offline {
-    background-color: grey;
+    background-color: rgba(71, 60, 60, 0.602);
 }
 .icon {
     position: relative;
+}
+::-moz-selection { /* Code for Firefox */
+    background: rgba(144, 165, 226, 0.671);
+}
+  
+::selection {
+    background: rgba(144, 165, 226, 0.671);
 }

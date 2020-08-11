@@ -97,6 +97,7 @@ class HistoryStackManager {
         let change, newNode;
         record.length && (change = {range: undefined, record}) && (newNode = this.createNewHistoryNode(change));
         this.addNewHistoryNode(newNode);
+        console.log(212,this.current)
 
     }
     updateRange = (range) =>{
@@ -106,6 +107,8 @@ class HistoryStackManager {
         this.data.waitState = type;
     }
     reApplyRange = (range) =>{
+        if(!range) return;
+        console.log(12, range)
         let {startContainer, startOffset, endContainer, endOffset} = range;
         let r = new Range();
         r.setStart(startContainer, startOffset);

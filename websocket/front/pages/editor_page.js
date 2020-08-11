@@ -34,12 +34,12 @@ class EditorApp extends React.Component{
         this.preserveRange = {startContainer, endContainer, startOffset, endOffset, commonAncestorContainer};
     }
     handleEditorKeyPress = (e) =>{
-        if(this.data.waitRange && this.data.waitRange != window.getSelection().getRangeAt(0)){
+        if(this.data.waitRange && this.data.waitRange != document.getSelection().getRangeAt(0)){
             let {startContainer} = this.data.waitRange;
             startContainer.remove();
         }
-        let r = this.data.waitRange || window.getSelection().getRangeAt(0);
-        if(this.data.waitRange == window.getSelection().getRangeAt(0) && e.keyCode !== 13){
+        let r = this.data.waitRange || document.getSelection().getRangeAt(0);
+        if(this.data.waitRange == document.getSelection().getRangeAt(0) && e.keyCode !== 13){
             e.preventDefault();
             let char = String.fromCodePoint(e.charCode);
             r.insertNode(document.createTextNode(char));
@@ -66,6 +66,7 @@ class EditorApp extends React.Component{
     }
     rememberRange = ()=>{
         let sel = document.getSelection().getRangeAt(0);
+        console.log('haizze',sel)
         let {startContainer, startOffset, endContainer, endOffset} = sel
         this.props.historyManager.updateRange({startContainer, startOffset, endContainer, endOffset});
         return sel;
@@ -76,10 +77,6 @@ class EditorApp extends React.Component{
     }
     spaceAround = () =>{
         
-    }
-    reassignRange = () =>{
-        if(!this.currentRange.collapsed) return;
-
     }
     addEventListenerForEditor = (editor) =>{
         editor.addEventListener('keydown', this.handleEditorKeyPress);
@@ -100,13 +97,14 @@ class EditorApp extends React.Component{
         s.addRange(this.currentRange);
     }
     handleClickBold = (e) =>{
-        this.rememberRange();
+        // this.rememberRange();
         this.currentRange = this.traveler.modify(this.currentRange,{
             prop: 'color',
             val: 'red'
         });
         this.repopulateSelection()
-        this.rememberRange();
+        console.log(10, this.props.editorNode.childNodes.length)
+        // this.rememberRange();
         console.log(this.props.editorNode)
     }
     componentDidMount(){
