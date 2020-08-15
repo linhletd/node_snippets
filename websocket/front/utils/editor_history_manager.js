@@ -15,23 +15,11 @@ class HistoryStackManager {
     }
     observerCallback = (mutations, observer) =>{
         let record = [];
-        if(this.data.mergeHistory){
-            let m = mutations[0];
-            let {addedNodes, nextSibling, previousSibling, target} = m;
-            this.current.record.push({
-                type: 'addNode',
-                addedNodes,
-                target,
-                previousSibling,
-                nextSibling
-            });
-            this.data.mergeHistory = undefined;
-            return;
-        }
-        mutations.map((m) =>{
+        mutations.map((m, idx) =>{
             let {addedNodes, attributeName, nextSibling, oldValue, previousSibling, removedNodes, target, type } = m;
             switch(type){
                 case 'attributes':{
+                    this.clearTextTimeOut();
                     record.push({
                         type,
                         target,
@@ -42,25 +30,45 @@ class HistoryStackManager {
                     break;
                 }
                 case 'characterData':{
-                    let prevChange;
-                    this.current.change.record && (prevChange = this.current.change.record) 
+                    let prevChange, len;
+                    this.current.change.record && (prevChange = this.current.change.record, len = prevChange.length) 
                     // console.log(prevChange, prevChange.length == 1, prevChange[0].type == type, prevChange[0].target == target, this.data.textTimer, mutations.length == 1)
-                    if(prevChange && prevChange.length == 1 && prevChange[0].type == type && prevChange[0].target == target && this.data.textTimer && mutations.length == 1) {
-                        prevChange[0].newValue = target.nodeValue;
+                    if(prevChange && len <= 2 && prevChange[len -1].type == type && prevChange[len -1].target == target && 
+                        this.data.textTimer && mutations.length == 1) {
+                        prevChange[len -1].newValue = target.nodeValue;
                         return;
                     }
                     else {
-                        record.push({
-                            type,
-                            target,
-                            oldValue,
-                            newValue: target.nodeValue
-                        })  
-                    this.setTextTimeOut();
+                        prevChange = record;
+                        len = record.length;
+                        if(len && prevChange[len -1].type == type && prevChange[len -1].target == target){
+                            prevChange[len -1] = {
+                                type,
+                                target,
+                                oldValue,
+                                newValue: target.nodeValue
+                            }
+                        }
+                        else{
+                            record.push({
+                                type,
+                                target,
+                                oldValue,
+                                newValue: target.nodeValue
+                            })
+                        }
+
+                        if(idx == mutations.length - 1 && mutations.length <= 2){
+                            this.setTextTimeOut();
+                        }
+                        else{
+                            this.clearTextTimeOut();
+                        }  
                     }
                     break;
                 }
                 case 'childList':{
+                    this.clearTextTimeOut();
                     if(addedNodes.length && removedNodes.length){
                         record.push({
                             type: 'replaceNode',
@@ -97,10 +105,12 @@ class HistoryStackManager {
         let change, newNode;
         record.length && (change = {range: undefined, record}) && (newNode = this.createNewHistoryNode(change));
         this.addNewHistoryNode(newNode);
-        console.log(212,this.current)
 
     }
     updateRange = (range) =>{
+        if(this.data.textTimer && !this.current.next){
+            return;
+        }
         this.current.change.range = range;
     };
     updatePendingState = (type) =>{
@@ -108,7 +118,6 @@ class HistoryStackManager {
     }
     reApplyRange = (range) =>{
         if(!range) return;
-        console.log(12, range)
         let {startContainer, startOffset, endContainer, endOffset} = range;
         let r = new Range();
         r.setStart(startContainer, startOffset);
@@ -125,7 +134,7 @@ class HistoryStackManager {
         this.clearTextTimeOut()
         this.data.textTimer = setTimeout(() => {
             this.clearTextTimeOut();
-        }, 5000);
+        }, 3000);
     }
     startObserving = ()=>{
         if(!this.isObserving){

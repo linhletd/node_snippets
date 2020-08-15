@@ -7,7 +7,7 @@ class EditorApp extends React.Component{
         this.setToolbarState = undefined;
         this.currentRange = new Range();
         this.data = {
-            waitRange: undefined,
+            waitElem: null,
         }
         this.traveler = new EditorNodeTraveler(props.editorNode);
         this.undo = props.historyManager.undo.bind(props.historyManager, this);
@@ -20,10 +20,10 @@ class EditorApp extends React.Component{
     }
     isBelongTag = (nodeName, node) =>{
         if(node.nodeNome == nodeName) return true;
-        while(node != this.root && node.parentNode.nodeName == nodeName){
+        while(node != this.props.editorNode && node.nodeName !== nodeName){
             node = node.parentNode;
         }
-        return node.parentNode.nodeName == nodeName ? true : false;
+        return node.nodeName == nodeName ? true : false;
     }
     restoreRange = ({startContainer, endContainer, startOffset, endOffset}) =>{
         this.currentRange.setStart(startContainer, startOffset);
@@ -33,13 +33,13 @@ class EditorApp extends React.Component{
         let {startContainer, endContainer, startOffset, endOffset, commonAncestorContainer} = this.currentRange;
         this.preserveRange = {startContainer, endContainer, startOffset, endOffset, commonAncestorContainer};
     }
-    handleEditorKeyPress = (e) =>{
-        if(this.data.waitRange && this.data.waitRange != document.getSelection().getRangeAt(0)){
-            let {startContainer} = this.data.waitRange;
-            startContainer.remove();
+    handleEditorKeyDown = (e) =>{
+        let waitElem = this.data;
+        if(waitElem && e.keyCode !== 13){
+            e.preventDefault();
         }
-        let r = this.data.waitRange || document.getSelection().getRangeAt(0);
-        if(this.data.waitRange == document.getSelection().getRangeAt(0) && e.keyCode !== 13){
+        let r = this.data.waitElem || document.getSelection().getRangeAt(0);
+        if(this.data.waitElem == document.getSelection().getRangeAt(0) && e.keyCode !== 13){
             e.preventDefault();
             let char = String.fromCodePoint(e.charCode);
             r.insertNode(document.createTextNode(char));
@@ -59,19 +59,58 @@ class EditorApp extends React.Component{
             }
             r.collapse(true);
         }
-        this.data.waitRange && (this.data.waitRange = undefined);
+        this.data.waitElem && (this.data.waitElem = null);
     }
     handleEditorMouseUp = (e) =>{
         this.currentRange = this.rememberRange();
     }
     rememberRange = ()=>{
         let sel = document.getSelection().getRangeAt(0);
-        console.log('haizze',sel)
         let {startContainer, startOffset, endContainer, endOffset} = sel
         this.props.historyManager.updateRange({startContainer, startOffset, endContainer, endOffset});
         return sel;
     }
-    handleInputData = () =>{
+    handleEditorKeyPress = (e) =>{
+        let {waitElem} = this.data;
+        let r = document.getSelection().getRangeAt(0);
+        let {startContainer} = r;
+
+        if(waitElem){
+            e.preventDefault();
+            if(e.keyCode === 13 && !this.isBelongTag('LI', this.currentRange.startContainer)){
+                this.currentRange.insertNode(document.createElement('br'));
+                this.currentRange.insertNode(document.createElement('br'));
+                this.currentRange.setStart(waitElem, 1);
+                this.currentRange.collapse(true);
+            }
+            else {
+                let text = document.createTextNode(e.key);
+                waitElem.appendChild(text);
+                this.currentRange.setStart(text, 1);
+                this.currentRange.collapse(true);
+            }
+            this.repopulateSelection();
+            this.data.waitElem = null;
+        }
+        else if(e.keyCode === 13  && !this.isBelongTag('LI', startContainer)){
+            e.preventDefault();
+            if(!r.collapsed){
+                r.deleteContents();
+            }
+            let br1 = document.createElement('br');
+            let br2 = document.createElement('br');
+            r.insertNode(br1);
+            r.setStartAfter(br1);
+            r.collapse(true);
+            if(!br1.nextSibling || !br1.previousSibling || br1.nextSibling && br1.nextSibling.nodeName !== 'BR' || br1.previousSibling && br1.previousSibling.nodeName !== 'BR'){
+                r.insertNode(br2);
+                r.setStartBefore(br2);
+                r.collapse(true);
+            }
+            console.log(r.commonAncestorContainer);
+            this.currentRange = r;
+            this.repopulateSelection();
+        }
         this.rememberRange();
         setTimeout(this.rememberRange,0)
     }
@@ -79,15 +118,15 @@ class EditorApp extends React.Component{
         
     }
     addEventListenerForEditor = (editor) =>{
-        editor.addEventListener('keydown', this.handleEditorKeyPress);
+        // editor.addEventListener('keydown', this.handleEditorKeyDown);
         editor.addEventListener('mouseup',this.handleEditorMouseUp);
-        editor.addEventListener('keypress', this.handleInputData);
+        editor.addEventListener('keypress', this.handleEditorKeyPress);
         // editor.addEventListener('paste', this.handlePasteData);
     }
     removeEventListenerForEditor = (editor) =>{
-        editor.removeEventListener('keydown', this.handleEditorKeyPress);
+        // editor.removeEventListener('keydown', this.handleEditorKeyDown);
         editor.removeEventListener('mouseup', this.handleEditorMouseUp);
-        editor.removeEventListener('keypress', this.handleInputData);
+        editor.removeEventListener('keypress', this.handleEditorKeyPress);
         // editor.removeEventListener('paste', this.handlePastData)
     }
     repopulateSelection = () =>{
@@ -98,14 +137,23 @@ class EditorApp extends React.Component{
     }
     handleClickBold = (e) =>{
         // this.rememberRange();
+        if(this.data.waitElem){
+            this.waitElem.color = 'red';
+            return;
+        }
         this.currentRange = this.traveler.modify(this.currentRange,{
             prop: 'color',
             val: 'red'
         });
-        this.repopulateSelection()
-        console.log(10, this.props.editorNode.childNodes.length)
+        this.repopulateSelection();
+        let {commonAncestorContainer: common} = this.currentRange;
+        if(this.currentRange.collapsed && common.nodeName === 'SPAN' && !common.hasChildNodes()){
+            this.data.waitElem = common;
+        }
         // this.rememberRange();
-        console.log(this.props.editorNode)
+    }
+    handleClickList = () =>{
+        this.traveler.convertToList('UL', this.currentRange);
     }
     componentDidMount(){
         let {editorNode: editor} = this.props;
@@ -116,6 +164,10 @@ class EditorApp extends React.Component{
             e.preventDefault();
         }
         app.appendChild(editor);
+        editor.onselectstart = ()=>{
+            this.data.waitElem && (this.data.waitElem.remove(), this.data.waitElem = null);
+
+        }
         this.addEventListenerForEditor(editor);
         this.props.historyManager.startObserving();
     }
@@ -146,7 +198,7 @@ class EditorApp extends React.Component{
                     <div id = 'tool_bar'>
                         <button onClick = {self.undo}>undo</button>
                         <button onClick = {self.redo}>redo</button>
-                        <button>order list</button>
+                        <button onClick = {self.handleClickList}>order list</button>
                         <button onClick = {self.handleClickBold}>bold</button>
                         <label>font</label>
                         <select>
