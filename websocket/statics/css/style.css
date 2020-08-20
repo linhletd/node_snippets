@@ -24,3 +24,69 @@
 ::selection {
     background: rgba(144, 165, 226, 0.671);
 }
+#tool_bar > *{
+    display: inline-flex;
+    border: 1px solid grey;
+    background-color: #f0f0f5;
+    border-radius: 2px;
+    font-size: 16px;
+    width: 25px;
+    height: 24px;
+    align-items: center;
+    justify-content: center;
+
+}
+#tool_bar .space{
+    margin-right: 5px;
+}
+#tool_bar >.ctn{
+    width: fit-content;
+}
+
+#tool_bar > .select{
+    border: none
+}
+#tool_bar > .select select{
+    font-size: 13px;
+    display: inline-block;
+    height: 24px;
+    width: max-content;
+    border: 1px solid grey;
+    border-radius: 2px;
+}
+#tool_bar > .select select:focus{
+    border: 2px solid grey;
+    border-radius: 3px;
+}
+#tool_bar > .select select:s{
+    border: 2px solid grey;
+    border-radius: 3px;
+}
+#tool_bar .colr .prev-i > i{
+    font-size: 15px;
+}
+#tool_bar .colr .prev-i{
+    display: inline-flex;
+    flex-direction: column;
+    margin-right: 2px;
+}
+#tool_bar .colr .prev-i >div{
+    height: 3px;
+    margin-top: 0px;
+}
+#tool_bar .color-select{
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    opacity: 0;
+    width: 100%;
+    border: 1px solid green
+}
+#tool_bar .i-wrapper{
+    position: relative;
+}
+#tool_bar{
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+}

@@ -5,8 +5,9 @@ target: to optimize dom tree:
     no span right after a span that it 'isEqualTo';
 */
 class EditorNodeTraveler{
-    constructor(root){
+    constructor(root, updateState){
         this.root = root;
+        this.updateStore = updateState;
         this.state = {
             range: null,
             modifyingStyle: null,
@@ -14,6 +15,7 @@ class EditorNodeTraveler{
             posR: 0,
             bigLeft: null,
             bigRight: null,
+            originRange: null
 
         }
     }
@@ -24,7 +26,8 @@ class EditorNodeTraveler{
     }
     isSpanEmpty(span){
         if(span.nodeName !== 'SPAN' && span.nodeName !== '#text'){
-            throw new Error('only check text or span node')
+            return false;
+            // throw new Error('only check text or span node')
         }
         if(span.nodeName === '#text'){
             if(span.nodeValue === '') return true;
@@ -202,7 +205,7 @@ class EditorNodeTraveler{
             (range.setStart(be, be.nodeValue.length), range.collapse(true)) : 
             af && af.nodeName === '#text' ? (range.setStart(af, 0), range.collapse(false)) : 
             (t = document.createTextNode(''), range.insertNode(t), range.setStart(t, 0), range.collapse(true)), start = range.startContainer, startOffset = range.startOffset);
-
+            t && setTimeout(t.remove.bind(t),0)
             let it1 = this.findLeftMostSpace(start, startOffset),
                 it2 = this.findRightMostSpace(start, startOffset),
                 x1, x2;
@@ -268,6 +271,190 @@ class EditorNodeTraveler{
             this._restoreCollapsedRange();
         }
         return this.state.range;
+    }
+    reassignRange(range){
+        let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
+        if(startOffset === 0){
+            let cur = start;
+            while(cur.parentNode !== this.root && cur !== common){
+                let par = cur.parentNode;
+                if(cur === par.firstChild){
+                    cur = par;
+                }
+                else{
+                    break;
+                }
+            }
+            range.setStartBefore(cur);
+        }
+        if(end.hasChildNodes() && endOffset === end.childNodes.length || endOffset === end.nodeValue.length){
+            let cur = end;
+            while(cur.parentNode !== this.root && cur !== common){
+                let par = cur.parentNode;
+                if(cur === par.lastChild){
+                    cur = par;
+                }
+                else{
+                    break;
+                }
+            }
+            range.setEndAfter(cur);
+        }
+        return range
+    }
+    checkRange = (range) =>{
+        let state = {};
+        let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset, collapsed} = range;
+        if(this.isBelongTag('A', common)){
+            state.link = 2;
+        }
+        else{
+            state.link = 1;
+        }
+        if(this.isBelongTag('OL', common) || this.isBelongTag('UL', common)){
+            state.inclevel = 1;
+            state.declevel = 1;
+        }
+        else{
+            state.inclevel = 0;
+            state.declevel = 0;
+        };
+        (()=>{
+            let list = this.findBreak(range);
+            this.state.foundBreak = list;
+            let tempType;
+            let node;
+            for(let i = 0; i < list.length; i++){
+                node = list[i];
+                if(['UL', 'OL', 'LI'].indexOf(node.nodeName) < 0){
+                    state.order = 1;
+                    state.unorder = 1;
+                }
+                else{
+                    if(node.nodeName === 'LI'){
+                        node = this.OULWrapper(node);
+                        if(!node){
+                            state.order = 1;
+                            state.unorder = 1;
+                            break;
+                        }
+                    }
+                    if(!tempType){
+                        tempType = node.nodeName;
+                    }
+                    else if(node.nodeName !== tempType){
+                        state.order = 1;
+                        state.unorder = 1;
+                        break;
+                    }
+                }
+                if(i === list.length - 1){
+                    tempType === 'UL' ? state.unorder = 2 : state.order = 2;
+                }
+            }
+        })();
+        (()=>{
+            if(common.nodeName === 'SPAN' || collapsed || common.nodeName === '#text'){
+                if(common.nodeName === '#text') common = common.parentNode;
+                common.style.fontWeight === 'bold' ? state.bold = 2 : '';
+                common.style.fontStyle === 'italic' ? state.italic = 2 : '';
+                common.style.fontDecoration === 'underline' ? state.underline = 2 : '';
+            }
+            else{
+                let _check, head, tail;
+                let neededCheck = {
+                    bold: 'fontWeight',
+                    italic: 'fontStyle',
+                    underline: 'textDecoration'
+                }
+                if(start.nodeName === '#text'){
+                    head = start;
+                }
+                else{
+                    head = this.getNthChild(start, startOffset)
+                }
+                if(end.nodeName === '#text'){
+                    tail = end;
+                }
+                else{
+                    tail = this.getNthChild(end, endOffset)
+                }
+                // let endChecked = false;
+                this._getInitialLeftNode(range);
+                this._getInitialRightNode(range);
+                let _verify = (cur)=>{
+                    let keys = Object.keys(neededCheck);
+                    if(!keys.length)
+                    keys.map((val) =>{
+                        let prop = neededCheck[val];
+                        let actual = cur.nodeName === '#text' ? cur.parentNode.style[prop] : cur.style[prop];
+                        if(actual !== val){
+                            state[val] = 1;
+                            delete neededCheck[val];
+                        }
+                    })
+                };
+                (_check = (cur, side) =>{
+                    if(cur === this.state.bigRight){
+                        // endChecked = true;
+                        return;
+                    }
+                    if(['IMG', 'HR', 'BR', 'PRE'].indexOf(cur.nodeName) > -1 || cur !== head && cur.nodeName === '#text'){
+                        //do nothing
+                    }
+                    else{
+                        _verify(cur);
+                        if(!Object.keys(neededCheck).length){
+                            return;
+                        }
+                    }
+                    if(cur.hasChildNodes() && cur.nodeName !== 'SPAN'){
+                        return _check(cur.firstChild);
+                    }
+                    else if(cur[side]){
+                        return _check(cur[side]);
+                    }
+                    else{
+                        let par = cur.parentNode;
+                        while(par !== (side === 'previousSibling' ? this.state.bigRight : common)){
+                            if(par[side]){
+                                return _check(par[side]);
+                            }
+                            par = par.parentNode;
+                        }
+                        // endChecked = true;
+                    }
+                })(head, 'nextSibling');
+                if(Object.keys(neededCheck).length){
+                    _check(tail, 'previousSibling')
+                }
+                Object.keys(neededCheck).map(key => {
+                    state[key] = 2;
+                })
+            }
+        })();
+        console.log(11111,{...state});
+        this.updateStore({
+            type: 'TOOLBARCHANGE',
+            data: state
+        });
+    }
+    OULWrapper(li, limit){
+        let par = li.parentNode;
+        if(this.isBelongTag('LI', limit)){
+            return par;
+        }
+        let check = par.nodeName;
+        let _find;
+        return (_find = (cur) =>{
+            if(cur.nodeName !== check){
+                return false;
+            }
+            else if(cur.parentNode.nodeName !== 'UL' && cur.parentNode.nodeName !== 'OL' || cur === common){
+                return cur;
+            }
+            return _find(cur.parentNode);
+        })(par)
     }
     handleGeneralCase = () =>{
         // let {startContainer: start, endContainer: end, startOffset, endOffset, commonAncestorContainer: common} = this.state.range;
@@ -418,8 +605,8 @@ class EditorNodeTraveler{
         };
         return node
     }
-    _getInitialLeftNode = () =>{
-        let {startContainer: start, commonAncestorContainer: common, startOffset} = this.state.range;
+    _getInitialLeftNode = (range) =>{
+        let {startContainer: start, commonAncestorContainer: common, startOffset} = range || this.state.range;
         if(start == common){
             this.state.bigLeft = this.getNthChild(common, startOffset);
             return;
@@ -434,8 +621,8 @@ class EditorNodeTraveler{
             bigLeft,
         })
     }
-    _getInitialRightNode = () =>{
-        let {endContainer: end, commonAncestorContainer: common, endOffset} = this.state.range;
+    _getInitialRightNode = (range) =>{
+        let {endContainer: end, commonAncestorContainer: common, endOffset} = range || this.state.range;
         if(end == common){
             return this.state.bigRight = this.getNthChild(common, endOffset);
         }
@@ -536,11 +723,11 @@ class EditorNodeTraveler{
         this.state.range.setEnd(end == div ? common : end, end == div ? extEndOff + endOffset : endOffset);
     }
     isBelongTag = (nodeName, node) =>{
-        if(node.nodeNome == nodeName) return node;
-        while(node != this.root && node.nodeName !== nodeName){
+        if(node.nodeName === nodeName) return node;
+        while(node !== this.root && node.nodeName !== nodeName){
             node = node.parentNode;
         }
-        return node.parentNode.nodeName == nodeName ? node : false;
+        return node.nodeName == nodeName ? node : false;
     }
     isContain(par, node){
         if(node.parentNode === par) return true;
@@ -568,7 +755,7 @@ class EditorNodeTraveler{
             end = start;
         }
         else{
-            if(start.nodeName === '#text') start = start
+            if(start.nodeName === '#text') start = start;
             else {
                 let r1 = range.cloneRange();
                 r1.collapse(true);
@@ -586,9 +773,11 @@ class EditorNodeTraveler{
             }
         }
         let findLeft = (cur) =>{
+            console.log(2, cur);
             let par = cur.parentNode,
                 prev = cur.previousSibling,
                 li = this.isBelongTag('LI', cur);
+                console.log(3, li);
             if(li || cur.nodeName === 'LI'){
                 cur = li || cur;
                 let x = list.push(cur);
@@ -663,82 +852,107 @@ class EditorNodeTraveler{
             p1 && p1.remove();
         },0)
         console.log(3, list);
-        return list
+        return {list, end, p1, p2}
     }
     convertToList = (type, range) =>{
-        let list = this.findBreak(range);
+        let {startContainer, endContainer, startOffset, endOffset, collapsed} = range;
+        let {list, end, p1, p2} = this.findBreak(range);
         let start;
         let r = new Range();
-        list.map((elem, idx) => {
-            if(idx === 0){
-                let newPar = document.createElement(type);
-                let par = elem.parentNode;
-                if(elem.nodeName == 'LI'){
-                    newPar.style = Object.assign(newPar.style, par.style);
-                    if(par.nodeName !== type && elem === par.firstChild){
-                        par.parentNode.replaceChild(newPar, par);
-                        r.selectNodeContents(par);
-                        let ct = r.extractContents();
-                        newPar.appendChild(ct);
+        let newPar = document.createElement(type);
+        if(list.length === 2 && list.filter((cur) =>(cur.nodeName !== 'BR' && cur.nodeName !== 'UL' && 
+        cur.nodeName !== 'OL' && cur.nodeName !== 'LI')).length === 2){
+            r.setStartBefore(list[0]);
+            r.setEndAfter(list[1]);
+            let ct = r.extractContents();
+            let li = document.createElement('li');
+            newPar.appendChild(li);
+            r.insertNode(newPar);
+            newPar.firstChild.appendChild(ct);
+        }
+        else {
+            list.map((elem, idx) => {
+                if(idx === 0){
+                    let par = elem.parentNode;
+                    if(elem.nodeName == 'LI'){
+                        newPar.style = Object.assign(newPar.style, par.style);
+                        if(par.nodeName !== type && elem === par.firstChild){
+                            par.parentNode.replaceChild(newPar, par);
+                            r.selectNodeContents(par);
+                            let ct = r.extractContents();
+                            newPar.appendChild(ct);
+                        }
+                        else if(par.nodeName === type && elem !== par.firstChild || elem !== par.firstChild){
+                            r.setStartBefore(elem);
+                            r.setEndAfter(par.lastChild);
+                            let ct = r.extractContents();
+                            r.setStartAfter(par);
+                            r.collapse(true);
+                            r.insertNode(newPar);
+                            newPar.appendChild(ct);
+                        }
                     }
-                    else if(par.nodeName === type && elem !== par.firstChild || elem !== par.firstChild){
-                        r.setStartBefore(elem);
-                        r.setEndAfter(par.lastChild);
-                        let ct = r.extractContents();
-                        r.setStartAfter(par);
+                    else if(elem.nodeName === 'UL' || elem.nodeName === 'OL' ){
+                        r.setStartAfter(elem);
                         r.collapse(true);
                         r.insertNode(newPar);
-                        newPar.appendChild(ct);
+    
                     }
+                    else if(elem.nodeName === 'BR'){
+                        elem.parentNode.replaceChild(newPar, elem);
+                    }
+                    else{
+                        r.setStartBefore(elem);
+                        r.collapse(true);
+                        r.insertNode(newPar);
+    
+                    }
+                    newPar.parentNode && (par = newPar);
+                    start = par;
+                    return;
                 }
-                else if(elem.nodeName === 'UL' || elem.nodeName === 'OL' ){
-                    r.setStartAfter(elem);
-                    r.collapse(true);
-                    r.insertNode(newPar);
-
+                r.setStartAfter(start);
+                r.setEndBefore(elem);
+                if(!r.collapsed || r.collapsed && elem.nodeName === 'BR'){
+                    let ct = r.extractContents();
+                    let li = document.createElement('li');
+                    start.appendChild(li);
+                    li.appendChild(ct);
                 }
-                else if(elem.nodeName === 'BR'){
-                    elem.parentNode.replaceChild(newPar, elem);
+                if(elem.nodeName === 'BR') elem.remove()
+                else if(elem.nodeName === 'UL' || elem.nodeName === 'OL'){
+                    if(idx = list.length - 1 && end !== elem.lastChild){
+                        r.setStartBefore(elem.firstChild);
+                        r.setEndAfter(end);
+                    }
+                    else{
+                        elem.remove();
+                        r.selectNodeContents(elem);
+                    }
+                    let ct = r.extractContents();
+                    start.appendChild(ct);
                 }
                 else{
-                    r.setStartBefore(elem);
-                    r.collapse(true);
-                    r.insertNode(newPar);
-                }
-                newPar.parentNode && (par = newPar);
-                start = par;
-                return;
-            }
-            r.setStartAfter(start);
-            r.setEndBefore(elem);
-            if(!r.collapsed){
-                let ct = r.extractContents();
-                let li = document.createElement('li');
-                start.appendChild(li);
-                li.appendChild(ct);
-            }
-            if(elem.nodeName === 'BR') elem.remove()
-            else if(elem.nodeName === 'UL' || elem.nodeName === 'OL'){
-                if(idx = list.length - 1 && end !== elem.lastChild){
-                    r.setStartBefore(elem.firstChild);
-                    r.setEndAfter(end);
-                }
-                else{
+                    let li = start.firstChild && start.firstChild.cloneNode(false) || document.createElement('li');
+                    start.appendChild(li);
                     elem.remove();
-                    r.selectNodeContents(elem);
+                    start.lastChild.appendChild(elem);
                 }
-                let ct = r.extractContents();
-                start.appendChild(ct);
-            }
-            else{
-                let li = start.firstChild.cloneNode(false) || document.createElement('li');
-                start.appendChild(li);
-                elem.remove();
-                start.lastChild.appendChild(elem);
-            }
+    
+            });
+        } 
 
-        });
-
+        range.setStart(startContainer, startOffset);
+        range.setEnd(endContainer, endOffset);
+        if(p1){
+            range.setStartBefore(p1);
+            collapsed ? range.collapse(true) : '';
+        }
+        if(p2){
+            range.setEndBefore(p2);
+        }
+        return range
     }
+
 }
 export default EditorNodeTraveler;

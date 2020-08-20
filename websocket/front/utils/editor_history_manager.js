@@ -229,7 +229,7 @@ class HistoryStackManager {
         list.forEach(node => {fragment.appendChild(node)});
         r.insertNode(fragment);
     }
-    redo = (sub) =>{
+    redo = (subject) =>{
         if(!this.current.next){
             console.log('stop')
             return;
@@ -264,10 +264,11 @@ class HistoryStackManager {
         })
         this.startObserving();
         this.reApplyRange(this.current.next.change.range);
+        subject.updateRangeFromSelection()
         this.current = this.current.next;
 
     }
-    undo = (sub)=>{
+    undo = (subject)=>{
         if(!this.current.change.record){
             console.log('stop');
             return;
@@ -304,6 +305,7 @@ class HistoryStackManager {
         this.startObserving();
         this.current = this.current.prev;
         this.reApplyRange(this.current.change.range);
+        subject.updateRangeFromSelection();
     }
 }
 export default HistoryStackManager;

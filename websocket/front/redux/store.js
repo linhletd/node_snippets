@@ -18,7 +18,9 @@ const LOGIN = 'LOGIN',
       CONTINUEGAME = 'CONTINUEGAME',
       CONTINUEMSG = 'CONTINUEMSG',
       LEAVEGAME = 'LEAVEGAME',
-      ENDGAME = 'ENDGAME';
+      ENDGAME = 'ENDGAME',
+
+      TOOLBARCHANGE = 'TOOLBARCHANGE'
     
 var user, socket, usersStatus = undefined;
 if(window.atob && /^InVzZXIi=|;InVzZXIi=/.test(document.cookie)){
@@ -159,11 +161,36 @@ let initialEditor = {
 function editor(state = initialEditor){
     return state;
 }
+let initialEditorToolbar = {
+    undo: 0,//0 disabled, 1 no, 2 yes
+    redo: 0,
+    bold: 1, 
+    italic: 1,
+    underline: 1,
+    order: 1,
+    unorder: 1,
+    inclevel: 0,
+    declevel: 0,
+    link: 1,
+    quote: 1,
+    code: 1,
+    fill: 'yellow',
+    color: 'red',
+    fontsize: 12,
+    fontfamily: 'Arial'
 
+}
+function toolbar(state = initialEditorToolbar, {type, data}){
+    if(type === TOOLBARCHANGE){
+        return {...state, ...data}
+    }
+    return state;
+}
 let reducer = combineReducers({
     main,
     poong,
-    editor
+    editor,
+    toolbar
 })
 const store = createStore(reducer);
 store.subscribe(()=>{
