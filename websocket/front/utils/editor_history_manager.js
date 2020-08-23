@@ -42,12 +42,7 @@ class HistoryStackManager {
                         prevChange = record;
                         len = record.length;
                         if(len && prevChange[len -1].type == type && prevChange[len -1].target == target){
-                            prevChange[len -1] = {
-                                type,
-                                target,
-                                oldValue,
-                                newValue: target.nodeValue
-                            }
+                            // do nothing
                         }
                         else{
                             record.push({
@@ -108,7 +103,7 @@ class HistoryStackManager {
 
     }
     updateRange = (range) =>{
-        if(this.data.textTimer && !this.current.next){
+        if(this.current.next){
             return;
         }
         this.current.change.range = range;
@@ -269,10 +264,11 @@ class HistoryStackManager {
 
     }
     undo = (subject)=>{
-        if(!this.current.change.record){
+        if(!this.current.prev){
             console.log('stop');
             return;
         }
+
         this.stopObserving();
         let actions = this.current.change.record;
         for(let i = actions.length - 1; i >= 0; i--){
@@ -306,6 +302,7 @@ class HistoryStackManager {
         this.current = this.current.prev;
         this.reApplyRange(this.current.change.range);
         subject.updateRangeFromSelection();
+
     }
 }
 export default HistoryStackManager;

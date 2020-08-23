@@ -5,9 +5,10 @@ target: to optimize dom tree:
     no span right after a span that it 'isEqualTo';
 */
 class EditorNodeTraveler{
-    constructor(root, updateState){
+    constructor(root, updateState, observer){
         this.root = root;
         this.updateStore = updateState;
+        this.observer = observer;
         this.state = {
             range: null,
             modifyingStyle: null,
@@ -177,7 +178,7 @@ class EditorNodeTraveler{
         let {commonAncestorContainer, startOffset} = this.state.range;
         let node = this.getNthChild(commonAncestorContainer, startOffset).firstChild;
         let _restore = (node) =>{
-            if(count + node.nodeValue.length >= this.state.posL){
+            if(node.nodeValue && count + node.nodeValue.length >= this.state.posL){
                 this.state.range.setStart(node, this.state.posL - count);
                 this.state.range.collapse(true);
             }
@@ -303,7 +304,39 @@ class EditorNodeTraveler{
         return range
     }
     checkRange = (range) =>{
-        let state = {};
+        let font = {
+            'Georgia': 'Georgia,serif',
+            'Palatino Linotype':'Palatino Linotype,Book Antiqua,Palatino,serif',
+            'Times New Roman':'Times New Roman,Times,serif',
+            'Arial': 'Arial,Helvetica,sans-serif',
+            'Arial': 'Arial Black,Gadget,sans-serif',
+            'Comic Sans MS': 'Comic Sans MS,cursive,sans-serif',
+            'Impact': 'Impact,Charcoal,sans-serif',
+            'Lucida Sans Unicode': 'Lucida Sans Unicode,Lucida Grande,sans-serif',
+            'Tahoma': 'Tahoma,Geneva,sans-serif',
+            'Trebuchet MS': 'Trebuchet MS,Helvetica,sans-serif',
+            'Verdana': 'Verdana,Geneva,sans-serif',
+            'Courier New': 'Courier New,Courier,monospace',
+            'Lucida Console': 'Lucida Console,Monaco,monospace'
+        }
+        let size = ['8px', '9px', '10px', '11px', '12px', '14px', '16px', '18px', '20px', '24px', 
+        '28px', '32px', '38px', '46px', '54px', '62px', '72px'];
+
+        let state = {
+            bold: 1, 
+            italic: 1,
+            underline: 1,
+            order: 1,
+            unorder: 1,
+            inclevel: 0,
+            declevel: 0,
+            link: 1,
+            quote: 1,
+            code: 1,
+            fontsize: '16px',
+            fontfamily: 'Arial,Helvetica,sans-serif'
+        
+        };
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset, collapsed} = range;
         if(this.isBelongTag('A', common)){
             state.link = 2;
@@ -319,53 +352,60 @@ class EditorNodeTraveler{
             state.inclevel = 0;
             state.declevel = 0;
         };
-        (()=>{
-            let list = this.findBreak(range);
-            this.state.foundBreak = list;
-            let tempType;
-            let node;
-            for(let i = 0; i < list.length; i++){
-                node = list[i];
-                if(['UL', 'OL', 'LI'].indexOf(node.nodeName) < 0){
-                    state.order = 1;
-                    state.unorder = 1;
+        // let checkNearestStyle = (cur, prop) =>{
+        //     if(cur.nodeName !== '#text' && cur.style[prop] === undefined){
+        //         return false;
+        //     }
+        //     else if(cur.nodeName === '#text'){
+        //         cur = cur.parentNode;
+        //     }
+        //     while(!cur.style[prop]){
+        //         cur = cur.parentNode;
+        //     }
+        //     return cur.style[prop];
+        // }
+        let checkList, checkBIU;
+        (checkBIU = ()=>{
+            if(common.nodeName === 'SPAN' || collapsed || common.nodeName === '#text'){
+                console.log('here')
+                if(common.nodeName === '#text') common = common.parentNode;
+                common.style.fontWeight === 'bold' ? state.bold = 2 : state.bold = 1;
+                common.style.fontStyle === 'italic' ? state.italic = 2 : state.italic = 1;
+                common.style.textDecoration === 'underline' ? state.underline = 2 : state.underline = 1;
+                let fnt;
+                if(common.style.fontSize = ''){
+                    //do nothing
+                }
+                else if(size.indexOf(common.style.fontSize) === -1){
+                    console.log(common.style)
+                    state.fontsize = 'false';
                 }
                 else{
-                    if(node.nodeName === 'LI'){
-                        node = this.OULWrapper(node);
-                        if(!node){
-                            state.order = 1;
-                            state.unorder = 1;
-                            break;
-                        }
-                    }
-                    if(!tempType){
-                        tempType = node.nodeName;
-                    }
-                    else if(node.nodeName !== tempType){
-                        state.order = 1;
-                        state.unorder = 1;
-                        break;
-                    }
+                    state.fontsize = common.style.fontSize;
                 }
-                if(i === list.length - 1){
-                    tempType === 'UL' ? state.unorder = 2 : state.order = 2;
+                if(common.style.fontFamily === ''){
+                    //do nothing
                 }
-            }
-        })();
-        (()=>{
-            if(common.nodeName === 'SPAN' || collapsed || common.nodeName === '#text'){
-                if(common.nodeName === '#text') common = common.parentNode;
-                common.style.fontWeight === 'bold' ? state.bold = 2 : '';
-                common.style.fontStyle === 'italic' ? state.italic = 2 : '';
-                common.style.fontDecoration === 'underline' ? state.underline = 2 : '';
+                else if(fnt = common.style.fontFamily.match(/^(.*?)\s?\,/)[1] && !font[fnt]){
+                    console.log(common.style.fontFamily)
+                    state.fontfamily = 'false';
+                }
+                else{
+                    state.fontfamily = common.style.fontFamily;
+                }
             }
             else{
                 let _check, head, tail;
                 let neededCheck = {
                     bold: 'fontWeight',
                     italic: 'fontStyle',
-                    underline: 'textDecoration'
+                    underline: 'textDecoration',
+                    fontsize: 'fontSize',
+                    fontfamily: 'fontFamily'
+                }
+                let temp = {
+                    fontsize: undefined,
+                    fontfamily: undefined
                 }
                 if(start.nodeName === '#text'){
                     head = start;
@@ -377,18 +417,33 @@ class EditorNodeTraveler{
                     tail = end;
                 }
                 else{
-                    tail = this.getNthChild(end, endOffset)
+                    tail = this.getNthChild(end, endOffset) || end.lastChild;
                 }
-                // let endChecked = false;
                 this._getInitialLeftNode(range);
                 this._getInitialRightNode(range);
                 let _verify = (cur)=>{
                     let keys = Object.keys(neededCheck);
-                    if(!keys.length)
+                    if(!keys.length) return;
                     keys.map((val) =>{
                         let prop = neededCheck[val];
                         let actual = cur.nodeName === '#text' ? cur.parentNode.style[prop] : cur.style[prop];
-                        if(actual !== val){
+                        if(val === 'fontsize'){
+                            actual === '' && (actual = state.fontsize);
+                            !temp.fontsize && (temp.fonsize = actual);
+                            if(size.indexOf(actual) || actual !== temp.fontsize){
+                                state.fontsize = 'false';
+                                delete neededCheck.fontsize
+                            }
+                        }
+                        else if(val === 'fontfamily'){
+                            actual === '' && (actual = state.fontfamily);
+                            !temp.fontfamily && (temp.fontfamily = actual.match(/^(.*?)\s?\,/)[1]);
+                            if(!font[temp.fontfamily] ||actual.match(/^(.*?)\s?\,/)[1] !== temp.fontsize){
+                                state.fontfamily = 'false';
+                                delete neededCheck.fontfamily
+                            }
+                        }
+                        else if(actual !== val){
                             state[val] = 1;
                             delete neededCheck[val];
                         }
@@ -399,7 +454,7 @@ class EditorNodeTraveler{
                         // endChecked = true;
                         return;
                     }
-                    if(['IMG', 'HR', 'BR', 'PRE'].indexOf(cur.nodeName) > -1 || cur !== head && cur.nodeName === '#text'){
+                    if(['IMG', 'HR', 'BR', 'PRE'].indexOf(cur.nodeName) > -1){
                         //do nothing
                     }
                     else{
@@ -430,10 +485,71 @@ class EditorNodeTraveler{
                 }
                 Object.keys(neededCheck).map(key => {
                     state[key] = 2;
+                    key === 'fontfamily' && (state.fontfamily = font[temp.fontfamily]);
+                    key === 'fontsize' && (state.fontsize = temp.fontsize);
                 })
             }
         })();
-        console.log(11111,{...state});
+        (checkList = ()=>{
+            let li, li1, li2;
+            if(li = this.isBelongTag('LI', common)){
+                li.parentNode.nodeName === 'UL' ? state.unorder = 2 : state.order = 2;
+                return;
+            }
+            else if(!(li1 = this.isBelongTag('LI', start)) || !(li2 = this.isBelongTag('LI', end)) || start.parentNode.nodeName !== end.parentNode.nodeName){
+                state.order = 1;
+                state.unorder = 1;
+                return;
+            }
+            else{
+                let tempType = start.parentNode.nodeName;
+                let _checkLeft, _checkRight;
+                (_checkLeft = (cur) =>{
+                    if(cur === this.state.bigRight){
+                        return;
+                    }
+                    else if(cur.nodeName !== 'LI' && cur.nodeName !== tempType){
+                        state.order = 1;
+                        state.unorder = 1;
+                        tempType = undefined;
+                        return;
+                    }
+                    else if(cur.nextSibling){
+                        _checkLeft(cur.nextSibling);
+                    }
+                    else{
+                        while(!cur.parentNode.nextSibling){
+                            cur = cur.parentNode;
+                        }
+                        _checkLeft(cur.parentNode.nextSibling);
+                    }
+                })(li1);
+                (_checkRight = (cur) =>{
+                    if(!tempType || cur === this.state.bigRight.previousSibling){
+                        return;
+                    }
+                    else if(cur.nodeName !== 'LI' && cur.nodeName !== tempType){
+                        state.order = 1;
+                        state.unorder = 1;
+                        tempType = undefined;
+                        return;
+                    }
+                    else if(cur.previousSibling){
+                        _checkLeft(cur.previousSibling);
+                    }
+                    else{
+                        while(!cur.parentNode.previousSibling){
+                            cur = cur.parentNode;
+                        }
+                        _checkLeft(cur.parentNode.previousSibling);
+                    }
+                })(li2);
+                if(tempType){
+                    tempType === 'UL' ? state.unorder = 2 : state.order = 2;
+                }
+            }
+        })();
+console.log('state', state)
         this.updateStore({
             type: 'TOOLBARCHANGE',
             data: state
@@ -661,8 +777,10 @@ class EditorNodeTraveler{
         this.goDownAndNextToModify(div.firstChild);
         let r1 = new Range();
         r1.selectNodeContents(div);
-        r.insertNode(r1.extractContents());
-        this.state.range.setEndAfter(initRight.previousSibling);
+        let ct = r1.extractContents();
+        let end = ct.lastChild;
+        r.insertNode(ct);
+        this.state.range.setEndAfter(end);
         
         if((initRight.children && !initRight.children.length || !initRight.children) && initRight.innerText == '') return initRight.remove();
         initRight.normalize();
@@ -683,7 +801,7 @@ class EditorNodeTraveler{
         }
         let parNode;
         let r = this.state.range.cloneRange();
-        if(initLeft.hasChildNodes() && initLeft.nodeName != 'SPAN'){
+        if(initLeft.hasChildNodes() && initLeft.nodeName !== 'SPAN'){
             parNode = initLeft;
             r.setEndAfter(parNode.lastChild);
         }
@@ -696,8 +814,9 @@ class EditorNodeTraveler{
         this.goDownAndNextToModify(div.firstChild);
         let r1 = new Range();
         r1.selectNodeContents(div);
-        r.insertNode(r1.extractContents());
-        let start = initLeft.nextSibling;
+        let ct = r1.extractContents();
+        let start = ct.firstChild;
+        r.insertNode(ct);
         this.state.range.setStartBefore(start);
         if((initLeft.children && !initLeft.children.length || !initLeft.children) && initLeft.innerText == '') return initLeft.remove();
         initLeft.normalize();
@@ -740,13 +859,16 @@ class EditorNodeTraveler{
         }
         return false;
     }
-    findBreak(range){
+    findBreak = (range, check)=>{
+        if(check){
+            this.observer.stopObserving();
+        }
         let list = [],
             completed = false;
         let {startContainer: start, endContainer: end, commonAncestorContainer: common} = range;
         let p1, p2;
         if(common.nodeName === '#text'){
-
+            //do nothing
         }
         else if(range.collapsed){
             p1 = document.createTextNode('');
@@ -773,11 +895,9 @@ class EditorNodeTraveler{
             }
         }
         let findLeft = (cur) =>{
-            console.log(2, cur);
             let par = cur.parentNode,
                 prev = cur.previousSibling,
                 li = this.isBelongTag('LI', cur);
-                console.log(3, li);
             if(li || cur.nodeName === 'LI'){
                 cur = li || cur;
                 let x = list.push(cur);
@@ -847,9 +967,14 @@ class EditorNodeTraveler{
         let eli = this.isBelongTag('LI', end);
         if(eli) end = eli;
         findRight(start, true);
+        console.log('p1, p2', p1, p2)
         setTimeout(()=>{
             p2 && p2.remove();
             p1 && p1.remove();
+            if(check){
+                this.observer.startObserving()
+            }
+            console.log(range);
         },0)
         console.log(3, list);
         return {list, end, p1, p2}

@@ -10,7 +10,7 @@ class EditorApp extends React.Component{
         this.data = {
             waitElem: null,
         }
-        this.traveler = new EditorNodeTraveler(props.editorNode, props.updateState);
+        this.traveler = new EditorNodeTraveler(props.editorNode, props.updateState, props.historyManager);
         this.undo = props.historyManager.undo.bind(props.historyManager, this);
         this.redo = props.historyManager.redo.bind(props.historyManager, this);
 
@@ -158,12 +158,15 @@ class EditorApp extends React.Component{
         // setTimeout(this.rememberRange,0)
     }
     handleInput = (e) =>{
-        this.currentRange = this.rememberRange();
+        setTimeout(() => {
+            this.currentRange = this.rememberRange()   
+        },0)
     }
     updateRangeFromSelection = () =>{
-        let sel = document.getSelection();
-        this.currentRange = sel.getRangeAt(0);
+        // let sel = document.getSelection();
+        this.currentRange = this.rememberRange();//sel.getRangeAt(0);
         this.traveler.checkRange(this.currentRange);
+        
     }
     rememberRange = ()=>{
         let r = document.getSelection().getRangeAt(0);
@@ -249,24 +252,64 @@ class EditorApp extends React.Component{
         let s = document.getSelection()
         s.removeAllRanges();
         s.addRange(this.currentRange);
+        console.log(1, this.currentRange)
     }
-    handleClickBold = (e) =>{
+    changeStyle = ({prop, val}) =>{
         if(this.data.waitElem){
             this.waitElem.fontWeight = 'bold';
             return;
         }
         this.currentRange = this.traveler.modify(this.currentRange,{
-            prop: 'fontWeight',
-            val: 'bold'
-        });
+            prop,
+            val
+        }).cloneRange();
+        console.log(0, this.currentRange)
         this.repopulateSelection();
         let {commonAncestorContainer: common} = this.currentRange;
         if(this.currentRange.collapsed && common.nodeName === 'SPAN' && !common.hasChildNodes()){
             this.data.waitElem = common;
         }
+        this.traveler.checkRange(this.currentRange);
+
     }
-    handleClickList = () =>{
+    handleClickBold = (e)=>{
+        this.changeStyle({prop: 'fontWeight', val: 'bold'});
+    }
+    handleClickItalic = (e) =>{
+       this.changeStyle({prop: 'fontStyle', val: 'italic'}); 
+    }
+    handleClickUnderline = (e) =>{
+        this.changeStyle({prop: 'textDecoration', val: 'underline'})
+    }
+    handleClickFontColor = (e) =>{
+        let target = e.target;
+        let colr = target.firstChild ? target.firstChild.style.color : target.tagName === 'I' ? target.style.color : target.style.backgroundColor;
+        this.changeStyle({prop: 'color', val: colr})
+    }
+    handleSelectFontColor = (e) =>{
+        let target = e.target;
+        this.changeStyle({prop: 'color', val: target.value});
+    }
+    handleBgroundColor = (e) =>{
+        let target = e.target;
+        let val = target.value ? target.value : target.firstChild ? target.firstChild.style.backgroundColor : target.style.backgroundColor;
+        this.changeStyle({prop: 'backgroundColor', val});
+    }
+    handleFont = (e) =>{
+        let target = e.target;
+        this.changeStyle({prop: 'fontFamily', val: target.value});
+    }
+    handleFontSize = (e) =>{
+        let target = e.target;
+        this.changeStyle({prop: 'fontSize', val: target.value});
+    }
+    handleClickUList = () =>{
+        //if
         this.currentRange = this.traveler.convertToList('UL', this.currentRange);
+        this.repopulateSelection();
+    }
+    handleClickOList = () =>{
+        this.currentRange = this.traveler.convertToList('OL', this.currentRange);
         this.repopulateSelection();
     }
     shouldComponentUpdate(){
@@ -274,12 +317,12 @@ class EditorApp extends React.Component{
     }
     componentDidMount(){
         let {editorNode: editor} = this.props;
-        editor.style.paddingLeft = '5px';
         let app = document.getElementById('editor_app');
         let toolbar = document.getElementById('tool_bar');
         toolbar.onselectstart = (e) =>{
             e.preventDefault();
         }
+        editor.style.fontSize = '30px'
         app.appendChild(editor);
         editor.onselectstart = ()=>{
             this.data.waitElem && (this.data.waitElem.remove(), this.data.waitElem = null);
@@ -296,7 +339,15 @@ class EditorApp extends React.Component{
             undo: this.undo,
             redo: this.redo,
             handleClickBold: this.handleClickBold,
-            handleClickList: this.handleClickList
+            handleClickItalic: this.handleClickItalic,
+            handleClickUnderline: this.handleClickUnderline,
+            handleBgroundColor: this.handleBgroundColor,
+            handleClickFontColor: this.handleClickFontColor,
+            handleSelectFontColor: this.handleSelectFontColor,
+            handleFont: this.handleFont,
+            handleFontSize: this.handleFontSize,
+            handleClickUList: this.handleClickUList,
+            handleClickOList: this.handleClickOList
         }
         return (
             <div id = 'editor_app'>

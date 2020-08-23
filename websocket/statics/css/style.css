@@ -57,9 +57,11 @@
 #tool_bar > .select select:focus{
     border: 2px solid grey;
     border-radius: 3px;
+    outline: none;
+
 }
-#tool_bar > .select select:s{
-    border: 2px solid grey;
+#tool_bar > .select select{
+    border: 1px solid grey;
     border-radius: 3px;
 }
 #tool_bar .colr .prev-i > i{
@@ -85,8 +87,21 @@
 #tool_bar .i-wrapper{
     position: relative;
 }
+#tool_bar .activated{
+    background-color: #ccefff;
+}
+#tool_bar .disabled{
+    opacity: 0.55;
+}
 #tool_bar{
     margin-bottom: 5px;
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+}
+#editor_area{
+    padding-left: 5px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 16px;
+    
 }

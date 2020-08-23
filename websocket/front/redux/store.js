@@ -149,10 +149,12 @@ function poong(state = initialPoong, {type, data}){
 
 let editorNode = document.createElement('div');
 editorNode.contentEditable = true;
+editorNode.id = 'editor_area'
 // editorNode.style.color = 'orange';
 // editorNode.style.backgroundColor = 'grey';
-editorNode.style.border = '2px solid blue';
-editorNode.style.height = '100vh'
+editorNode.style.height = '100vh';
+editorNode.style.outline = 'none';
+editorNode.style.border = '1px solid grey';
 
 let initialEditor = {
     editorNode,
@@ -162,7 +164,7 @@ function editor(state = initialEditor){
     return state;
 }
 let initialEditorToolbar = {
-    undo: 0,//0 disabled, 1 no, 2 yes
+    undo: 0,//0 disabled, 1 normal, 2 activated
     redo: 0,
     bold: 1, 
     italic: 1,
@@ -176,8 +178,8 @@ let initialEditorToolbar = {
     code: 1,
     fill: 'yellow',
     color: 'red',
-    fontsize: 12,
-    fontfamily: 'Arial'
+    fontsize: '16px',
+    fontfamily: 'Arial,Helvetica,sans-serif'
 
 }
 function toolbar(state = initialEditorToolbar, {type, data}){
