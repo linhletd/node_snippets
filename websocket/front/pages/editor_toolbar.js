@@ -7,6 +7,8 @@ class ToolBar extends React.PureComponent{
     render(){
         let {click, state} = this.props;
         // console.log(2222, state)
+        let emptyFontStyle = state.fontfamily === 'false' ? {display: 'none'} : {display: 'block'};
+        let emptySizeStyle = state.fontsize === 'false' ? {display: 'none'} : {display: 'block'}
         return (
             <div id = 'tool_bar'>
                 <div onClick = {click.undo} className = {state.undo ? '' : 'disabled'}><i className="fa fa-reply"></i></div>
@@ -46,24 +48,24 @@ class ToolBar extends React.PureComponent{
                     </i>
                 </div>
                 <div className = 'ctn select'>
-                  <select onChange = {click.handleFont}  >
+                  <select onChange = {click.handleFont} value = {state.fontfamily} >
                         <option value = 'Georgia,serif' style = {{fontFamily: 'Georgia,serif'}}>Georgia</option>
-                        <option value = 'Palatino Linotype,Book Antiqua,Palatino,serif' style = {{fontFamily: 'Palatino Linotype,Book Antiqua,Palatino,serif'}}>Palatino Linotype</option>
-                        <option value = 'Times New Roman,Times,serif' style = {{fontFamily: 'Times New Roman,Times,serif'}}>Times New Roman</option>
+                        <option value = '"Palatino Linotype","Book Antiqua",Palatino,serif' style = {{fontFamily: 'Palatino Linotype,Book Antiqua,Palatino,serif'}}>Palatino Linotype</option>
+                        <option value = '"Times New Roman",Times,serif' style = {{fontFamily: '"Times New Roman",Times,serif'}}>Times New Roman</option>
                         <option value = 'Arial,Helvetica,sans-serif' style = {{fontFamily: 'Arial,Helvetica,sans-serif'}}>Arial</option>
-                        <option value = 'Arial Black,Gadget,sans-serif' style = {{fontFamily: 'Arial Black, Gadget, sans-serif'}}>Arial Black</option>
-                        <option value = 'Comic Sans MS,cursive,sans-serif' style = {{fontFamily: 'Comic Sans MS,cursive,sans-serif'}}>Comic Sans MS</option>
+                        <option value = '"Arial Black",Gadget,sans-serif' style = {{fontFamily: '"Arial Black", Gadget, sans-serif'}}>Arial Black</option>
+                        <option value = '"Comic Sans MS",cursive,sans-serif' style = {{fontFamily: '"Comic Sans MS",cursive,sans-serif'}}>Comic Sans MS</option>
                         <option value = 'Impact,Charcoal,sans-serif' style = {{fontFamily: 'Impact,Charcoal,sans-serif'}}>Impact</option>
-                        <option value = 'Lucida Sans Unicode,Lucida Grande,sans-serif' style = {{fontFamily: 'Lucida Sans Unicode,Lucida Grande,sans-serif'}}>Lucida Sans Unicode</option>
+                        <option value = '"Lucida Sans Unicode","Lucida Grande",sans-serif' style = {{fontFamily: '"Lucida Sans Unicode","Lucida Grande",sans-serif'}}>Lucida Sans Unicode</option>
                         <option value = 'Tahoma,Geneva,sans-serif' style = {{fontFamily: 'Tahoma,Geneva,sans-serif'}}>Tahoma</option>
-                        <option value = 'Trebuchet MS,Helvetica,sans-serif' style = {{fontFamily: 'Trebuchet MS,Helvetica,sans-serif'}}>Trebuchet MS</option>
+                        <option value = '"Trebuchet MS",Helvetica,sans-serif' style = {{fontFamily: '"Trebuchet MS",Helvetica,sans-serif'}}>Trebuchet MS</option>
                         <option value = 'Verdana,Geneva,sans-serif' style = {{fontFamily: 'Verdana,Geneva,sans-serif'}}>Verdana</option>
-                        <option value = 'Courier New,Courier,monospace' style = {{fontFamily: 'Courier New,Courier,monospace'}}>Courier New</option>
-                        <option value = 'Lucida Console,Monaco,monospace' style = {{fontFamily: 'Lucida Console,Monaco,monospace'}}>Lucida Console</option>
-                        {/* {state.fontfamily === 'false' ? <option value = 'false'>&nbsp</option> : ''} */}
+                        <option value = '"Courier New",Courier,monospace' style = {{fontFamily: '"Courier New",Courier,monospace'}}>Courier New</option>
+                        <option value = '"Lucida Console",Monaco,monospace' style = {{fontFamily: '"Lucida Console",Monaco,monospace'}}>Lucida Console</option>
+                        <option value = 'false' style = {emptyFontStyle}></option>
 
                     </select>
-                    <select onChange = {click.handleFontSize} >
+                    <select onChange = {click.handleFontSize} value = {state.fontsize}>
                         <option value = '8px'>8</option>
                         <option value = '9px'>9</option>
                         <option value = '10px'>10</option>
@@ -81,7 +83,7 @@ class ToolBar extends React.PureComponent{
                         <option value = '54px'>54</option>
                         <option value = '62px'>62</option>
                         <option value = '72px'>72</option>
-                        {/* {state.fontsize === 'false' ? <option value = 'false'>&nbsp</option> : ''} */}
+                        <option value = 'false' style = {emptySizeStyle}></option>
                     </select>
                 </div>
 

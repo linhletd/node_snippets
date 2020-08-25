@@ -306,18 +306,18 @@ class EditorNodeTraveler{
     checkRange = (range) =>{
         let font = {
             'Georgia': 'Georgia,serif',
-            'Palatino Linotype':'Palatino Linotype,Book Antiqua,Palatino,serif',
-            'Times New Roman':'Times New Roman,Times,serif',
+            'Palatino Linotype':'"Palatino Linotype","Book Antiqua",Palatino,serif',
+            'Times New Roman':'"Times New Roman",Times,serif',
             'Arial': 'Arial,Helvetica,sans-serif',
-            'Arial': 'Arial Black,Gadget,sans-serif',
-            'Comic Sans MS': 'Comic Sans MS,cursive,sans-serif',
+            'Arial Black': '"Arial Black",Gadget,sans-serif',
+            'Comic Sans MS': '"Comic Sans MS",cursive,sans-serif',
             'Impact': 'Impact,Charcoal,sans-serif',
-            'Lucida Sans Unicode': 'Lucida Sans Unicode,Lucida Grande,sans-serif',
+            'Lucida Sans Unicode': '"Lucida Sans Unicode","Lucida Grande",sans-serif',
             'Tahoma': 'Tahoma,Geneva,sans-serif',
-            'Trebuchet MS': 'Trebuchet MS,Helvetica,sans-serif',
+            'Trebuchet MS': '"Trebuchet MS",Helvetica,sans-serif',
             'Verdana': 'Verdana,Geneva,sans-serif',
-            'Courier New': 'Courier New,Courier,monospace',
-            'Lucida Console': 'Lucida Console,Monaco,monospace'
+            'Courier New': '"Courier New",Courier,monospace',
+            'Lucida Console': '"Lucida Console",Monaco,monospace'
         }
         let size = ['8px', '9px', '10px', '11px', '12px', '14px', '16px', '18px', '20px', '24px', 
         '28px', '32px', '38px', '46px', '54px', '62px', '72px'];
@@ -367,17 +367,15 @@ class EditorNodeTraveler{
         let checkList, checkBIU;
         (checkBIU = ()=>{
             if(common.nodeName === 'SPAN' || collapsed || common.nodeName === '#text'){
-                console.log('here')
                 if(common.nodeName === '#text') common = common.parentNode;
                 common.style.fontWeight === 'bold' ? state.bold = 2 : state.bold = 1;
                 common.style.fontStyle === 'italic' ? state.italic = 2 : state.italic = 1;
                 common.style.textDecoration === 'underline' ? state.underline = 2 : state.underline = 1;
                 let fnt;
-                if(common.style.fontSize = ''){
+                if(common.style.fontSize === ''){
                     //do nothing
                 }
                 else if(size.indexOf(common.style.fontSize) === -1){
-                    console.log(common.style)
                     state.fontsize = 'false';
                 }
                 else{
@@ -386,12 +384,11 @@ class EditorNodeTraveler{
                 if(common.style.fontFamily === ''){
                     //do nothing
                 }
-                else if(fnt = common.style.fontFamily.match(/^(.*?)\s?\,/)[1] && !font[fnt]){
-                    console.log(common.style.fontFamily)
+                else if(!(fnt = font[common.style.fontFamily.match(/^\"?(.*?)\"?\,/)[1]])){
                     state.fontfamily = 'false';
                 }
                 else{
-                    state.fontfamily = common.style.fontFamily;
+                    state.fontfamily = fnt;
                 }
             }
             else{
@@ -417,28 +414,28 @@ class EditorNodeTraveler{
                     tail = end;
                 }
                 else{
-                    tail = this.getNthChild(end, endOffset) || end.lastChild;
+                    tail = this.getNthChild(end, endOffset - 1);
                 }
                 this._getInitialLeftNode(range);
                 this._getInitialRightNode(range);
                 let _verify = (cur)=>{
                     let keys = Object.keys(neededCheck);
-                    if(!keys.length) return;
+                    if(!keys.length || cur.hasChildNodes() && cur.nodeName !== 'SPAN') return;
                     keys.map((val) =>{
                         let prop = neededCheck[val];
                         let actual = cur.nodeName === '#text' ? cur.parentNode.style[prop] : cur.style[prop];
                         if(val === 'fontsize'){
                             actual === '' && (actual = state.fontsize);
-                            !temp.fontsize && (temp.fonsize = actual);
-                            if(size.indexOf(actual) || actual !== temp.fontsize){
+                            !temp.fontsize && (temp.fontsize = actual);
+                            if(size.indexOf(actual) === -1 || actual !== temp.fontsize){
                                 state.fontsize = 'false';
                                 delete neededCheck.fontsize
                             }
                         }
                         else if(val === 'fontfamily'){
                             actual === '' && (actual = state.fontfamily);
-                            !temp.fontfamily && (temp.fontfamily = actual.match(/^(.*?)\s?\,/)[1]);
-                            if(!font[temp.fontfamily] ||actual.match(/^(.*?)\s?\,/)[1] !== temp.fontsize){
+                            !temp.fontfamily && (temp.fontfamily = actual.match(/^\"?(.*?)\"?\,/)[1]);
+                            if(!font[temp.fontfamily] ||actual.match(/^\"?(.*?)\"?\,/)[1] !== temp.fontfamily){
                                 state.fontfamily = 'false';
                                 delete neededCheck.fontfamily
                             }
@@ -450,8 +447,7 @@ class EditorNodeTraveler{
                     })
                 };
                 (_check = (cur, side) =>{
-                    if(cur === this.state.bigRight){
-                        // endChecked = true;
+                    if(!cur || side === 'nextSibling' && cur === this.state.bigRight || side === 'previousSibling' && this.state.bigRight && (cur === this.state.bigRight.previousSibling)){
                         return;
                     }
                     if(['IMG', 'HR', 'BR', 'PRE'].indexOf(cur.nodeName) > -1){
@@ -464,23 +460,23 @@ class EditorNodeTraveler{
                         }
                     }
                     if(cur.hasChildNodes() && cur.nodeName !== 'SPAN'){
-                        return _check(cur.firstChild);
+                        return _check(cur.firstChild, side);
                     }
                     else if(cur[side]){
-                        return _check(cur[side]);
+                        return _check(cur[side], side);
                     }
                     else{
                         let par = cur.parentNode;
-                        while(par !== (side === 'previousSibling' ? this.state.bigRight : common)){
+                        while(par !== common){
                             if(par[side]){
-                                return _check(par[side]);
+                                return _check(par[side], side);
                             }
                             par = par.parentNode;
                         }
                         // endChecked = true;
                     }
                 })(head, 'nextSibling');
-                if(Object.keys(neededCheck).length){
+                if(Object.keys(neededCheck).length && (this.state.initRight)){
                     _check(tail, 'previousSibling')
                 }
                 Object.keys(neededCheck).map(key => {
@@ -635,6 +631,7 @@ console.log('state', state)
         return this.state.range;
     }
     goDownAndNextToModify = (cur, stop) =>{
+        //alternative: broad search first
         let {prop, val} = this.state.modifyingStyle;
         if(!cur || cur === stop) return;
         let par = cur.parentNode,
@@ -642,7 +639,7 @@ console.log('state', state)
         next = cur.nextSibling;
         if(['IMG', 'HR', 'BR', 'PRE'].indexOf(cur.nodeName) > -1) return this.goDownAndNextToModify(next, stop);
         if(cur.nodeName != '#text' && cur.nodeName != 'SPAN'){
-            cur.style[prop] = val;
+            prop !== 'backgroundColor' && (cur.style[prop] = val);
             this.goDownAndNextToModify(cur.firstChild, stop);
             this.goDownAndNextToModify(next, stop);
             return;
@@ -779,8 +776,8 @@ console.log('state', state)
         r1.selectNodeContents(div);
         let ct = r1.extractContents();
         let end = ct.lastChild;
-        r.insertNode(ct);
-        this.state.range.setEndAfter(end);
+        end && r.insertNode(ct);
+        this.state.range.setEnd(r.endContainer, r.endOffset)
         
         if((initRight.children && !initRight.children.length || !initRight.children) && initRight.innerText == '') return initRight.remove();
         initRight.normalize();
@@ -816,8 +813,8 @@ console.log('state', state)
         r1.selectNodeContents(div);
         let ct = r1.extractContents();
         let start = ct.firstChild;
-        r.insertNode(ct);
-        this.state.range.setStartBefore(start);
+        start && r.insertNode(ct)
+        this.state.range.setStart(r.startContainer, r.startOffset)
         if((initLeft.children && !initLeft.children.length || !initLeft.children) && initLeft.innerText == '') return initLeft.remove();
         initLeft.normalize();
     }
@@ -843,8 +840,10 @@ console.log('state', state)
     }
     isBelongTag = (nodeName, node) =>{
         if(node.nodeName === nodeName) return node;
+        // console.log(1234, node);
         while(node !== this.root && node.nodeName !== nodeName){
             node = node.parentNode;
+            // console.log(1234, node);
         }
         return node.nodeName == nodeName ? node : false;
     }
@@ -871,9 +870,15 @@ console.log('state', state)
             //do nothing
         }
         else if(range.collapsed){
-            p1 = document.createTextNode('');
-            range.insertNode(p1);
-            start = p1;
+            if(common.nodeName === 'SPAN' && common.childNodes.length === 1 && common.firstChild.nodeName === 'BR'){
+                common.firstChild.remove();
+                start = common;
+            }
+            else{
+                p1 = document.createTextNode('');
+                range.insertNode(p1);
+                start = p1;                
+            }
             end = start;
         }
         else{
@@ -909,7 +914,7 @@ console.log('state', state)
             !cur.previousSibling && cur.parentNode === this.root && !cur.hasChildNodes()){
                 return list.push(cur);
             }
-            if(cur.hasChildNodes()){
+            if(cur.hasChildNodes() && cur !== start){
                 return findLeft(cur.lastChild);
             }
             if(prev){
@@ -967,17 +972,33 @@ console.log('state', state)
         let eli = this.isBelongTag('LI', end);
         if(eli) end = eli;
         findRight(start, true);
-        console.log('p1, p2', p1, p2)
+        // console.log('p1, p2', p1, p2)
         setTimeout(()=>{
             p2 && p2.remove();
             p1 && p1.remove();
             if(check){
                 this.observer.startObserving()
             }
-            console.log(range);
+            // console.log(range);
         },0)
         console.log(3, list);
         return {list, end, p1, p2}
+    }
+    _replayStyle(li){
+        if(!li.hasChildNodes()){
+            return;
+        }
+        let color;
+        let childNodes = [...li.childNodes]
+        for(let i = 0; i < childNodes.length; i++){
+            if(!childNodes[i].style || childNodes[i].style.color !== color){
+                return;
+            }
+            else if(color === undefined){
+                color = childNodes[i].style.color;
+            }
+        }
+        li.style.color = color;
     }
     convertToList = (type, range) =>{
         let {startContainer, endContainer, startOffset, endOffset, collapsed} = range;
@@ -991,9 +1012,10 @@ console.log('state', state)
             r.setEndAfter(list[1]);
             let ct = r.extractContents();
             let li = document.createElement('li');
-            newPar.appendChild(li);
             r.insertNode(newPar);
-            newPar.firstChild.appendChild(ct);
+            newPar.appendChild(li);
+            li.appendChild(ct);
+            this._replayStyle(li);
         }
         else {
             list.map((elem, idx) => {
@@ -1043,10 +1065,11 @@ console.log('state', state)
                     let li = document.createElement('li');
                     start.appendChild(li);
                     li.appendChild(ct);
+                    this._replayStyle(li);
                 }
                 if(elem.nodeName === 'BR') elem.remove()
                 else if(elem.nodeName === 'UL' || elem.nodeName === 'OL'){
-                    if(idx = list.length - 1 && end !== elem.lastChild){
+                    if(idx === list.length - 1 && end !== elem.lastChild){
                         r.setStartBefore(elem.firstChild);
                         r.setEndAfter(end);
                     }

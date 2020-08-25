@@ -20,6 +20,17 @@ class HistoryStackManager {
             switch(type){
                 case 'attributes':{
                     this.clearTextTimeOut();
+                    // if(mutations.length === 1 && this.current.change.record && target.innerText === ''){
+                    //     console.log(this.current)
+                    //     this.current.change.record.push({
+                    //         type,
+                    //         target,
+                    //         attributeName,
+                    //         oldValue,
+                    //         newValue: target.attributes[attributeName].value
+                    //     });
+                    //     return;
+                    // }
                     record.push({
                         type,
                         target,
@@ -111,7 +122,7 @@ class HistoryStackManager {
     updatePendingState = (type) =>{
         this.data.waitState = type;
     }
-    reApplyRange = (range) =>{
+    reApplyRange = (range, subject) =>{
         if(!range) return;
         let {startContainer, startOffset, endContainer, endOffset} = range;
         let r = new Range();
@@ -120,6 +131,8 @@ class HistoryStackManager {
         let sel = document.getSelection();
         sel.removeAllRanges();
         sel.addRange(r);
+        subject.currentRange = r;
+        subject.traveler.checkRange(r);
     }
     clearTextTimeOut = () =>{
         this.data.textTimer && clearTimeout(this.data.textTimer);
@@ -171,6 +184,12 @@ class HistoryStackManager {
         node.prev = this.current;
         this.current = node;
         this.length++;
+        if(this.props.toolbarState.undo === 0){
+            this.props.updateState({
+                type: 'TOOLBARCHANGE',
+                data: {undo: 1}
+            })
+        }
     }
     distanceFromCurrentToTail = () => {
         let distance = 0;
@@ -258,17 +277,27 @@ class HistoryStackManager {
             }
         })
         this.startObserving();
-        this.reApplyRange(this.current.next.change.range);
-        subject.updateRangeFromSelection()
+        this.reApplyRange(this.current.next.change.range, subject);
         this.current = this.current.next;
+        if(this.props.toolbarState.undo === 0){
+            this.props.updateState({
+                type: 'TOOLBARCHANGE',
+                data: {undo: 1}
+            })
+        }
+        if(!this.current.next){
+            this.props.updateState({
+                type: 'TOOLBARCHANGE',
+                data: {redo: 0}
+            })
+        }    
 
     }
     undo = (subject)=>{
-        if(!this.current.prev){
+        if(this.current === this.head){
             console.log('stop');
             return;
         }
-
         this.stopObserving();
         let actions = this.current.change.record;
         for(let i = actions.length - 1; i >= 0; i--){
@@ -300,8 +329,19 @@ class HistoryStackManager {
         }
         this.startObserving();
         this.current = this.current.prev;
-        this.reApplyRange(this.current.change.range);
-        subject.updateRangeFromSelection();
+        this.reApplyRange(this.current.change.range, subject);
+        if(this.props.toolbarState.redo === 0){
+            this.props.updateState({
+                type: 'TOOLBARCHANGE',
+                data: {redo: 1}
+            })
+        }
+        if(this.current === this.head){
+            this.props.updateState({
+                type: 'TOOLBARCHANGE',
+                data: {undo: 0}
+            })
+        }
 
     }
 }

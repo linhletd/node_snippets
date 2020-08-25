@@ -152,9 +152,13 @@ editorNode.contentEditable = true;
 editorNode.id = 'editor_area'
 // editorNode.style.color = 'orange';
 // editorNode.style.backgroundColor = 'grey';
-editorNode.style.height = '100vh';
+editorNode.style.height = '90vh';
 editorNode.style.outline = 'none';
 editorNode.style.border = '1px solid grey';
+editorNode.style.borderRadius = '5px';
+editorNode.style.fontSize = '16px';
+editorNode.style.padding = '5px 5px';
+editorNode.style.fontFamily = 'Arial, Helvetica, sans-serif'
 
 let initialEditor = {
     editorNode,
