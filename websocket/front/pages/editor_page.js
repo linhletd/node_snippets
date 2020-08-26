@@ -6,7 +6,7 @@ class EditorApp extends React.Component{
     constructor(props){
         super(props);
         this.setToolbarState = undefined;
-        this.currentRange = new Range();
+        this.currentRange = undefined;
         this.data = {
             waitElem: null,
             focused: false
@@ -29,6 +29,7 @@ class EditorApp extends React.Component{
         return node.nodeName == nodeName ? true : false;
     }
     restoreRange = ({startContainer, endContainer, startOffset, endOffset}) =>{
+        this.currentRange = new Range();
         this.currentRange.setStart(startContainer, startOffset);
         this.currentRange.setEnd(endContainer, endOffset);
     }
@@ -49,23 +50,6 @@ class EditorApp extends React.Component{
             node = node.parentNode;
         }
         return node === par ? node : false;
-    }
-    isRemainLi(OUL){
-        let _findLi, queue = [OUL];
-        return (_findLi = () =>{
-            if(queue.length === 0){
-                return false;
-            }
-            let node = queue.shift();
-            if(node.nodeName === 'LI'){
-                return true;
-            }
-            if(node.hasChildNodes()){
-                queue = [queue, ...node.childNodes];
-                return _findLi;
-            } 
-            
-        })()
     }
     lastFindOUL = (cur)=>{
         cur = this.traveler.isBelongTag('LI', cur);
@@ -110,9 +94,9 @@ class EditorApp extends React.Component{
                 },0)
             }
         let {startContainer: start, startOffset: off, endOffset: endOff, endContainer: end, collapsed} = r;
-        let li, par;
+        let li, par, span;
+        li = this.traveler.isBelongTag('LI', start);
         if(e.keyCode === 8){
-            li = this.traveler.isBelongTag('LI', start)
             if(r.collapsed && off === 0 && li &&
             this.isFirst(li, start) && li === li.parentNode.firstChild){
                 e.preventDefault();
@@ -120,7 +104,7 @@ class EditorApp extends React.Component{
                 if(!this.traveler.isBelongTag('UL', par) || !this.traveler.isBelongTag('OL', par)){
                     let br = document.createElement('br');
                     li.remove();
-                    let ok = li.hasChildNodes() && li.innerText;
+                    let ok = li.hasChildNodes() && this.traveler.hasRealText(li);
                     r.setStartBefore(par);
                     r.collapse(true);
                     r.insertNode(br);
@@ -147,12 +131,10 @@ class EditorApp extends React.Component{
                 sel.addRange(r);
             }
             else if(li){
-                console.log(567, li.firstChild)
-                if(li.firstChild.nodeName !== 'SPAN'){
+                if(li.firstChild && li.firstChild.nodeName !== 'SPAN'){
                     //do nothing;
                 }
-                else if(collapsed && off === 1 && li.innerText.length === 1){
-                    console.log('here here')
+                else if(collapsed && off === 1 && this.traveler.hasRealText(li)){
                     e.preventDefault();
                     start.remove();
                     let br = document.createElement('br');
@@ -160,7 +142,7 @@ class EditorApp extends React.Component{
                     this.currentRange.setStartBefore(br);
                     this.currentRange.collapse(true);
                 }
-                else if(!collapsed && off === 0 && (this.isLast(li) && endOff === end.nodeValue.length || this.traveler.isBelongTag('LI', end) !== li)){
+                else if(!collapsed && off === 0 && (this.isLast(li, end) && endOff === end.nodeValue.length || this.traveler.isBelongTag('LI', end) !== li)){
                     e.preventDefault();
                     r.setStart(li.firstChild,0);
                     r.extractContents();
@@ -171,26 +153,78 @@ class EditorApp extends React.Component{
                 }
             }
         }
-        else if(e.keyCode === 13 && (li = this.traveler.isBelongTag('LI', start)) && li.innerText === ''){
+        else if(e.keyCode === 13 && li){
             let firstOUL, lastOUL
             let prev, next;
-            if((firstOUL = this.firstFindOUL(li)) && (!firstOUL.previousSibling || (prev = firstOUL.previousSibling) && 
-            prev.nodeName !== 'BR' && prev.nodeName !== '#text')){
-                e.preventDefault();
-                firstOUL.parentNode.insertBefore(document.createElement('BR'), firstOUL);
-            }
-            else if((!li.hasChildNodes() || li.childNodes.length === 1 && li.firstChild.nodeName === 'BR') && (lastOUL = this.lastFindOUL(li)) && (!lastOUL.nextSibling || (next = lastOUL.nextSibling) && 
-            next.nodeName !== 'BR' && next.nodeName !== '#text')){
-                e.preventDefault();
-                li.remove();
-                r.setStartAfter(lastOUL);
-                r.collapse(true);
-                r.insertNode(document.createElement('br'))
-                r.collapse(true);
-                if(!this.isRemainLi(lastOUL)){
-                    lastOUL.remove();
+            // if((firstOUL = this.firstFindOUL(li)) && (!firstOUL.previousSibling || (prev = firstOUL.previousSibling) && 
+            // prev.nodeName !== 'BR' && prev.nodeName !== '#text')){
+            //     e.preventDefault();
+            //     firstOUL.parentNode.insertBefore(document.createElement('BR'), firstOUL);
+            // }
+            // else if((!li.hasChildNodes() || li.childNodes.length === 1 && li.firstChild.nodeName === 'BR') && (lastOUL = this.lastFindOUL(li)) && (!lastOUL.nextSibling || (next = lastOUL.nextSibling) && 
+            // next.nodeName !== 'BR' && next.nodeName !== '#text')){
+            //     e.preventDefault();
+            //     li.remove();
+            //     r.setStartAfter(lastOUL);
+            //     r.collapse(true);
+            //     r.insertNode(document.createElement('br'))
+            //     r.collapse(true);
+            //     if(!this.traveler.isRemainLi(lastOUL)){
+            //         lastOUL.remove();
+            //     }
+            // }
+            par = li.parentNode;
+            r.extractContents();
+            if(this.traveler.hasRealText(li) || li !== par.firstChild && li !== par.lastChild){
+                if(off === 0 && this.isFirst(li, start)){
+                    e.preventDefault();
+                    span = li.firstChild && li.firstChild.nodeName === 'SPAN' ? li.firstChild.cloneNode(false) : document.createElement('span');
+                    let br = document.createElement('br');
+                    r.setStartBefore(par);
+                    r.collapse(true);
+                    if(['UL', 'OL'].indexOf(par.parentNode.nodeName) === -1){
+                        r.insertNode(span);
+                    }
+                    else{
+                        let li1 = li.cloneNode(false);
+                        r.insertNode(li1);
+                        li1.appendChild(span);
+                    }
+                    span.appendChild(br);
+                    r.setStart(span, 0);
+                    r.collapse(true);
                 }
+                //do nothing
             }
+            else{
+                e.preventDefault();
+                if(!(this.isBelongTag('UL', par) && this.isBelongTag('OL', par))){
+                    let  br = document.createElement('br');
+                    if(li.hasChildNodes() && li.firstChild.nodeName === 'SPAN'){
+                        span = li.firstChild.cloneNode(false);
+                    }
+                    else{
+                        span = document.createElement('span');
+                    }
+                    li.remove();
+                    li === par.firstChild ? r.setStartBefore(par) : r.setStartAfter(par);
+                    r.collapse(true);
+                    r.insertNode(span);
+                    span.appendChild(br);
+                    r.setStart(span, 0);
+                    r.collapse(true);
+                }
+                else{
+                    li.remove();
+                    li === par.firstChild ? r.setStartBefore(par) : r.setStartAfter(par);
+                    r.collapse(true);
+                    r.insertNode(li);
+                    r.setStart(li, 0);
+                    r.collapse(true);
+                }
+                if(!this.traveler.isRemainLi(par)) par.remove();
+            }
+
         }
         this.rememberRange();
         // setTimeout(this.rememberRange,0)
@@ -307,7 +341,7 @@ class EditorApp extends React.Component{
         },0)
     }
     changeStyle = ({prop, val}) =>{
-        if(!this.currentRange.startContainer) return;
+        if(!this.currentRange) return;
         let state = this.props.toolbarState;
         (prop === 'fontWeight' && state.bold === 2 ||
         prop === 'fontStyle' && state.italic === 2 ||
@@ -376,8 +410,8 @@ class EditorApp extends React.Component{
         this.changeStyle({prop: 'fontSize', val: target.value});
     }
     handleClickUList = () =>{
-        if(!this.currentRange.startContainer) return;
-        this.currentRange = this.traveler.convertToList('UL', this.currentRange);
+        if(!this.currentRange) return;
+        this.currentRange = this.traveler.convertToList('UL', this.currentRange).cloneRange();
         let wt = this.data.waitElem, li;
         if(wt && (li = wt.parentNode).nodeName === 'LI' && li.childNodes.length === 1){
             this.data.waitElem = null;
@@ -387,8 +421,8 @@ class EditorApp extends React.Component{
         this.repopulateSelection();
     }
     handleClickOList = () =>{
-        if(!this.currentRange.startContainer) return;
-        this.currentRange = this.traveler.convertToList('OL', this.currentRange);
+        if(!this.currentRange) return;
+        this.currentRange = this.traveler.convertToList('OL', this.currentRange).cloneRange();
         let wt = this.data.waitElem, li;
         if(wt && (li = wt.parentNode).nodeName === 'LI' && li.childNodes.length === 1){
             this.data.waitElem = null;
@@ -396,6 +430,31 @@ class EditorApp extends React.Component{
             wt.appendChild(br);
         }
         this.repopulateSelection();
+    }
+    handleIncreaseListLevel = ()=>{
+        if(!this.currentRange) return;
+        let state = this.props.toolbarState;
+        if(state.inclevel === 1){
+            let type = state.unorder === 2 ? 'UL' : 'OL';
+            this.currentRange = this.traveler.increaseListLevel(this.currentRange, type);
+            this.repopulateSelection();
+        }
+    }
+    handleDecreaseListLevel = () =>{
+        if(!this.currentRange) return;
+        let state = this.props.toolbarState;
+        if(state.declevel === 1){
+            this.currentRange = this.traveler.decreaseListLevel(this.currentRange);
+            this.repopulateSelection();
+        }
+    }
+    handleUnList = () =>{
+        if(this.props.declevel === 1){
+            this.handleDecreaseListLevel();
+        }
+        else{
+
+        }
     }
     shouldComponentUpdate(){
         return false;
@@ -437,7 +496,9 @@ class EditorApp extends React.Component{
             handleFont: this.handleFont,
             handleFontSize: this.handleFontSize,
             handleClickUList: this.handleClickUList,
-            handleClickOList: this.handleClickOList
+            handleClickOList: this.handleClickOList,
+            handleIncreaseListLevel: this.handleIncreaseListLevel,
+            handleDecreaseListLevel: this.handleDecreaseListLevel,
         }
         return (
             <div id = 'editor_app'>

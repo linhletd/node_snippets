@@ -18,8 +18,8 @@ class ToolBar extends React.PureComponent{
                 <div onClick = {click.handleClickUnderline} className = {state.underline === 2 ? 'space activated' : 'space'}><i className="fa fa-underline"></i></div>
                 <div onClick = {click.handleClickUList} className = {state.unorder === 2 ? 'activated' : ''}><i className="fa fa-list-ul"></i></div>
                 <div onClick = {click.handleClickOList} className = {state.order === 2 ? 'activated' : ''}><i className="fa fa-list-ol"></i></div>
-                <div onClick = {click.handleClickList} className = {state.inclevel === 2 ? 'activated' : state.inclevel === 0 ? 'disabled' : ''}><i className="fa fa-indent"></i></div>
-                <div onClick = {click.handleClickList} className = {state.declevel === 2 ? 'activated space' : state.declevel === 0 ? 'space disabled' : 'space'}><i className="fa fa-outdent"></i></div>
+                <div onClick = {click.handleIncreaseListLevel} className = {state.inclevel === 0 ? 'disabled' : ''}><i className="fa fa-indent"></i></div>
+                <div onClick = {click.handleDecreaseListLevel} className = {state.declevel === 0 ? 'space disabled' : 'space'}><i className="fa fa-outdent"></i></div>
                 <div onClick = {click.handleClickList}><i className="fa fa-quote-left"></i></div>
                 <div onClick = {click.handleClickList}><i className="fa fa-code"></i></div>
                 <div onClick = {click.handleClickList}  className = {state.link === 2 ? 'activated space' : 'space'}><i className="fa fa-link"></i></div>

@@ -275,9 +275,9 @@ class EditorNodeTraveler{
     }
     reassignRange(range){
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
-        if(startOffset === 0){
+        if(startOffset === 0 && start !== common){
             let cur = start;
-            while(cur.parentNode !== this.root && cur !== common){
+            while(cur.parentNode !== this.root && cur.parentNode !== common){
                 let par = cur.parentNode;
                 if(cur === par.firstChild){
                     cur = par;
@@ -288,9 +288,9 @@ class EditorNodeTraveler{
             }
             range.setStartBefore(cur);
         }
-        if(end.hasChildNodes() && endOffset === end.childNodes.length || endOffset === end.nodeValue.length){
+        if(start !== common && (end.hasChildNodes && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length)){
             let cur = end;
-            while(cur.parentNode !== this.root && cur !== common){
+            while(cur.parentNode !== this.root && cur.parentNode !== common){
                 let par = cur.parentNode;
                 if(cur === par.lastChild){
                     cur = par;
@@ -299,8 +299,10 @@ class EditorNodeTraveler{
                     break;
                 }
             }
+            console.log('cur', cur)
             range.setEndAfter(cur);
         }
+        console.log(1234567, range)
         return range
     }
     checkRange = (range) =>{
@@ -492,19 +494,20 @@ class EditorNodeTraveler{
                 li.parentNode.nodeName === 'UL' ? state.unorder = 2 : state.order = 2;
                 return;
             }
-            else if(!(li1 = this.isBelongTag('LI', start)) || !(li2 = this.isBelongTag('LI', end)) || start.parentNode.nodeName !== end.parentNode.nodeName){
+            else if(!(li1 = this.isBelongTag('LI', start)) || !(li2 = this.isBelongTag('LI', end)) || li1 && li2 && li1.parentNode.nodeName !== li2.parentNode.nodeName){
                 state.order = 1;
                 state.unorder = 1;
                 return;
             }
             else{
-                let tempType = start.parentNode.nodeName;
+                let tempType = li1.parentNode.nodeName;
                 let _checkLeft, _checkRight;
                 (_checkLeft = (cur) =>{
                     if(cur === this.state.bigRight){
                         return;
                     }
                     else if(cur.nodeName !== 'LI' && cur.nodeName !== tempType){
+                        console.log(cur, 'fasefafe')
                         state.order = 1;
                         state.unorder = 1;
                         tempType = undefined;
@@ -515,6 +518,7 @@ class EditorNodeTraveler{
                     }
                     else{
                         while(!cur.parentNode.nextSibling){
+                            if(cur.parentNode === this.root) return;
                             cur = cur.parentNode;
                         }
                         _checkLeft(cur.parentNode.nextSibling);
@@ -525,6 +529,7 @@ class EditorNodeTraveler{
                         return;
                     }
                     else if(cur.nodeName !== 'LI' && cur.nodeName !== tempType){
+                        console.log(cur, 'rightfalse')
                         state.order = 1;
                         state.unorder = 1;
                         tempType = undefined;
@@ -839,6 +844,7 @@ console.log('state', state)
         this.state.range.setEnd(end == div ? common : end, end == div ? extEndOff + endOffset : endOffset);
     }
     isBelongTag = (nodeName, node) =>{
+        if(!node) return false;
         if(node.nodeName === nodeName) return node;
         // console.log(1234, node);
         while(node !== this.root && node.nodeName !== nodeName){
@@ -858,6 +864,9 @@ console.log('state', state)
         }
         return false;
     }
+    isTempSpan(node){
+        return node.nodeName === 'SPAN' && node.childNodes.length === 1 && node.firstChild.nodeName === 'BR'
+    }
     findBreak = (range, check)=>{
         if(check){
             this.observer.stopObserving();
@@ -870,8 +879,7 @@ console.log('state', state)
             //do nothing
         }
         else if(range.collapsed){
-            if(common.nodeName === 'SPAN' && common.childNodes.length === 1 && common.firstChild.nodeName === 'BR'){
-                common.firstChild.remove();
+            if(this.isTempSpan(common)){
                 start = common;
             }
             else{
@@ -914,7 +922,7 @@ console.log('state', state)
             !cur.previousSibling && cur.parentNode === this.root && !cur.hasChildNodes()){
                 return list.push(cur);
             }
-            if(cur.hasChildNodes() && cur !== start){
+            if(cur.hasChildNodes() && !this.isTempSpan(cur)){
                 return findLeft(cur.lastChild);
             }
             if(prev){
@@ -1101,6 +1109,138 @@ console.log('state', state)
         }
         return range
     }
+    isRemainLi(OUL){
+        let _findLi, queue = [OUL];
+        return (_findLi = () =>{
+            if(queue.length === 0){
+                return false;
+            }
+            let node = queue.shift();
+            if(node.nodeName === 'LI'){
+                return true;
+            }
+            if(node.hasChildNodes && node.hasChildNodes()){
+                queue = [queue, ...node.childNodes];
+            } 
+            return _findLi();
+        })()
+    }
+    hasRealText(node){
+        let _findText, queue = [node];
+        return (_findText = () =>{
+            if(queue.length === 0){
+                return false;
+            }
+            let node = queue.shift();
+            if(node.nodeName === '#text' && node.nodeValue.length > 0){
+                return true;
+            }
+            if(node.hasChildNodes && node.hasChildNodes()){
+                queue = [queue, ...node.childNodes];
+            } 
+            return _findText();
+        })()
+    }
+    reunion = (node, bool) =>{
+        if(!node || node.nodeName !== 'UL' && node.nodeName !== 'OL'){
+            return;
+        }
+        let prev = node.previousSibling, next = node.nextSibling;
+        if(prev && prev.nodeName === node.nodeName){
+            let r = new Range();
+            r.selectNodeContents(node);
+            let ct = r.extractContents();
+            node.remove();
+            prev.appendChild(ct);
+        }
+        if(bool && next){
+            return this.reunion(next);
+        }
+    }
+    increaseListLevel = (range, type) =>{
+        let li1 = this.isBelongTag('LI', range.startContainer);
+        let li2 = this.isBelongTag('LI', range.endContainer);
+        let r = new Range();
+        r.setStartBefore(li1);
+        r.setEndAfter(li2);
+        r = this.reassignRange(r);
+        let ct = r.extractContents();
+        let elem = document.createElement(type);
+        r.insertNode(elem);
+        elem.appendChild(ct);
+        this.reunion(elem, true);
+        return r;
+    }
+    decreaseListLevel =(range) =>{
+        let li1 = this.isBelongTag('LI', range.startContainer);
+        let li2 = this.isBelongTag('LI', range.endContainer);
+        let r = new Range();
+        r.setStartBefore(li1);
+        r.setEndAfter(li2);
+        r = this.reassignRange(r);
+        let ct = r.extractContents();
+        let common = r.commonAncestorContainer;
+        r.setEndAfter(common);
+        let ct2 = r.extractContents();
+        if(this.isRemainLi(ct2.firstChild)){
+            r.insertNode(ct2);
+            r.collapse(true);
+        }
+        let grand = common.parentNode;
+        if(!this.isRemainLi(common)){
+            common.remove();
+        }
+        if(grand.nodeName === 'UL' || grand.nodeName === 'OL'){
+            let f = ct.firstChild;
+            let l = ct.lastChild && ct.lastChild.nextSibling;
+            r.insertNode(ct);
+            this.reunion(f);
+            this.reunion(l);
+        }
+        else{
+            let childNodes = ct.childNodes;
+            let r1 = new Range();
+            let nodes = [...childNodes];
+            len = nodes.length;
+            nodes.map((node, idx) =>{
+                if(node.nodeName === 'UL' || node.nodeName === 'OL'){
+                    r.insertNode(node);
+                    idx === 0 ? this.reunion(node) : this.reunion(node, true)
+                    r.setStartAfter(node);
+                }
+                else{
+                    let br = document.createElement('br'), ct1, first;
+                    if(node.firstChild && node.firstChild.nodeName === 'BR' || !node.hasChildNodes()){
+                        ct1 = document.createElement('span');
+                        first = ct1;
+                    }
+                    else{
+                        r1.selectNodeContents(node);
+                        ct1 = r1.extractContents();
+                        first = ct1.firstChild;
+                    }
+                    r.insertNode(ct1);
+                    if(first.previousSibling && ['IMG', 'BLOCKQUOTE', 'PRE', 'UL', 'OL'].indexOf(first.previousSibling.nodeName) === -1){
+                        grand.insertBefore(br, first)
+                    }
+                }
+                r.collapse(false);
+            })
+        }
+        return r;
+    }
+    unlistMany = (range) =>{
+        let li1 = this.isBelongTag('LI', range.startContainer);
+        let li2 = this.isBelongTag('LI', range.endContainer);
+        let r = new Range();
+        r.setStartBefore(li1);
+        r.setEndAfter(li2);
+        r = this.reassignRange(r);
+        let ct = r.extractContents();
+        let fst = ct.firstChild;
+        
 
+
+    }
 }
 export default EditorNodeTraveler;
