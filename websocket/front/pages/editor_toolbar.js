@@ -20,8 +20,8 @@ class ToolBar extends React.PureComponent{
                 <div onClick = {click.handleClickOList} className = {state.order === 2 ? 'activated' : ''}><i className="fa fa-list-ol"></i></div>
                 <div onClick = {click.handleIncreaseListLevel} className = {state.inclevel === 0 ? 'disabled' : ''}><i className="fa fa-indent"></i></div>
                 <div onClick = {click.handleDecreaseListLevel} className = {state.declevel === 0 ? 'space disabled' : 'space'}><i className="fa fa-outdent"></i></div>
-                <div onClick = {click.handleClickList}><i className="fa fa-quote-left"></i></div>
-                <div onClick = {click.handleClickList}><i className="fa fa-code"></i></div>
+                <div onClick = {click.handleClickList} className = {state.quote === 0 ? 'disabled' : state.quote === 2 ? 'activated' : ''}><i className="fa fa-quote-left"></i></div>
+                <div onClick = {click.handleClickList} className = {state.quote === 0 ? 'disabled' : state.quote === 2 ? 'activated' : ''}><i className="fa fa-code"></i></div>
                 <div onClick = {click.handleClickList}  className = {state.link === 2 ? 'activated space' : 'space'}><i className="fa fa-link"></i></div>
                 {/* <div className = 'ctn fill space'>
                     <i className="fa fa-font prev-i" style = {{backgroundColor: 'yellow'}}></i>

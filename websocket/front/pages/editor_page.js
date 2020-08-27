@@ -411,6 +411,9 @@ class EditorApp extends React.Component{
     }
     handleClickUList = () =>{
         if(!this.currentRange) return;
+        if(this.props.toolbarState.unorder === 2){
+            return this.handleUnList()
+        }
         this.currentRange = this.traveler.convertToList('UL', this.currentRange).cloneRange();
         let wt = this.data.waitElem, li;
         if(wt && (li = wt.parentNode).nodeName === 'LI' && li.childNodes.length === 1){
@@ -422,6 +425,9 @@ class EditorApp extends React.Component{
     }
     handleClickOList = () =>{
         if(!this.currentRange) return;
+        if(this.props.toolbarState.order === 2){
+            return this.handleUnList()
+        }
         this.currentRange = this.traveler.convertToList('OL', this.currentRange).cloneRange();
         let wt = this.data.waitElem, li;
         if(wt && (li = wt.parentNode).nodeName === 'LI' && li.childNodes.length === 1){
@@ -449,11 +455,12 @@ class EditorApp extends React.Component{
         }
     }
     handleUnList = () =>{
-        if(this.props.declevel === 1){
-            this.handleDecreaseListLevel();
+        if(this.props.toolbarState.declevel === 1){
+            return this.handleDecreaseListLevel();
         }
         else{
-
+            this.currentRange = this.traveler.unlistMany(this.currentRange);
+            this.repopulateSelection();
         }
     }
     shouldComponentUpdate(){
@@ -477,11 +484,15 @@ class EditorApp extends React.Component{
         editor.onblur = () =>{
             this.data.focused = false;
         }
-        this.addEventListenerForEditor(editor);
+        editor.onmouseup = this.updateRangeFromSelection;
+        editor.onkeypress = this.handleKeyPress;
+        editor.onkeydown = this.handleKeyDown;
+        editor.oninput = this.handleInput;
+        // this.addEventListenerForEditor(editor);
         this.props.historyManager.startObserving();
     }
     componentWillUnmount(){
-        this.removeEventListenerForEditor(this.props.editorNode);
+        // this.removeEventListenerForEditor(this.props.editorNode);
     }
     render(){
         let click = {
