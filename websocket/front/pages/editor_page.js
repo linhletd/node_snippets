@@ -93,7 +93,7 @@ class EditorApp extends React.Component{
                     
                 },0)
             }
-        let {startContainer: start, startOffset: off, endOffset: endOff, endContainer: end, collapsed} = r;
+        let {startContainer: start, startOffset: off, endOffset: endOff, endContainer: end, collapsed, commonAncestorContainer: common} = r;
         let li, par, span;
         li = this.traveler.isBelongTag('LI', start);
         if(e.keyCode === 8){
@@ -153,30 +153,11 @@ class EditorApp extends React.Component{
                 }
             }
         }
-        else if(e.keyCode === 13 && li){
-            let firstOUL, lastOUL
-            let prev, next;
-            // if((firstOUL = this.firstFindOUL(li)) && (!firstOUL.previousSibling || (prev = firstOUL.previousSibling) && 
-            // prev.nodeName !== 'BR' && prev.nodeName !== '#text')){
-            //     e.preventDefault();
-            //     firstOUL.parentNode.insertBefore(document.createElement('BR'), firstOUL);
-            // }
-            // else if((!li.hasChildNodes() || li.childNodes.length === 1 && li.firstChild.nodeName === 'BR') && (lastOUL = this.lastFindOUL(li)) && (!lastOUL.nextSibling || (next = lastOUL.nextSibling) && 
-            // next.nodeName !== 'BR' && next.nodeName !== '#text')){
-            //     e.preventDefault();
-            //     li.remove();
-            //     r.setStartAfter(lastOUL);
-            //     r.collapse(true);
-            //     r.insertNode(document.createElement('br'))
-            //     r.collapse(true);
-            //     if(!this.traveler.isRemainLi(lastOUL)){
-            //         lastOUL.remove();
-            //     }
-            // }
+        else if(e.keyCode === 13 && (li = this.traveler.isBelongTag('LI', common))){
             par = li.parentNode;
             r.extractContents();
-            if(this.traveler.hasRealText(li) || li !== par.firstChild && li !== par.lastChild){
-                if(off === 0 && this.isFirst(li, start)){
+            if(this.traveler.hasRealText(li)){
+                if(off === 0 && this.isFirst(li, start) && li === par.firstChild){
                     e.preventDefault();
                     span = li.firstChild && li.firstChild.nodeName === 'SPAN' ? li.firstChild.cloneNode(false) : document.createElement('span');
                     let br = document.createElement('br');
@@ -191,12 +172,12 @@ class EditorApp extends React.Component{
                         li1.appendChild(span);
                     }
                     span.appendChild(br);
-                    r.setStart(span, 0);
+                    r.setStart(li, 0);
                     r.collapse(true);
                 }
                 //do nothing
             }
-            else{
+            else if(li === par.firstChild || li === par.lastChild){
                 e.preventDefault();
                 if(!(this.isBelongTag('UL', par) && this.isBelongTag('OL', par))){
                     let  br = document.createElement('br');
@@ -206,13 +187,13 @@ class EditorApp extends React.Component{
                     else{
                         span = document.createElement('span');
                     }
-                    li.remove();
+                    span.appendChild(br);
                     li === par.firstChild ? r.setStartBefore(par) : r.setStartAfter(par);
                     r.collapse(true);
                     r.insertNode(span);
-                    span.appendChild(br);
                     r.setStart(span, 0);
                     r.collapse(true);
+                    li.remove();
                 }
                 else{
                     li.remove();
@@ -476,7 +457,6 @@ class EditorApp extends React.Component{
         app.appendChild(editor);
         editor.onselectstart = ()=>{
             this.data.waitElem && (this.data.waitElem.remove(), this.data.waitElem = null);
-
         }
         editor.onfocus = () =>{
             this.data.focused = true;

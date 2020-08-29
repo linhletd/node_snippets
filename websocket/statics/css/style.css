@@ -99,3 +99,6 @@
     align-items: center;
     flex-wrap: wrap;
 }
+#editor_area p{
+    display: inline;
+}
