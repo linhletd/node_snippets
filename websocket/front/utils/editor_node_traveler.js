@@ -25,16 +25,12 @@ class EditorNodeTraveler{
         span.style[prop] = val;
         return span;
     }
-    isSpanEmpty(span){
-        if(!span || span.nodeName !== 'SPAN' && span.nodeName !== '#text'){
-            return false;
-            // throw new Error('only check text or span node')
-        }
+    isSpanEmpty = (span) =>{
         if(span.nodeName === '#text'){
             if(span.nodeValue === '') return true;
             return false;
         }
-        return span.children.length === 0 && span.innerText === '';
+        return !span.hasChildNodes() || span.childNodes.length === 1 && span.firstChild.nodeName === span.nodeName && this.isSpanEmpty(span.firstChild);
     }
     splitNode = (range) =>{
         let common = range.commonAncestorContainer;
@@ -191,6 +187,8 @@ class EditorNodeTraveler{
     }
     modify = (range, {prop, val}) => {
         this.state.range = range.cloneRange();
+        // this.state.range = this.reassignRange(range.cloneRange());
+
         this.state.modifyingStyle = {prop, val};
         if(range.collapsed){
             this.state.collapsed = true;
@@ -249,31 +247,49 @@ class EditorNodeTraveler{
         }
         else{this.state.collapsed = false}
         let {commonAncestorContainer: common} = this.state.range;
-        // if(common.parentNode.nodeName == 'SPAN'){
-        //     common = common.parentNode;
-        // }
-        if(common.nodeName == '#text'){
-            common = common.parentNode;
-            this.handleTextSpanCommonNode(common, prop, val)
-        }
-        else if(common.nodeName == 'SPAN'){
-            this.handleTextSpanCommonNode(common,prop, val)
+        let x;
+        if(common.nodeName == 'SPAN' || (x = common.nodeName === '#text')){
+            x && (x = this.isBelongTag('SPAN', common)) && (common = x)
+            common = this.splitNodeX(common, this.state.range, true);
+            if(common.nodeName === '#text'){
+                let span = document.createElement('span');
+                common.parentNode.replaceChild(span, common);
+                span.appendChild(common);
+                common = span;
+            }
+            common.style[prop] = val;
+            this.state.range.selectNodeContents(common);
         }
         else {
             this.handleGeneralCase();
         }
-        if(this.state.range.startContainer != this.root && this.state.range.startOffset === 0){
-            this.state.range.setStartBefore(this.state.range.startContainer);
-        }
-        if(this.state.range.endContainer != this.root && this.state.range.endOffset === this.state.range.endContainer.childNodes.length){
-            this.state.range.setEndAfter(this.state.range.endContainer);
-        }
+        // if(this.state.range.startContainer != this.root && this.state.range.startOffset === 0){
+        //     this.state.range.setStartBefore(this.state.range.startContainer);
+        // }
+        // if(this.state.range.endContainer != this.root && this.state.range.endOffset === this.state.range.endContainer.childNodes.length){
+        //     this.state.range.setEndAfter(this.state.range.endContainer);
+        // }
         if(this.state.collapsed){
             this._restoreCollapsedRange();
         }
         if(this.state.t){
             this.state.t.remove();
             this.state.t = null;
+        }
+        if(prop === 'color'){
+            console.log('coloer')
+            let li;
+            if((li = this.isBelongTag('LI', common))){
+                this._replayStyle(li);
+            }
+            else {
+                if((li = this.isBelongTag('LI', this.state.range.startContainer))){
+                    this._replayStyle(li);
+                }
+                if((li = this.isBelongTag('LI', this.state.range.endContainer))){
+                    this._replayStyle(li);
+                }
+            }
         }
         return this.state.range;
     }
@@ -292,7 +308,7 @@ class EditorNodeTraveler{
             }
             range.setStartBefore(cur);
         }
-        if(start !== common && (end.hasChildNodes && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length)){
+        if(end !== common && (end.hasChildNodes && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length)){
             let cur = end;
             while(cur.parentNode !== this.root && cur.parentNode !== common){
                 let par = cur.parentNode;
@@ -553,29 +569,33 @@ class EditorNodeTraveler{
                 }
             }
         })();
-        let pre
-        // checkQuote = () =>{
-        //     let type = 'BLOCKQUOTE', stateName = 'quote';
-        //     state[stateName] = 2;
-        //     let stop = this.state.initRight ? this.state.bigRight.nextSibling : this.state.bigRight;
-        //     if(this.isBelongTag(type, common)){
-        //         state[stateName] = 2;
-        //         return;
-        //     }
-        //     if(state.unorder === 2 || state.order === 2){
-        //         state[stateName] = 0;
-        //         return;
-        //     }
-        //     if((pre = this.isBelongTag('PRE', common))){
-        //         state[stateName] = 1;
-        //         return;
-        //     }
-        //     let precount = 0;
-        //     let cur = this.state.initLeft;
-        //     while(cur !== stop){
-        //         if(['IMG', 'UL', 'OL',])
-        //     }
-        // }
+        (checkQuote = () =>{
+            let type = 'BLOCKQUOTE', stateName = 'quote';
+            if(this.isBelongTag(type, common)){
+                state[stateName] = 2;
+                return;
+            }
+            let a = this.isBelongTag('BLOCKQUOTE', start);
+            if(!a){
+                state[stateName] = 1;
+                return;
+            }
+            let b = this.isBelongTag('BLOCKQUOTE', end);
+            if(!b){
+                state[stateName] = 1;
+                return;
+            }
+            let stop = b.nextSibling;
+            let cur = a;
+            state[stateName] = 2;
+            while(cur && cur !== stop){
+                if(cur.nodeName !== 'BLOCKQUOTE'){
+                    state[stateName] = 1;
+                    return;
+                }
+                cur = cur.nextSibling;
+            }
+        })()
         this.updateStore({
             type: 'TOOLBARCHANGE',
             data: state
@@ -668,36 +688,35 @@ class EditorNodeTraveler{
         prev = cur.previousSibling,
         next = cur.nextSibling;
         if(['IMG', 'HR', 'BR', 'PRE'].indexOf(cur.nodeName) > -1) return this.goDownAndNextToModify(next, stop);
-        if(cur.nodeName != '#text' && cur.nodeName != 'SPAN'){
-            prop !== 'backgroundColor' && (cur.style[prop] = val);
+        if(cur.nodeName !== '#text' && cur.nodeName !== 'SPAN'){
+            prop === 'color' && cur.nodeName === 'LI' && (cur.style[prop] = val);
             this.goDownAndNextToModify(cur.firstChild, stop);
             this.goDownAndNextToModify(next, stop);
             return;
         }
         if(cur.nodeName == '#text'){
-
-            if(par.style[prop] == val){
-                if(prev && prev.nodeName == '#text'){
-                    prev.nodeValue += cur.nodeValue;
-                    cur.remove();
-                    cur = prev;
-                }
-                else{
-                    //keep there!
-                }
-            }
-            else if(prev && prev.nodeName == 'SPAN' && this.createSampleSpan(prop, val).isEqualNode(prev.cloneNode(false))){
-                prev.appendChild(cur);
-                prev.normalize();
-                cur.remove();
-                cur = prev;
-            }
-            else{
+            // if(par.style[prop] == val){
+            //     if(prev && prev.nodeName == '#text'){
+            //         prev.nodeValue += cur.nodeValue;
+            //         cur.remove();
+            //         cur = prev;
+            //     }
+            //     else{
+            //         //keep there!
+            //     }
+            // }
+            // else if(prev && prev.nodeName == 'SPAN' && this.createSampleSpan(prop, val).isEqualNode(prev.cloneNode(false))){
+            //     prev.appendChild(cur);
+            //     prev.normalize();
+            //     cur.remove();
+            //     cur = prev;
+            // }
+            // else{
                 let span = this.createSampleSpan(prop, val);
                 par.replaceChild(span, cur);
                 span.appendChild(cur);
                 cur = span;
-            }
+            // }
         }
         else if(cur.nodeName == 'SPAN'){
             let r0 = new Range();
@@ -736,10 +755,10 @@ class EditorNodeTraveler{
                 }
             }
         }
-        return this.goDownAndNextToModify(cur.nextSibling, stop);
+        cur && this.goDownAndNextToModify(cur.nextSibling, stop);
     }
     getNthChild(par, n){
-        if(n >= par.childNodes.length) return null;
+        if(n >= par.childNodes.length || n < 0) return null;
         let x = 0;
         let node = par.firstChild;
         while(x < n){
@@ -799,6 +818,7 @@ class EditorNodeTraveler{
             parNode = initRight.parentNode;
             r.setStartBefore(initRight);
         }
+        this.reassignRange(r);
         let div = parNode.cloneNode(false);
         div.appendChild(r.extractContents());
         this.goDownAndNextToModify(div.firstChild);
@@ -807,10 +827,10 @@ class EditorNodeTraveler{
         let ct = r1.extractContents();
         let end = ct.lastChild;
         end && r.insertNode(ct);
-        this.state.range.setEnd(r.endContainer, r.endOffset)
-        
-        if((initRight.children && !initRight.children.length || !initRight.children) && initRight.innerText == '') return initRight.remove();
-        initRight.normalize();
+        this.state.range.setEndAfter(end)
+        if(end.nextSibling && this.isSpanEmpty(end.nextSibling)){
+            end.nextSibling.remove();
+        }
     }
 
     _handleLeftBranch = () => {
@@ -836,6 +856,7 @@ class EditorNodeTraveler{
             parNode = initLeft.parentNode;
             r.setEndAfter(initLeft);
         }
+        this.reassignRange(r);
         let div = parNode.cloneNode(false);
         div.appendChild(r.extractContents());
         this.goDownAndNextToModify(div.firstChild);
@@ -843,10 +864,11 @@ class EditorNodeTraveler{
         r1.selectNodeContents(div);
         let ct = r1.extractContents();
         let start = ct.firstChild;
-        start && r.insertNode(ct)
-        this.state.range.setStart(r.startContainer, r.startOffset)
-        if((initLeft.children && !initLeft.children.length || !initLeft.children) && initLeft.innerText == '') return initLeft.remove();
-        initLeft.normalize();
+        start && r.insertNode(ct);
+        this.state.range.setStartBefore(start);
+        if(start.previousSibling && this.isSpanEmpty(start.previousSibling)){
+            start.previousSibling.remove();
+        }
     }
     _transfer = (extRange) =>{
         let {startContainer: start, endContainer: end, startOffset, endOffset} = this.state.range;
@@ -869,14 +891,12 @@ class EditorNodeTraveler{
         this.state.range.setEnd(end == div ? common : end, end == div ? extEndOff + endOffset : endOffset);
     }
     isBelongTag = (nodeName, node) =>{
-        if(!node) return false;
+        if(!node) throw new Error('invalid second arg');
         if(node.nodeName === nodeName) return node;
-        // console.log(1234, node);
         try{
             while(node !== this.root && node.nodeName !== nodeName){
             node = node.parentNode;
             if(!node) return false
-            // console.log(1234, node);
             } 
         }
         catch(e){
@@ -916,16 +936,22 @@ class EditorNodeTraveler{
         return node.childNodes.length === 1 && node.firstChild.nodeName === 'BR';
     }
     isBlockElem(node){
-        if(!node || ['UL', 'OL', 'P', 'BLOCKQUOTE', 'PRE', 'IMG'].indexOf(node.nodeName) > -1 || 
-        node.nodeName === 'SPAN' && node.lastChild && node.lastChild.nodeName === 'BR'){
+        if(!node || ['UL', 'OL', 'P', 'BLOCKQUOTE', 'PRE', 'IMG'].indexOf(node.nodeName) > -1){
             return node;
         };
         return false;
     }
-    handleUnacessedSpan(span){
-        if(span && span.nodeName === 'SPAN' && (!span.hasChildNodes() || span.childNodes.length === 1 && span.firstChild.nodeName === '#text' && span.nodeValue === '')){
+    handleUnacessedSpan(span, bool){
+        if(!span) return span;
+        if((span.nodeName === 'SPAN' || span.nodeName === 'P') && (!span.hasChildNodes() || span.childNodes.length === 1 && span.firstChild.nodeName === '#text' && span.nodeValue === '')){
             span.appendChild(document.createElement('br'));
+            return span;
         }
+        if(bool && span.nodeName === '#text' && span.nodeValue === ''){
+            span.remove()
+            return undefined;
+        }
+        return span;
     }
     unwrapBlockquote = (quote) =>{
         if(!quote.hasChildNodes() || this.hasOnlyOneBr(quote)){
@@ -959,7 +985,6 @@ class EditorNodeTraveler{
         let p1, p2, pre, block, block1, block2, epre;
         if((pre = this.isBelongTag('PRE', common) || this.isBelongTag('P', common))){
             list.push(pre);
-            list.push(pre);
             return {list};
         }
         else if((block = this.isBelongTag('BLOCKQUOTE', common))){
@@ -972,8 +997,9 @@ class EditorNodeTraveler{
                 block.appendChild(this.state.br2);
             }
         }
-        let b, c;
-        if(!block && ((block1 = this.isBelongTag('BLOCKQUOTE', start) && (b = !block1.hasChildNodes() || (c = this.hasOnlyOneBr(block1))))||(pre = (this.isBelongTag('PRE', start) || this.isBelongTag('P', start))))){
+        let b, c, d, e;
+        if(!block && (block1 = this.isBelongTag('BLOCKQUOTE', start) && (b = !block1.hasChildNodes() || (c = this.hasOnlyOneBr(block1))))||
+        (pre = (this.isBelongTag('PRE', start) || this.isBelongTag('P', start) || this.isBelongTag('SPAN', start)))){
             if(b || c){
                 let span = document.createElement('span');
                 b ? span.appendChild(document.createElement('br')): '';
@@ -981,24 +1007,32 @@ class EditorNodeTraveler{
                 pre = span;
                 block1 = null;
             }
-            console.log('pre', pre)
             start = pre;
         }
-        else{
-            let spanx
-            if((spanx = this.isBelongTag('SPAN', start))){
-                start = spanx;
-                console.log('span')
-            } 
-            else {
-                let r1 = range.cloneRange();
-                r1.collapse(true);
-                p1 = document.createTextNode('');
-                r1.insertNode(p1);
-                start = p1;
+        else if(start.nodeName === '#text'){start = start}
+        else {
+            let r1 = range.cloneRange();
+            r1.collapse(true);
+            p1 = document.createTextNode('');
+            r1.insertNode(p1);
+            start = p1;
+        }
+        if(!block && (block2 = this.isBelongTag('BLOCKQUOTE', end) && (d = !block2.hasChildNodes() || (e = this.hasOnlyOneBr(block2))))||
+        (epre = (this.isBelongTag('PRE', end) || this.isBelongTag('P', end) || this.isBelongTag('SPAN', end)))){
+            if(d || e){
+                let span = document.createElement('span');
+                d ? span.appendChild(document.createElement('br')): '';
+                block2.parentNode.replaceChild(p, block2);
+                epre = span;
+                block2 = null;
             }
-            if(epre = this.isBelongTag('SPAN', end)){}
-            else if(!(epre = this.isBelongTag('PRE', end) || this.isBelongTag('P', end))) {
+            end = epre;
+        }
+        else{
+            if(end.nodeName === '#text'){
+                end = end;
+            }
+            else{
                 if(!collapsed){
                     let r2 = range.cloneRange();
                     r2.collapse(false);
@@ -1008,14 +1042,12 @@ class EditorNodeTraveler{
                 }
                 else{
                     end = start;
-                }
+                } 
             }
         }
         if(!block){
-            if(epre){
-                end = epre;
-            }
             if(block1){
+                let li;
                 if((li = this.isBelongTag('LI', start))){
                     let r = new Range();
                     r.setStartBefore(li);
@@ -1027,12 +1059,13 @@ class EditorNodeTraveler{
                     this.unwrapBlockquote(node);
                     block1 = null;
                 }
-                else if(!this.isBlockElem(block1.firstChild)){
+                else if(!this.isBlockElem(block1.firstChild) && block1.firstChild.nodeName !== 'BR'){
                     this.state.br1 = document.createElement('br');
-                    block1.insertBefore(br, block1.firstChild);
+                    block1.insertBefore(this.state.br1, block1.firstChild);
                 }
             };
-            if((block2 = this.isBelongTag('BLOCKQUOTE', start))){
+            if(block2){
+                let li;
                 if((li = this.isBelongTag('LI', end))){
                     let r = new Range();
                     r.setStartBefore(block2);
@@ -1044,9 +1077,9 @@ class EditorNodeTraveler{
                     this.unwrapBlockquote(node);
                     block2 = null;
                 }
-                else if(!this.isBlockElem(block2.lastChild)){
+                else if(!this.isBlockElem(block2.lastChild) && block2.lastChild.nodeName !== 'BR'){
                     this.state.br2 = document.createElement('br');
-                    block2.appendChild(br);
+                    block2.appendChild(this.state.br2);
                 }
             };
         }
@@ -1083,7 +1116,6 @@ class EditorNodeTraveler{
         }
         let endChecked;
         let findRight = (cur, bool) =>{
-            console.log('cur', cur)
             if(completed) return list;
             if(cur === end) endChecked = true;
             if(cur.nodeName === 'BLOCKQUOTE'){
@@ -1100,7 +1132,6 @@ class EditorNodeTraveler{
                     list.push(cur);
                     if(endChecked || !endChecked && cur.hasChildNodes() && ((endx = this.isContain(cur, end) && (end = endx)))){
                         completed = true;
-                        console.log(endx)
                     }
                     if(!completed){
                         //continue
@@ -1191,7 +1222,7 @@ class EditorNodeTraveler{
             x.parentNode.insertBefore(br, x);
             list[list.length - 1] = br;
         }
-        console.log(list, start)
+        console.log(list, start, p1, p2)
         return {list, end, p1, p2}
     }
     _replayStyle(li){
@@ -1199,25 +1230,29 @@ class EditorNodeTraveler{
             return;
         }
         let color;
-        let childNodes = [...li.childNodes]
+        let childNodes = [...li.childNodes];
         for(let i = 0; i < childNodes.length; i++){
-            if(!childNodes[i].style || childNodes[i].style.color !== color){
+            if(!childNodes[i].style){
                 return;
             }
-            else if(color === undefined){
+            else if(color === undefined && childNodes[i].style.color){
                 color = childNodes[i].style.color;
+            }
+            else if(childNodes[i].style.color !== color){
+                return;
             }
         }
         li.style.color = color;
     }
     convertToList = (type, range) =>{
-        console.log('conv')
         let {startContainer, endContainer, startOffset, endOffset, collapsed} = range;
+
         let {list, end, p1, p2} = this.findBreak(range);
+        console.log(list)
         let start;
         let r = new Range();
         let newPar = document.createElement(type);
-        if(list.length === 2 && list.filter((cur) =>(!this.isBlockElem(cur) || cur.nodeName === 'LI')).length === 2){
+        if(list.length === 2 && list.filter((cur) =>(!this.isBlockElem(cur) && cur.nodeName !== 'LI' && cur.nodeName !== 'BR')).length === 2){
             r.setStartBefore(list[0]);
             r.setEndAfter(list[1]);
             let ct = r.extractContents();
@@ -1230,7 +1265,6 @@ class EditorNodeTraveler{
         }
         else {
             list.map((elem, idx) => {
-                console.log(elem)
                 if(idx === 0){
                     let par = elem.parentNode;
                     if(elem.nodeName == 'LI'){
@@ -1258,7 +1292,6 @@ class EditorNodeTraveler{
     
                     }
                     else if(elem.nodeName === 'BR'){
-                        console.log('br')
                         elem.parentNode.replaceChild(newPar, elem);
                     }
                     else{
@@ -1283,7 +1316,7 @@ class EditorNodeTraveler{
                 r.setStartAfter(start);
                 r.setEndBefore(elem);
                 let test1;
-                if(!r.collapsed || (test1 = (r.collapsed && elem.nodeName === 'BR'))){
+                if(!r.collapsed || (test1 = (r.collapsed && elem.nodeName === 'BR' && list[idx -1] && list[idx -1].nodeName === 'BR'))){
                     let ct = r.extractContents();
                     let li = document.createElement('li');
                     start.appendChild(li);
@@ -1291,8 +1324,15 @@ class EditorNodeTraveler{
                     this._replayStyle(li);
                 }
                 if(elem.nodeName === 'BR'){
-                    console.log('remove')
+                    if(this.isBlockElem(list[idx -1])){
+                        let li = document.createElement('li');
+                        start.appendChild(li);
+                    }
+                    elem.remove() 
                    elem.remove() 
+                    elem.remove() 
+                   elem.remove() 
+                    elem.remove() 
                 } 
                 else if(elem.nodeName === 'UL' || elem.nodeName === 'OL'){
                     if(idx === list.length - 1 && end !== elem.lastChild){
@@ -1323,13 +1363,13 @@ class EditorNodeTraveler{
                 }
     
             });
-            // let n1 = start.previousSibling, n2 = start.nextSibling;
-            // if(list[0].nodeName === 'BR' && n1.previousSibling){
-            //     n1.remove();
-            // }
-            // if(list[list.length -1].nodeName === 'BR' && n2.nextSibling){
-            //     n2.remove();
-            // }
+            let n1 = start.previousSibling, n2 = start.nextSibling;
+            if(list[0].nodeName === 'BR' && n1.previousSibling){
+                n1.remove();
+            }
+            if(list[list.length -1].nodeName === 'BR' && n2.nextSibling){
+                n2.remove();
+            }
         } 
         this.reunion(start, true);
         if(p1){
@@ -1342,8 +1382,14 @@ class EditorNodeTraveler{
             collapsed ? range.collapse(true) : '';
         }
         else{
-            range.setStart(startContainer, startOffset);
-            collapsed ? range.collapse(true) : '';
+            try{
+                range.setStart(startContainer, startOffset);
+                collapsed ? range.collapse(true) : '';                
+            }
+            catch(e){
+                console.log(e.message);
+                range.setStartBefore(start.firstChild);
+            }
         }
         if(p2){
             range.setEndBefore(p2);
@@ -1353,7 +1399,11 @@ class EditorNodeTraveler{
             }
         }
         else if(!collapsed){
-            range.setStart(endContainer, endOffset);
+            try{range.setEnd(endContainer, endOffset);}
+            catch(e){
+                console.log(e.message)
+                range.setEndAfter(start.lastChild);
+            }
         }
         if(this.state.br1){
             this.state.br1.remove();
@@ -1460,39 +1510,52 @@ class EditorNodeTraveler{
         }
         return r;
     }
-    unListOne(nodes, r0, grand){
+    unListOne(nodes, r, grand){
         if(!grand) grand = r.commonAncestorContainer;
         let len = nodes.length;
         let r1 = new Range();
+        let r0 = r.cloneRange();
         nodes.map((node, idx) =>{
             if(node.nodeName === 'UL' || node.nodeName === 'OL'){
                 r0.insertNode(node);
                 r0.setStartAfter(node);
-                idx !== len - 1 ? this.reunion(node) : this.reunion(node, true);
+
+                if(idx !== len - 1){
+                    this.reunion(node)
+                }
+                else{
+                    this.reunion(node, true);
+                    r.setStartAfter(node.lastChild);
+                    r.collapse(true);  
+                }
             }
             else{
-                let ct1, first, last;
+                let ct1;
                 if(node.firstChild && node.firstChild.nodeName === 'BR' || !node.hasChildNodes()){
                     ct1 = document.createElement('br');
+                    idx === len - 1 && (r.setStartBefore(ct1), r.collapse(true));
+
                 }
-                else if(this.isBlockElem(node.firstChild)){
+                else if(node.firstChild.nodeName === 'PRE'){
                     ct1 = node.firstChild;
                     if(!ct1.hasChildNodes()){
                         ct1.appendChild(document.createElement('br'));
                     }
+                    idx === len - 1 && (r.setStartBefore(ct1.firstChild), r.collapse(true));
                 }
-                else if(node.childNodes.length === 1 && node.firstChild.nodeName === 'SPAN'){
-                    ct1 = node.firstChild;
-                    ct1.appendChild(document.createElement('br'));
-                }
+                // else if(node.childNodes.length === 1 && node.firstChild.nodeName === 'SPAN'){
+                //     ct1 = node.firstChild;
+                //     ct1.appendChild(document.createElement('br'));
+                // }
                 else{
                     r1.selectNodeContents(node);
-                    let span = document.createElement('span');
-                    r0.insertNode(span);
-                    span.appendChild(r1.extractContents())
-                    span.appendChild(document.createElement('br'));
+                    let p = document.createElement('p');
+                    r0.insertNode(p);
+                    p.appendChild(r1.extractContents());
+                    this.handleUnacessedSpan(p.firstChild);
+                    idx === len - 1 && (r.setStartAfter(p.lastChild), r.collapse(true));
                 }
-                ct1 && r0.insertNode(r1.extractContents());
+                ct1 && r0.insertNode(ct1);
                 // if(first.previousSibling && ['IMG', 'BLOCKQUOTE', 'PRE', 'UL', 'OL', 'P'].indexOf(first.previousSibling.nodeName) === -1
                 // && ['IMG', 'BLOCKQUOTE', 'PRE', 'UL', 'OL', 'P'].indexOf(first.nodeName) === -1){
                 //     grand.insertBefore(br, first)
@@ -1508,7 +1571,7 @@ class EditorNodeTraveler{
             }
             r0.collapse(false);
         })
-        return r0;
+        return r;
     }
     unlistMany = (range) =>{
         let li1 = this.isBelongTag('LI', range.startContainer);
@@ -1524,6 +1587,70 @@ class EditorNodeTraveler{
         },[])
         r = this.unListOne(nodes, r); 
         return r;
+    }
+    findMostOuterOUL(li){
+        while(li.parentNode.nodeName === 'UL' || li.parentNode.nodeName === 'OL'){
+            li = li.parentNode;
+        }
+        return li;
+    }
+    splitNodeX = (node, range, bool) =>{
+        range = range.cloneRange();
+        !bool && (range = this.reassignRange(range));
+        let r1 = range.cloneRange();
+        r1.collapse(true);
+        r1.setStartBefore(node);
+        let ct1 = r1.extractContents()
+        let r2 = range.cloneRange();
+        r2.collapse(false)
+        r2.setEndAfter(node);
+        let ct2 = r2.extractContents()
+        if(!this.isSpanEmpty(ct1.firstChild)){
+            console.log('ct1', ct1.firstChild)
+            r1.insertNode(ct1);
+        };
+        if(!this.isSpanEmpty(ct2.firstChild)){
+            console.log('ct2', ct2.firstChild)
+            r2.insertNode(ct2);
+        }
+        return node;
+    }
+    createBlq(){
+        let blq = document.createElement('BLOCKQUOTE');
+        blq.style.fn = '16px';
+        return blq;
+    }
+    convertToBLockquote(range){
+        // range = range.cloneRange();
+        let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
+        let xnode;
+        let blq = this.createBlq();
+        if((xnode = this.isBelongTag('UL', common) || this.isBelongTag('OL', common) || this.isBelongTag('PRE', common))){
+            console.log(xnode, 0)
+            if(xnode.nodeName !== 'PRE'){
+                xnode = this.findMostOuterOUL(xnode);
+                console.log(xnode, 1)
+                this.reassignRange(range);
+            }
+            xnode = this.splitNodeX(xnode, range);
+            xnode.parentNode.replaceChild(blq, xnode);
+        }
+        else{
+            let px;
+            if((end !== this.root && end.hasChildNodes() && endOffset === end.childNodes.length - 1) && end.lastChild.nodeName === 'BR' || (px = this.isBelongTag('P', end))){
+                px && (end = px);
+                range.setEndAfter(end);
+            }
+            if((px = this.isBelongTag('P', start))){
+                range.setStartBefore(px);
+            }
+            this.reassignRange(range);
+            xnode = range.extractContents();
+            range.insertNode(blq);
+        }
+        blq.appendChild(xnode);
+        range.selectNodeContents(blq);
+        return range;
     }
 }
 export default EditorNodeTraveler;

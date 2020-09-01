@@ -100,5 +100,5 @@
     flex-wrap: wrap;
 }
 #editor_area p{
-    display: inline;
+    margin: 0px 0px;
 }
