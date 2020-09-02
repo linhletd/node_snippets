@@ -155,23 +155,21 @@ class EditorApp extends React.Component{
         }
         else if(e.keyCode === 13 && (li = this.traveler.isBelongTag('LI', common))){
             par = li.parentNode;
-            r.extractContents();
+            let grand = par.parentNode;
+            !r.collapsed && r.extractContents();
             if(this.traveler.hasRealText(li)){
                 if(off === 0 && this.isFirst(li, start) && li === par.firstChild){
                     e.preventDefault();
-                    span = li.firstChild && li.firstChild.nodeName === 'SPAN' ? li.firstChild.cloneNode(false) : document.createElement('span');
-                    let br = document.createElement('br');
                     r.setStartBefore(par);
                     r.collapse(true);
                     if(['UL', 'OL'].indexOf(par.parentNode.nodeName) === -1){
-                        r.insertNode(span);
+                        let br = document.createElement('br');
+                        r.insertNode(br);
                     }
                     else{
-                        let li1 = li.cloneNode(false);
+                        let li1 = document.createElement('li');
                         r.insertNode(li1);
-                        li1.appendChild(span);
                     }
-                    span.appendChild(br);
                     r.setStart(li, 0);
                     r.collapse(true);
                 }
@@ -180,18 +178,18 @@ class EditorApp extends React.Component{
             else if(li === par.firstChild || li === par.lastChild){
                 e.preventDefault();
                 if(!(this.isBelongTag('UL', par) && this.isBelongTag('OL', par))){
-                    let  br = document.createElement('br');
-                    if(li.hasChildNodes() && li.firstChild.nodeName === 'SPAN'){
-                        span = li.firstChild.cloneNode(false);
-                    }
-                    else{
-                        span = document.createElement('span');
-                    }
-                    span.appendChild(br);
+                    let p = document.createElement('p');
                     li === par.firstChild ? r.setStartBefore(par) : r.setStartAfter(par);
                     r.collapse(true);
-                    r.insertNode(span);
-                    r.setStart(span, 0);
+                    r.insertNode(p);
+                    if(li.hasChildNodes()){
+                        r.selectNodeContents(li)
+                        p.appendChild(r.extractContents())
+                    }
+                    else {
+                        p.appendChild(document.createElement('br'))
+                    }
+                    r.setStart(p, 0);
                     r.collapse(true);
                     li.remove();
                 }
@@ -204,6 +202,32 @@ class EditorApp extends React.Component{
                     r.collapse(true);
                 }
                 if(!this.traveler.isRemainLi(par)) par.remove();
+            }
+            else{
+                e.preventDefault();
+                r.selectNode(li);
+                r.selectNode(this.traveler.splitNodeX(par, r));
+                r.deleteContents();
+                if(grand.nodeName === 'UL' || grand.nodeName === 'OL'){
+                    r.appendChild(li);
+                    r.setStart(li, 0);
+                    r.collapse(true);
+                }
+                else{
+                    let p = document.createElement('p');
+                    r.insertNode(p);
+                    if(li.hasChildNodes()){
+                        console.log('child', li.firstChild)
+                        r.selectNodeContents(li)
+                        p.appendChild(r.extractContents())
+                    }
+                    else {
+                        // p.appendChild(document.createElement('br'))
+                    }
+                    r.setStart(p, 0);
+                    r.collapse(true);
+                }
+                this.traveler.unListOne([li], r);
             }
 
         }
@@ -305,7 +329,7 @@ class EditorApp extends React.Component{
             r.setStart(p,0);
             r.collapse(true)
         }
-        if(waitElem && waitElem.parentNode && e.keyCode !== 13 && !this.traveler.isBelongTag('LI', this.currentRange.startContainer)){
+        if(waitElem && waitElem.parentNode && e.keyCode !== 13){
             e.preventDefault();
             let text = document.createTextNode(e.key);
             waitElem.appendChild(text);

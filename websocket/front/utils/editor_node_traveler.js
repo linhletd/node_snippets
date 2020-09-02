@@ -26,11 +26,13 @@ class EditorNodeTraveler{
         return span;
     }
     isSpanEmpty = (span) =>{
+        console.log(span)
+        if(span.firstChild) console.log(this.isSpanEmpty(span.firstChild))
         if(span.nodeName === '#text'){
             if(span.nodeValue === '') return true;
             return false;
         }
-        return !span.hasChildNodes() || span.childNodes.length === 1 && span.firstChild.nodeName === span.nodeName && this.isSpanEmpty(span.firstChild);
+        return !span.hasChildNodes() || span.childNodes.length === 1 && (span.firstChild.nodeName === span.nodeName || this.isSpanEmpty(span.firstChild));
     }
     splitNode = (range) =>{
         let common = range.commonAncestorContainer;
@@ -169,22 +171,6 @@ class EditorNodeTraveler{
             return {node, off: true}
         }
     }).bind(this)
-    _restoreCollapsedRange = () =>{
-        let count = 0;
-        let {commonAncestorContainer, startOffset} = this.state.range;
-        let node = this.getNthChild(commonAncestorContainer, startOffset).firstChild;
-        let _restore = (node) =>{
-            if(node.nodeValue && count + node.nodeValue.length >= this.state.posL){
-                this.state.range.setStart(node, this.state.posL - count);
-                this.state.range.collapse(true);
-            }
-            else{
-                count += node.nodeValue.length;
-                _restore(this.findNext(node));
-            }
-        };
-        _restore(node)
-    }
     modify = (range, {prop, val}) => {
         this.state.range = range.cloneRange();
         // this.state.range = this.reassignRange(range.cloneRange());
@@ -222,35 +208,28 @@ class EditorNodeTraveler{
                 }
                 let {node: n1, off: o1} = x1.value,
                     {node: n2, off: o2} = x2.value;
-                    // console.log(n1, o1, n2, o2)
+                    console.log(n1, o1, n2, o2)
                 o1 === true ? this.state.range.setStartBefore(n1): this.state.range.setStart(n1, o1);
                 o2 === true ? this.state.range.setEndAfter(n2): this.state.range.setEnd(n2, o2);
+                console.log(this.state.range);
                 //continue...
             }
             else{
-                // let r = new Range();
-                // start.parentNode.nodeName === 'SPAN' ? r.selectNode(start.parentNode) : r.selectNode(start);
-                // this.state.range = range;
-                // let div = this._transfer(r);
-                // let common = 
                 let span = this.splitNode(range);
                 span.style[prop] = val;
-                // let br = document.createElement('br');
-                // let text = document.createTextNode('');
                 range.selectNodeContents(span);
                 range.deleteContents();
-                // this._reverse(r, div);
-                // console.log(1, range)
                 return range
             }
-            // } 
         }
         else{this.state.collapsed = false}
         let {commonAncestorContainer: common} = this.state.range;
         let x;
-        if(common.nodeName == 'SPAN' || (x = common.nodeName === '#text')){
+        if(common.nodeName === 'SPAN' || (x = common.nodeName === '#text')){
+            console.log('split', x, common)
             x && (x = this.isBelongTag('SPAN', common)) && (common = x)
             common = this.splitNodeX(common, this.state.range, true);
+            console.log(common)
             if(common.nodeName === '#text'){
                 let span = document.createElement('span');
                 common.parentNode.replaceChild(span, common);
@@ -261,6 +240,7 @@ class EditorNodeTraveler{
             this.state.range.selectNodeContents(common);
         }
         else {
+            this.state.common = common;
             this.handleGeneralCase();
         }
         // if(this.state.range.startContainer != this.root && this.state.range.startOffset === 0){
@@ -270,7 +250,24 @@ class EditorNodeTraveler{
         //     this.state.range.setEndAfter(this.state.range.endContainer);
         // }
         if(this.state.collapsed){
-            this._restoreCollapsedRange();
+            let _restoreCollapsedRange;
+            (_restoreCollapsedRange = () =>{
+                let count = 0;
+                let {commonAncestorContainer, startOffset} = this.state.range;
+                console.log(this.state.range)
+                let node = this.getNthChild(commonAncestorContainer, startOffset).firstChild;
+                let _restore = (node) =>{
+                    if(node.nodeValue && count + node.nodeValue.length >= this.state.posL){
+                        this.state.range.setStart(node, this.state.posL - count);
+                        this.state.range.collapse(true);
+                    }
+                    else{
+                        count += node.nodeValue.length;
+                        _restore(this.findNext(node));
+                    }
+                };
+                _restore(node)
+            })()
         }
         if(this.state.t){
             this.state.t.remove();
@@ -622,6 +619,7 @@ class EditorNodeTraveler{
         // let {startContainer: start, endContainer: end, startOffset, endOffset, commonAncestorContainer: common} = this.state.range;
         this._getInitialLeftNode();
         this._getInitialRightNode();
+        console.log(this.state)
         // let {bigLeft, bigRight} =  this.state;
         // let r = new Range();
         // r.setStartBefore(bigLeft);
@@ -771,6 +769,7 @@ class EditorNodeTraveler{
         let {startContainer: start, commonAncestorContainer: common, startOffset} = range || this.state.range;
         if(start == common){
             this.state.bigLeft = this.getNthChild(common, startOffset);
+            this.state.initLeft = null;
             return;
         }
         let initLeft = start.parentNode.nodeName == 'SPAN'? start.parentNode : start;
@@ -786,7 +785,9 @@ class EditorNodeTraveler{
     _getInitialRightNode = (range) =>{
         let {endContainer: end, commonAncestorContainer: common, endOffset} = range || this.state.range;
         if(end == common){
-            return this.state.bigRight = this.getNthChild(common, endOffset);
+            this.state.bigRight = this.getNthChild(common, endOffset);
+            this.state.initRight = null;
+            return;
         }
         let initRight = end.parentNode.nodeName == 'SPAN'? end.parentNode : end;
         let bigRight = initRight;
@@ -800,8 +801,10 @@ class EditorNodeTraveler{
     }
     _handleRightBranch = ()=>{
         let {bigRight, initRight} = this.state;
-        if(!bigRight || !initRight){
-            return this.state.range;
+        if(!initRight){
+            bigRight ? this.state.range.setEndBefore(bigRight) : this.state.range.setEndAfter(this.state.common.lastChild);
+            this.state.common = null;
+            return;
         }
         let par = initRight;
         while(par != bigRight){
@@ -827,7 +830,7 @@ class EditorNodeTraveler{
         let ct = r1.extractContents();
         let end = ct.lastChild;
         end && r.insertNode(ct);
-        this.state.range.setEndAfter(end)
+        this.state.range.setEndAfter(end);
         if(end.nextSibling && this.isSpanEmpty(end.nextSibling)){
             end.nextSibling.remove();
         }
@@ -1329,10 +1332,6 @@ class EditorNodeTraveler{
                         start.appendChild(li);
                     }
                     elem.remove() 
-                   elem.remove() 
-                    elem.remove() 
-                   elem.remove() 
-                    elem.remove() 
                 } 
                 else if(elem.nodeName === 'UL' || elem.nodeName === 'OL'){
                     if(idx === list.length - 1 && end !== elem.lastChild){
@@ -1364,10 +1363,10 @@ class EditorNodeTraveler{
     
             });
             let n1 = start.previousSibling, n2 = start.nextSibling;
-            if(list[0].nodeName === 'BR' && n1.previousSibling){
+            if(n1 && list[0].nodeName === 'BR' && n1 && previousSibling){
                 n1.remove();
             }
-            if(list[list.length -1].nodeName === 'BR' && n2.nextSibling){
+            if(n2 && list[list.length -1].nodeName === 'BR' && n2.nextSibling){
                 n2.remove();
             }
         } 
@@ -1511,6 +1510,7 @@ class EditorNodeTraveler{
         return r;
     }
     unListOne(nodes, r, grand){
+        !r.collapsed && r.deleteContents();
         if(!grand) grand = r.commonAncestorContainer;
         let len = nodes.length;
         let r1 = new Range();
@@ -1533,14 +1533,15 @@ class EditorNodeTraveler{
                 let ct1;
                 if(node.firstChild && node.firstChild.nodeName === 'BR' || !node.hasChildNodes()){
                     ct1 = document.createElement('br');
+                    r0.insertNode(ct1);
                     idx === len - 1 && (r.setStartBefore(ct1), r.collapse(true));
-
                 }
                 else if(node.firstChild.nodeName === 'PRE'){
                     ct1 = node.firstChild;
                     if(!ct1.hasChildNodes()){
                         ct1.appendChild(document.createElement('br'));
                     }
+                    r0.insertNode(ct1);
                     idx === len - 1 && (r.setStartBefore(ct1.firstChild), r.collapse(true));
                 }
                 // else if(node.childNodes.length === 1 && node.firstChild.nodeName === 'SPAN'){
@@ -1555,7 +1556,6 @@ class EditorNodeTraveler{
                     this.handleUnacessedSpan(p.firstChild);
                     idx === len - 1 && (r.setStartAfter(p.lastChild), r.collapse(true));
                 }
-                ct1 && r0.insertNode(ct1);
                 // if(first.previousSibling && ['IMG', 'BLOCKQUOTE', 'PRE', 'UL', 'OL', 'P'].indexOf(first.previousSibling.nodeName) === -1
                 // && ['IMG', 'BLOCKQUOTE', 'PRE', 'UL', 'OL', 'P'].indexOf(first.nodeName) === -1){
                 //     grand.insertBefore(br, first)
