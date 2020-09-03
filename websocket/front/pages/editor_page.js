@@ -94,9 +94,30 @@ class EditorApp extends React.Component{
                 },0)
             }
         let {startContainer: start, startOffset: off, endOffset: endOff, endContainer: end, collapsed, commonAncestorContainer: common} = r;
-        let li, par, span;
+        let li, par;
         li = this.traveler.isBelongTag('LI', start);
         if(e.keyCode === 8){
+            let span = this.traveler.isBelongTag('SPAN', common);
+            if(span && span === span.parentNode.firstChild){
+                if(this.traveler.hasRealText(span)){
+                    if(collapsed && off === 1 && start.nodeValue.length === 1 || 
+                        !collapsed && off === 0 && start === span.firstChild && endOff === end.nodeValue.length && end === span.lastChild){
+                        e.preventDefault();
+                        r.selectNodeContents(span);
+                        r.deleteContents();
+                        if(!span.hasChildNodes()){
+                            let br = document.createElement('br');
+                            span.appendChild(br);
+                        }
+                        this.currentRange.setStart(span, 0);
+                        this.currentRange.collapse(true);
+                    }
+                }
+                else if(span === span.parentNode.firstChild && span.parentNode.parentNode === this.props.editorNode.firstChild){
+                    e.preventDefault();
+                }
+
+            }
             if(r.collapsed && off === 0 && li &&
             this.isFirst(li, start) && li === li.parentNode.firstChild){
                 e.preventDefault();
@@ -122,36 +143,40 @@ class EditorApp extends React.Component{
                 if(!par.hasChildNodes()){
                     par.remove();
                 }
-                sel.removeAllRanges();
-                sel.addRange(r);
             }
-            else if(li){
-                if(li.firstChild && li.firstChild.nodeName !== 'SPAN'){
-                    //do nothing;
-                }
-                else{
-                    if(collapsed && off === 1 && this.traveler.hasRealText(li)){
-                        console.log('hahah')
-                        e.preventDefault();
-                        start.remove();
-                        let br = document.createElement('br');
-                        li.firstChild.appendChild(br);
-                        this.currentRange.setStartBefore(br);
-                        this.currentRange.collapse(true);
-                    }
-                    else if(!collapsed && off === 0 && (start !== end || endOff === start.length)){
-                        e.preventDefault();
-                        let span = li.firstChild;
-                        let br = document.createElement('br');
-                        span.insertBefore(br, span.firstChild);
-                        r.setStartAfter(br);
-                        this.traveler.reassignRange(r)
-                        r.deleteContents();
-                        this.currentRange.setStartBefore(br);
-                        this.currentRange.collapse(true);
-                    }
-                }
-            }
+            // else if(li){
+            //     if(li.firstChild && li.firstChild.nodeName !== 'SPAN'){
+            //         //do nothing;
+            //     }
+            //     else{
+            //         if(collapsed && off === 1 && this.traveler.hasRealText(li)){
+            //             console.log('hahah')
+            //             e.preventDefault();
+            //             start.remove();
+            //             let span = li.firstChild;
+            //             r.selectNodeContents(li);
+            //             r.deleteContents();
+            //             if(!span.hasChildNodes()){
+            //                 let br = document.createElement('br');
+            //                 span.appendChild(br);
+            //             }
+            //             li.appendChild(span)
+            //             this.currentRange.setStart(li.firstChild, 0);
+            //             this.currentRange.collapse(true);
+            //         }
+            //         else if(!collapsed && off === 0 && endOff === start.length){
+            //             e.preventDefault();
+            //             let span = li.firstChild;
+            //             let br = document.createElement('br');
+            //             span.insertBefore(br, span.firstChild);
+            //             r.setStartAfter(br);
+            //             this.traveler.reassignRange(r)
+            //             r.deleteContents();
+            //             this.currentRange.setStartBefore(br);
+            //             this.currentRange.collapse(true);
+            //         }
+            //     }
+            // }
         }
         else if(e.keyCode === 13 && (li = this.traveler.isBelongTag('LI', common))){
             par = li.parentNode;
@@ -211,26 +236,26 @@ class EditorApp extends React.Component{
                 if(grand.nodeName === 'UL' || grand.nodeName === 'OL'){
                     r.appendChild(li);
                     r.setStart(li, 0);
-                    r.collapse(true);
                 }
                 else{
                     let p = document.createElement('p');
                     r.insertNode(p);
-                    if(li.hasChildNodes()){
-                        console.log('child', li.firstChild)
-                        r.selectNodeContents(li)
-                        p.appendChild(r.extractContents())
+                    let span;
+                    if(li.hasChildNodes() && (span = li.firstChild) && span.nodeName === 'SPAN'){
+                        p.appendChild(span);
+                        r.setStart(span, 0);
                     }
-                    else {
-                        // p.appendChild(document.createElement('br'))
+                    else{
+                        p.appendChild(document.createElement('br'));
+                        r.setStart(p, 0);
                     }
-                    r.setStart(p, 0);
-                    r.collapse(true);
                 }
-                this.traveler.unListOne([li], r);
+                r.collapse(true);
             }
 
         }
+        sel.removeAllRanges();
+        sel.addRange(r);
         this.rememberRange();
         // setTimeout(this.rememberRange,0)
     }
@@ -333,6 +358,15 @@ class EditorApp extends React.Component{
             e.preventDefault();
             let text = document.createTextNode(e.key);
             waitElem.appendChild(text);
+            let par = waitElem.parentNode;
+            if(par.childNodes.length === 2 && par.lastChild.nodeName === 'BR'){
+                par.lastChild.remove();
+            }
+            if(par === this.props.editorNode || par.nodeName === 'BLOCKQUOTE'){
+                let p = document.createElement('p');
+                par.replaceChild(p, waitElem);
+                p.appendChild(waitElem)
+            }
             this.currentRange.setStart(text, 1);
             this.currentRange.collapse(true);
             this.repopulateSelection();
@@ -574,12 +608,12 @@ class EditorApp extends React.Component{
     }
     handleBlockquote = () =>{
         if(this.props.toolbarState.quote === 2){
-
+            this.currentRange = this.traveler.unQuote(this.currentRange);
         }
         else{
             this.currentRange = this.traveler.convertToBLockquote(this.currentRange);
-            this.repopulateSelection()
         }
+        this.repopulateSelection()
     }
     shouldComponentUpdate(){
         return false;

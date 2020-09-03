@@ -26,8 +26,7 @@ class EditorNodeTraveler{
         return span;
     }
     isSpanEmpty = (span) =>{
-        console.log(span)
-        if(span.firstChild) console.log(this.isSpanEmpty(span.firstChild))
+        if(!span) return true;
         if(span.nodeName === '#text'){
             if(span.nodeValue === '') return true;
             return false;
@@ -257,6 +256,7 @@ class EditorNodeTraveler{
                 console.log(this.state.range)
                 let node = this.getNthChild(commonAncestorContainer, startOffset).firstChild;
                 let _restore = (node) =>{
+                    if(!node) return;
                     if(node.nodeValue && count + node.nodeValue.length >= this.state.posL){
                         this.state.range.setStart(node, this.state.posL - count);
                         this.state.range.collapse(true);
@@ -290,11 +290,12 @@ class EditorNodeTraveler{
         }
         return this.state.range;
     }
-    reassignRange(range){
+    reassignRange(range, constraint){
+        if(constraint === true) constraint = this.root;
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
-        if(startOffset === 0 && start !== common){
+        if(startOffset === 0 && (start !== common || constraint && start !== constraint)){
             let cur = start;
-            while(cur.parentNode !== this.root && cur.parentNode !== common){
+            while(cur.parentNode !== this.root && (cur.parentNode !== common || cur.parentNode !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.firstChild){
                     cur = par;
@@ -305,9 +306,10 @@ class EditorNodeTraveler{
             }
             range.setStartBefore(cur);
         }
-        if(end !== common && (end.hasChildNodes && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length)){
+        let br;
+        if((end !== common || constraint && end !== constraint) && (end.hasChildNodes && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset) && br.nodeName === 'BR' && br === end.lastChild))){
             let cur = end;
-            while(cur.parentNode !== this.root && cur.parentNode !== common){
+            while(cur.parentNode !== this.root && (cur.parentNode !== common || cur.parentNode !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.lastChild){
                     cur = par;
@@ -566,33 +568,38 @@ class EditorNodeTraveler{
                 }
             }
         })();
-        (checkQuote = () =>{
-            let type = 'BLOCKQUOTE', stateName = 'quote';
-            if(this.isBelongTag(type, common)){
+        (checkCode = checkQuote = (type, stateName) =>{
+            let a;
+            this.state[stateName] = [];
+            if((a = this.isBelongTag(type, common))){
                 state[stateName] = 2;
+                this.state[stateName].push(a)
                 return;
             }
-            let a = this.isBelongTag('BLOCKQUOTE', start);
+            a = this.isBelongTag(type, start);
             if(!a){
                 state[stateName] = 1;
                 return;
             }
-            let b = this.isBelongTag('BLOCKQUOTE', end);
+            let b = this.isBelongTag(type, end);
             if(!b){
                 state[stateName] = 1;
                 return;
             }
             let stop = b.nextSibling;
             let cur = a;
+
             state[stateName] = 2;
             while(cur && cur !== stop){
-                if(cur.nodeName !== 'BLOCKQUOTE'){
+                if(cur.nodeName !== type){
                     state[stateName] = 1;
                     return;
                 }
+                else{this.state[stateName].push(cur)}
                 cur = cur.nextSibling;
             }
-        })()
+        })('BLOCKQUOTE', 'quote');
+        checkCode('PRE', 'code');
         this.updateStore({
             type: 'TOOLBARCHANGE',
             data: state
@@ -1265,6 +1272,7 @@ class EditorNodeTraveler{
             li.appendChild(ct);
             this.handleUnacessedSpan(li.firstChild)
             this._replayStyle(li);
+            start = newPar;
         }
         else {
             list.map((elem, idx) => {
@@ -1369,8 +1377,10 @@ class EditorNodeTraveler{
             if(n2 && list[list.length -1].nodeName === 'BR' && n2.nextSibling){
                 n2.remove();
             }
-        } 
+        }
+        let fst = start.firstChild, lst = start.lastChild;
         this.reunion(start, true);
+        console.log(startContainer, startOffset, endContainer, endOffset)
         if(p1){
             range.setStartBefore(p1);
             let li = this.isBelongTag('LI', p1);
@@ -1381,13 +1391,12 @@ class EditorNodeTraveler{
             collapsed ? range.collapse(true) : '';
         }
         else{
-            try{
+            if(startContainer.nodeName === 'SPAN' || startContainer.nodeName === '#text'){
                 range.setStart(startContainer, startOffset);
                 collapsed ? range.collapse(true) : '';                
             }
-            catch(e){
-                console.log(e.message);
-                range.setStartBefore(start.firstChild);
+            else{
+                range.setStartBefore(fst);
             }
         }
         if(p2){
@@ -1398,10 +1407,11 @@ class EditorNodeTraveler{
             }
         }
         else if(!collapsed){
-            try{range.setEnd(endContainer, endOffset);}
-            catch(e){
-                console.log(e.message)
-                range.setEndAfter(start.lastChild);
+            if(endContainer.nodeName === 'SPAN' || endContainer.nodeName === '#text'){
+                range.setEnd(endContainer, endOffset);
+            }
+            else{
+                lst === fst ? (range.setEndAfter(lst), range.collapse(false)) : range.setEndAfter(lst);
             }
         }
         if(this.state.br1){
@@ -1613,6 +1623,7 @@ class EditorNodeTraveler{
             console.log('ct2', ct2.firstChild)
             r2.insertNode(ct2);
         }
+        if(!node.hasChildNodes()) node.appendChild(document.createElement('br'));
         return node;
     }
     createBlq(){
@@ -1622,7 +1633,13 @@ class EditorNodeTraveler{
     }
     convertToBLockquote(range){
         // range = range.cloneRange();
-        let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
+        let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range, x;
+        if((x = this.isBelongTag('P', start) || this.isBelongTag('LI', start) || this.isBelongTag('PRE', start))){
+            range.setStartBefore(start);
+        }
+        if((x = this.isBelongTag('P', end) || this.isBelongTag('LI', end) || this.isBelongTag('PRE', end))){
+            range.setEndAfter(end);
+        }
         let xnode;
         let blq = this.createBlq();
         if((xnode = this.isBelongTag('UL', common) || this.isBelongTag('OL', common) || this.isBelongTag('PRE', common))){
@@ -1630,7 +1647,7 @@ class EditorNodeTraveler{
             if(xnode.nodeName !== 'PRE'){
                 xnode = this.findMostOuterOUL(xnode);
                 console.log(xnode, 1)
-                this.reassignRange(range);
+                this.reassignRange(range, xnode);
             }
             xnode = this.splitNodeX(xnode, range);
             xnode.parentNode.replaceChild(blq, xnode);
@@ -1641,9 +1658,6 @@ class EditorNodeTraveler{
                 px && (end = px);
                 range.setEndAfter(end);
             }
-            if((px = this.isBelongTag('P', start))){
-                range.setStartBefore(px);
-            }
             this.reassignRange(range);
             xnode = range.extractContents();
             range.insertNode(blq);
@@ -1651,6 +1665,69 @@ class EditorNodeTraveler{
         blq.appendChild(xnode);
         range.selectNodeContents(blq);
         return range;
+    }
+    unQuoteOne =  (quote, r)=>{
+        if(!r) r = new Range();
+        if(!quote.hasChildNodes() || this.hasOnlyOneBr(quote)){
+            r.selectNode(quote);
+            quote.parentNode.replaceChild(document.createElement('br'), quote);
+            r.collapse(false);
+            return r;
+        }
+        else{
+            if(quote.lastChild.nodeName === 'BR'){
+                quote.lastChild.remove();
+            }
+            r.selectNodeContents(quote);
+            let ct = r.extractContents();
+            r.selectNode(quote);
+            quote.remove();
+            r.insertNode(ct);
+            r.collapse(false);
+            return r;
+        }
+    }
+    unQuote = (r) =>{
+        let {startContainer: start, endContainer: end} = r, nodes = this.state.quote;
+        let x;
+        if((x = this.isBelongTag('P', start) || this.isBelongTag('LI', start) || this.isBelongTag('PRE', start))){
+            r.setStartBefore(start);
+        }
+        if((x = this.isBelongTag('P', end) || this.isBelongTag('LI', end) || this.isBelongTag('PRE', end))){
+            r.setEndAfter(end);
+        }
+        if(nodes.length === 1){
+            let node;
+            console.log('mot')
+            if(nodes[0].hasChildNodes() && !this.hasOnlyOneBr(nodes[0])){
+                let r1 = r.cloneRange();
+                r1.setEndAfter(nodes[0].lastChild);
+                this.reassignRange(r1);
+                console.log(r1)
+                r.setStart(r1.startContainer, r1.startOffset);
+                r1 = r.cloneRange();
+                console.log(r)
+                r1.setStartBefore(nodes[0].firstChild);
+                this.reassignRange(r1);
+                r.setEnd(r1.endContainer, r1.endOffset);
+                console.log('ro', r)
+                node = this.splitNodeX(nodes[0], r);
+            }
+            else{
+                node = nodes[0];
+            }
+            return this.unQuoteOne(node, r);
+        }
+        this.reassignRange(r);
+        let r1 = r.cloneRange();
+        r1.setEndAfter(nodes[0]);
+        nodes[0] = this.splitNodeX(nodes[0], r1);
+        r.setStartBefore(nodes[nodes.length - 1]);
+        nodes[nodes.length - 1] = this.splitNodeX(nodes[nodes.length - 1], r);
+        nodes.map(quote =>{
+            this.unQuoteOne(quote, r)
+        });
+        return r;
     }
 }
 export default EditorNodeTraveler;
