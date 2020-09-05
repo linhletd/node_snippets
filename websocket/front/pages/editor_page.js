@@ -405,8 +405,8 @@ class EditorApp extends React.Component{
                     let af = this.traveler.getNthChild(cm, off);
                     bef = this.traveler.handleUnacessedSpan(bef, true);
                     af = this.traveler.handleUnacessedSpan(af, true);
-                    let pr,nx,x,y;
-                    if(!this.traveler.isBelongTag('PRE', cm)){
+                    let pr,nx,x,y, pre;
+                    if(!(pre = this.traveler.isBelongTag('PRE', cm))){
                         if((x = bef && bef.nodeName !== 'BR' && !this.traveler.isBlockElem(bef) && (!(pr = bef.previousSibling) || (pr.nodeName !== '#text' && pr.nodeName !== 'SPAN')))){
                             let p = document.createElement('p');
                             cm.replaceChild(p, bef);
@@ -424,7 +424,16 @@ class EditorApp extends React.Component{
                             range.collapse(true);
                         }
                     }
-                    if(!y){
+                    if(pre){
+                        let br = document.createElement('br');
+                        range.insertNode(br);
+                        range.collapse(false);
+                        if(!br.nextSibling){
+                            pre.appendChild(document.createElement('br'));
+                        }
+                    }
+                    else if(!y){
+                        console.log('af', af)
                         if(!x){
                             let br = document.createElement('br');
                             range.insertNode(br);
@@ -554,7 +563,7 @@ class EditorApp extends React.Component{
         if(this.data.waitElem){
             this.data.waitElem = null;
         }
-        this.currentRange = this.traveler.convertToList('UL', this.currentRange).cloneRange();
+        this.currentRange = this.traveler.convertToListX('UL', this.currentRange).cloneRange();
         // let wt = this.data.waitElem, li;
         // if(wt && (li = wt.parentNode).nodeName === 'LI' && li.childNodes.length === 1){
         //     this.data.waitElem = null;
@@ -615,6 +624,15 @@ class EditorApp extends React.Component{
         }
         this.repopulateSelection()
     }
+    handleBlockCode = () =>{
+        if(this.props.toolbarState.code === 2){
+            this.currentRange = this.traveler.unCode(this.currentRange);
+        }
+        else{
+            this.currentRange = this.traveler.convertToBlockCode(this.currentRange);
+        }
+        this.repopulateSelection()
+    }
     shouldComponentUpdate(){
         return false;
     }
@@ -662,6 +680,7 @@ class EditorApp extends React.Component{
             handleIncreaseListLevel: this.handleIncreaseListLevel,
             handleDecreaseListLevel: this.handleDecreaseListLevel,
             handleBlockquote: this.handleBlockquote,
+            handleBlockCode: this.handleBlockCode,
         }
         return (
             <div id = 'editor_app'>

@@ -104,5 +104,7 @@
 }
 #editor_area *{
     font-size: 16px;
+}
+#editor_area *:not(pre){
     font-family: Arial, Helvetica, sans-serif;
 }

@@ -225,6 +225,9 @@ class EditorNodeTraveler{
         let {commonAncestorContainer: common} = this.state.range;
         let x;
         if(common.nodeName === 'SPAN' || (x = common.nodeName === '#text')){
+            if(x && x.parentNode.style[prop] === val || !x && common.style[prop] === val){
+                return this.state.range;
+            }
             console.log('split', x, common)
             x && (x = this.isBelongTag('SPAN', common)) && (common = x)
             common = this.splitNodeX(common, this.state.range, true);
@@ -307,7 +310,7 @@ class EditorNodeTraveler{
             range.setStartBefore(cur);
         }
         let br;
-        if((end !== common || constraint && end !== constraint) && (end.hasChildNodes && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset) && br.nodeName === 'BR' && br === end.lastChild))){
+        if((end !== common || constraint && end !== constraint) && (end.hasChildNodes && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset)) && br.nodeName === 'BR' && br === end.lastChild)){
             let cur = end;
             while(cur.parentNode !== this.root && (cur.parentNode !== common || cur.parentNode !== constraint)){
                 let par = cur.parentNode;
@@ -904,9 +907,8 @@ class EditorNodeTraveler{
         if(!node) throw new Error('invalid second arg');
         if(node.nodeName === nodeName) return node;
         try{
-            while(node !== this.root && node.nodeName !== nodeName){
+            while(node !== this.root && node.nodeName !== '#document-fragment' && node.nodeName !== nodeName){
             node = node.parentNode;
-            if(!node) return false
             } 
         }
         catch(e){
@@ -1185,7 +1187,7 @@ class EditorNodeTraveler{
                 r.setStartBefore(first0);
                 r.setEndAfter(block1);
                 this.reassignRange(r);
-                let ct = r.extractContent();
+                let ct = r.extractContents();
                 let node = ct.firstChild;
                 r.insertNode(node);
                 this.unwrapBlockquote(node);
@@ -1206,7 +1208,7 @@ class EditorNodeTraveler{
                 r.setStartBefore(block1);
                 r.setEndAfter(last0);
                 this.reassignRange(r);
-                let ct = r.extractContent();
+                let ct = r.extractContents();
                 let node = ct.firstChild;
                 r.insertNode(node);
                 this.unwrapBlockquote(node);
@@ -1255,13 +1257,22 @@ class EditorNodeTraveler{
         li.style.color = color;
     }
     convertToList = (type, range) =>{
-        let {startContainer, endContainer, startOffset, endOffset, collapsed} = range;
-
+        let {startContainer, endContainer, startOffset, endOffset, collapsed, commonAncestorContainer: common} = range;
+        let newPar = document.createElement(type);
+        if(collapsed && (common === this.root || common.nodeName === 'BLOCKQUOTE')){
+            range.insertNode(newPar);
+            newPar.appendChild(document.createElement('li'));
+            if(newPar.nextSibling && newPar.nextSibling.nodeName === 'BR'){
+                newPar.nextSibling.remove();
+            };
+            range.setStart(newPar.firstChild, 0);
+            range.collapse(true);
+            return range;
+        }
         let {list, end, p1, p2} = this.findBreak(range);
         console.log(list)
         let start;
         let r = new Range();
-        let newPar = document.createElement(type);
         if(list.length === 2 && list.filter((cur) =>(!this.isBlockElem(cur) && cur.nodeName !== 'LI' && cur.nodeName !== 'BR')).length === 2){
             r.setStartBefore(list[0]);
             r.setEndAfter(list[1]);
@@ -1371,7 +1382,7 @@ class EditorNodeTraveler{
     
             });
             let n1 = start.previousSibling, n2 = start.nextSibling;
-            if(n1 && list[0].nodeName === 'BR' && n1 && previousSibling){
+            if(n1 && list[0].nodeName === 'BR' && n1.previousSibling){
                 n1.remove();
             }
             if(n2 && list[list.length -1].nodeName === 'BR' && n2.nextSibling){
@@ -1623,7 +1634,7 @@ class EditorNodeTraveler{
             console.log('ct2', ct2.firstChild)
             r2.insertNode(ct2);
         }
-        if(!node.hasChildNodes()) node.appendChild(document.createElement('br'));
+        if(node.nodeName !== '#text' && !node.hasChildNodes()) node.appendChild(document.createElement('br'));
         return node;
     }
     createBlq(){
@@ -1663,6 +1674,10 @@ class EditorNodeTraveler{
             range.insertNode(blq);
         }
         blq.appendChild(xnode);
+        if(blq.nextSibling && blq.nextSibling.nodeName === 'BR'){blq.nextSibling.remove()}
+        if(!blq.hasChildNodes){
+            blq.appendChild(document.createElement('br'));
+        }
         range.selectNodeContents(blq);
         return range;
     }
@@ -1728,6 +1743,390 @@ class EditorNodeTraveler{
             this.unQuoteOne(quote, r)
         });
         return r;
+    }
+    normalizeText(frag){
+        // let div = document.createElement('div');
+        // div.appendChild(frag);
+        // let r = new Range(); 
+        // r.selectNodeContents(div);
+
+        let text = '';
+        let _add;
+        (_add = (cur) =>{
+            if(!cur) return;
+            if(cur.nodeName === '#text'){
+                text += cur.nodeValue;
+            }
+            else if(cur.hasChildNodes()){
+                _add(cur.firstChild);
+            }
+            if(!cur.nextSibling && cur.parentNode.nodeName === '#document-fragment'){
+                return;
+            }
+            if(cur.nextSibling){
+                _add(cur.nextSibling)
+            }
+            else{
+                let par = cur.parentNode;
+                while(par.nodeName !== '#document-fragment'){
+                    if(par.nextSibling){
+                        _add(par.nextSibling);
+                    }
+                    else{
+                        par = par.parentNode;
+                    }
+                }
+            }
+        })(frag.firstChild)
+        return text.length ? document.createTextNode(text): document.createElement('br')
+    }
+    convertToBlockCode = (r)=>{
+        let {startContainer: start, endContainer: end} = r, x, a, b;
+        if((x = this.isBelongTag('P', start) || this.isBelongTag('LI', start))){
+            r.setStartBefore(start);
+        }
+        if((x = this.isBelongTag('P', end) || this.isBelongTag('LI', end))){
+            r.setEndAfter(end);
+        }
+        this.findPreBreakPoint(r);
+        this.reassignRange(r, true);
+        console.log('...', r)
+        let frag = r.extractContents();
+        let pre = document.createElement('pre');
+        r.insertNode(pre);
+        if(pre.nextSibling && pre.nextSibling.nodeName === 'BR'){
+            pre.nextSibling.remove();
+        }
+        if(!frag.firstChild){
+            r.setStart(pre, 0);
+            r.collapse(true);
+            return r;
+        }
+        let _handle, r1 = new Range();
+        (_handle = (cur) =>{
+            let found = false;
+            if(cur.childNodes.length > 1 && cur.lastChild.nodeName === 'BR'){
+                cur.lastChild.remove();
+            }
+            switch(cur.nodeName){
+                case 'BR':
+                    pre.appendChild(cur);
+                    found = true;
+                    break;
+                case 'P': case 'PRE':
+                    found = true;
+                    r1.selectNodeContents(cur);
+                    pre.appendChild(this.normalizeText(r1.extractContents()));
+                    break;
+                case 'LI':
+                    if(cur.hasChildNodes() && cur.firstChild.nodeName === 'PRE'){
+                        _handle(cur.firstChild);
+                    }
+                    else if(!cur.hasChildNodes()){
+                    found = true;
+                    pre.appendChild(document.createElement('br'));
+                    }
+                    else{
+                        found = true;
+                        r.selectNodeContents(cur);
+                        pre.appendChild(this.normalizeText(r.extractContents()));
+                    }
+                    break;
+                case 'UL': case 'OL':
+                    _handle(cur.firstChild);
+                    break;
+                case 'BLOCKQUOTE':
+                    if(cur.hasChildNodes()){
+                        _handle(cur.firstChild);
+                    }
+                    else{
+                        found = true;
+                        pre.appendChild(document.createElement('br'));
+                    }
+            }
+            if(!cur.nextSibling && cur.parentNode.nodeName === '#document-fragment'){
+                return;
+            }
+            if(found){
+                pre.appendChild(document.createElement('br'));
+            }
+            if(cur.nextSibling){
+                _handle(cur.nextSibling)
+            }
+            else{
+                let par = cur.parentNode;
+                while(par.nodeName !== '#document-fragment'){
+                    if(par.nextSibling){
+                        _handle(par.nextSibling);
+                    }
+                    else{
+                        par = par.parentNode;
+                    }
+                }
+            }
+        })(frag.firstChild);
+        r.setStartAfter(pre.lastChild);
+        r.collapse(true);
+        return r;
+    }
+    unCodeOne = (pre, r) =>{
+        if(!r) r = new Range();
+        // r.selectNode(pre);
+        // pre.remove();
+        // let r1 = new Range();
+        r.setStart(pre, 0);
+        r.collapse(true);
+        // if(pre.childNodes.length > 1 && pre.lastChild.nodeName === 'BR'){
+        //     pre.lastChild.remove();
+        // }
+        let brs = pre.querySelectorAll('br');
+        let par = pre.parentNode;
+        brs.forEach((br) =>{
+            r.setEndAfter(br);
+            let ct = r.extractContents();
+            if(ct.childNodes.length === 1){
+                par.insertBefore(ct, pre);
+            }
+            else{
+                br.remove();
+                let p = document.createElement('p');
+                par.insertBefore(p, pre);
+                p.appendChild(ct);
+            }
+        });
+        if(pre.hasChildNodes()){
+            r.selectNodeContents(pre);
+            let p = document.createElement('p');
+            par.insertBefore(p, pre);
+            p.appendChild(r.extractContents());
+        }
+        let prev = pre.previousSibling;
+        r.selectNode(pre);
+        r.deleteContents();
+        return prev;
+    }
+    findPreBreakPoint = (r) =>{
+        let {startContainer: start, startOffset: startOff, endContainer: end, endOffset: endOff} = r, a, b;
+        console.log(start)
+        if((a = this.isBelongTag('PRE', start))){
+            let cur, span;
+           if(start === a){cur = this.getNthChild(start, startOff - 1)}
+           else if(span = this.isBelongTag('SPAN', start)){
+               cur = span;
+           }
+           else{
+            cur = start;
+           }
+           while(cur && cur.nodeName !== 'BR'){
+               cur = cur.previousSibling;
+           }
+           if(!cur){
+               r.setStartBefore(a);
+           }
+           else{
+               r.setStartAfter(cur);
+           }
+        }
+        if((b = this.isBelongTag('PRE', end))){
+            let cur, span;
+           if(end === b){cur = this.getNthChild(end, endOff)}
+           else if(span = this.isBelongTag('SPAN', end)){
+               cur = span;
+           }
+           else{
+            cur = end;
+           }
+           while(cur && cur.nodeName !== 'BR'){
+               cur = cur.nextSibling;
+           }
+           if(!cur){
+               r.setEndAfter(b);
+           }
+           else{
+               r.setEndAfter(cur);
+           }
+        }
+    }
+    unCode = (r) =>{
+        let nodes = this.state.code;
+        this.findPreBreakPoint(r);
+        let constraint = nodes.length === 1 ? nodes[0].parentNode : r.commonAncestorContainer;
+        this.reassignRange(r, constraint);
+        if(nodes.length === 1){
+            nodes[0] = this.splitNodeX(nodes[0], r);
+        }
+        else{
+            let r1 = r.cloneRange();
+            r1.setEndAfter(nodes[0]);
+            nodes[0] = this.splitNodeX(nodes[0], r1);
+            r1 = r.cloneRange();
+            r1.setStartBefore(nodes[nodes.length - 1]);
+            nodes[nodes[length - 1]] = this.splitNodeX(nodes[nodes.length - 1], r1)
+        }
+        nodes.map((pre, idx) =>{
+            let prev = this.unCodeOne(pre, r);
+            if(idx === nodes.length - 1){
+                if(prev.nodeName === 'BR'){
+                    r.setStartBefore(prev);
+                }
+                else if(prev.hasChildNodes() && prev.lastChild.nodeName === 'BR'){
+                    r.setStartBefore(prev.lastChild)
+                }
+                else{
+                    r.setStartAfter(prev.lastChild);
+                }
+                r.collapse(true);
+            }
+
+        });
+        return r;
+    }
+    codeToList = (pre,list) =>{
+        if(!pre.hasChildNodes()){
+            list.appendChild(document.createElement('li'));
+            return;
+        }
+        let r = new Range();
+        r.setStart(pre, 0);
+        r.collapse(true);
+        let brs = pre.querySelectorAll('br');
+        brs.forEach((br) =>{
+            r.setEndAfter(br);
+            let ct = r.extractContents();
+            let li = document.createElement('li');
+            if(ct.childNodes.length === 1){
+                list.appendChild(li);
+                li.appendChild(ct);
+            }
+            else{
+                br.remove();
+                list.appendChild(li);
+                li.appendChild(ct);
+            }
+        });
+        if(pre.hasChildNodes()){
+            r.selectNodeContents(pre);
+            let li = document.createElement('li');
+            list.appendChild(li)
+            li.appendChild(r.extractContents());
+        }
+    }
+    roundUpRange(r){
+        let {startContainer: start, endContainer: end} = r, x;
+        if((x = this.isBelongTag('P', start) || this.isBelongTag('LI', start))){
+            r.setStartBefore(start);
+        }
+        if((x = this.isBelongTag('P', end) || this.isBelongTag('LI', end))){
+            r.setEndAfter(end);
+        }
+    }
+    convertToListX = (tagName, r) =>{
+        let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff, collapsed} = r;
+        this.findPreBreakPoint(r);
+        this.roundUpRange(r);
+        let blq;
+        let constraint = (blq = this.isBelongTag('BLOCKQUOTE', r.commonAncestorContainer)) ? blq : true;
+        this.reassignRange(r, constraint);
+        let frag = r.extractContents();
+        let list = document.createElement(tagName);
+        r.insertNode(list);
+        if(list.nextSibling && list.nextSibling.nodeName === 'BR'){
+            list.nextSibling.remove();
+        }
+        if(!frag.firstChild){
+            r.setStart(list, 0);
+            r.collapse(true);
+            return r;
+        }
+        let _handle;
+        (_handle = (cur) =>{
+            if(cur.childNodes.length > 1 && cur.lastChild.nodeName === 'BR'){
+                cur.lastChild.remove();
+            }
+            switch(cur.nodeName){
+                case 'BR':{
+                    let li = document.createElement('li');
+                    list.appendChild(li);
+                    li.appendChild(cur);
+                    break;
+                }
+                case 'P':{
+                    let li = document.createElement('li');
+                    list.appendChild(li);
+                    r.selectNodeContents(cur);
+                    li.appendChild(r.extractContents());
+                    break;
+                }
+                case 'PRE':
+                    this.codeToList(cur, list);
+                    break;
+                case 'UL': case 'OL':
+                    r.selectNodeContents(cur);
+                    list.appendChild(r.extractContents())
+                    break;
+                case 'BLOCKQUOTE':
+                    if(!cur.hasChildNodes()){
+                        list.appendChild(document.createElement('li'));
+                        return;
+                    }
+                    else{
+                        _handle(cur.firstChild);
+                    }
+            }
+            if(!cur.nextSibling && cur.parentNode.nodeName === '#document-fragment'){
+                return;
+            }
+            if(cur.nextSibling){
+                _handle(cur.nextSibling)
+            }
+            else{
+                let par = cur.parentNode;
+                while(par.nodeName !== '#document-fragment'){
+                    if(par.nextSibling){
+                        _handle(par.nextSibling);
+                    }
+                    else{
+                        par = par.parentNode;
+                    }
+                }
+            }
+        })(frag.firstChild);
+        if(start.nodeName === '#text'){
+            r.setStart(start, startOff);
+            if(collapsed){
+                r.collapse(true);
+            }
+        }
+        else{
+            collapsed ? (r.setStartAfter(list.firstChild), r.collapse(true)) : r.setStartBefore(list.firstChild);
+        }
+        if(end.nodeName === '#text' && !collapsed){
+            r.setEnd(end, endOff);
+            if(collapsed){
+                r.collapse(true);
+            }
+        }
+        else if(!collapsed){
+            r.setEndAfter(list.lastChild)
+        }
+        return r;
+    }
+    modifyStyleX = (r, prop, val) =>{
+        let a, b;
+        if((a = this.isBelongTag('PRE', r.startContainer) || this.isBelongTag('CODE', r.startContainer))){
+            r.setStartAfter(a);
+        }
+        if((a = this.isBelongTag('PRE', r.endContainer) || this.isBelongTag('CODE', r.endContainer))){
+            r.setEndBefore(a);
+        }
+        this.reassignRange(r, true);
+        let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r;
+        if(start.nodeName === '#text' && start.parentNode.style[prop]){
+
+        }
+        let r1 = r.cloneRange();
+
+
     }
 }
 export default EditorNodeTraveler;
