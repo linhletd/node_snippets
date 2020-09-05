@@ -378,6 +378,7 @@ class EditorApp extends React.Component{
                 e.preventDefault();
                 let {startOffset: off, commonAncestorContainer: cm} = range;
                 if(cm.nodeName === 'P'){
+                    console.log('ha')
                     if(!cm.hasChildNodes() || cm.lastChild.nodeName === 'BR'){
                         let br = document.createElement('br');
                         cm.parentNode.replaceChild(br, cm);
@@ -393,10 +394,11 @@ class EditorApp extends React.Component{
                         this.traveler.insertAfter(p, cm);
                         p.appendChild(range.extractContents());
                         this.traveler.handleUnacessedSpan(cm.lastChild, true);
+                        console.log('mmmm')
                         this.traveler.handleUnacessedSpan(p.firstChild, true);
                         this.traveler.handleUnacessedSpan(cm);
                         this.traveler.handleUnacessedSpan(p);
-                        range.setStart(p, 0);
+                        p.firstChild && p.firstChild.nodeName !== 'BR' ? range.setStart(p.firstChild, 0) : range.setStart(p, 0);
                         range.collapse(true);
                     }
                 }
@@ -406,6 +408,7 @@ class EditorApp extends React.Component{
                     bef = this.traveler.handleUnacessedSpan(bef, true);
                     af = this.traveler.handleUnacessedSpan(af, true);
                     let pr,nx,x,y, pre;
+                    console.log(bef, af)
                     if(!(pre = this.traveler.isBelongTag('PRE', cm))){
                         if((x = bef && bef.nodeName !== 'BR' && !this.traveler.isBlockElem(bef) && (!(pr = bef.previousSibling) || (pr.nodeName !== '#text' && pr.nodeName !== 'SPAN')))){
                             let p = document.createElement('p');

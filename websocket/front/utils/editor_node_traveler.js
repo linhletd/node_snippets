@@ -222,29 +222,30 @@ class EditorNodeTraveler{
             }
         }
         else{this.state.collapsed = false}
-        let {commonAncestorContainer: common} = this.state.range;
-        let x;
-        if(common.nodeName === 'SPAN' || (x = common.nodeName === '#text')){
-            if(x && x.parentNode.style[prop] === val || !x && common.style[prop] === val){
-                return this.state.range;
-            }
-            console.log('split', x, common)
-            x && (x = this.isBelongTag('SPAN', common)) && (common = x)
-            common = this.splitNodeX(common, this.state.range, true);
-            console.log(common)
-            if(common.nodeName === '#text'){
-                let span = document.createElement('span');
-                common.parentNode.replaceChild(span, common);
-                span.appendChild(common);
-                common = span;
-            }
-            common.style[prop] = val;
-            this.state.range.selectNodeContents(common);
-        }
-        else {
-            this.state.common = common;
-            this.handleGeneralCase();
-        }
+        this.modifyStyleX(this.state.range, {prop, val})
+        // let {commonAncestorContainer: common} = this.state.range;
+        // let x;
+        // if(common.nodeName === 'SPAN' || (x = common.nodeName === '#text')){
+        //     if(x && x.parentNode.style[prop] === val || !x && common.style[prop] === val){
+        //         return this.state.range;
+        //     }
+        //     console.log('split', x, common)
+        //     x && (x = this.isBelongTag('SPAN', common)) && (common = x)
+        //     common = this.splitNodeX(common, this.state.range, true);
+        //     console.log(common)
+        //     if(common.nodeName === '#text'){
+        //         let span = document.createElement('span');
+        //         common.parentNode.replaceChild(span, common);
+        //         span.appendChild(common);
+        //         common = span;
+        //     }
+        //     common.style[prop] = val;
+        //     this.state.range.selectNodeContents(common);
+        // }
+        // else {
+        //     this.state.common = common;
+        //     this.handleGeneralCase();
+        // }
         // if(this.state.range.startContainer != this.root && this.state.range.startOffset === 0){
         //     this.state.range.setStartBefore(this.state.range.startContainer);
         // }
@@ -252,45 +253,77 @@ class EditorNodeTraveler{
         //     this.state.range.setEndAfter(this.state.range.endContainer);
         // }
         if(this.state.collapsed){
-            let _restoreCollapsedRange;
-            (_restoreCollapsedRange = () =>{
-                let count = 0;
-                let {commonAncestorContainer, startOffset} = this.state.range;
-                console.log(this.state.range)
-                let node = this.getNthChild(commonAncestorContainer, startOffset).firstChild;
-                let _restore = (node) =>{
-                    if(!node) return;
-                    if(node.nodeValue && count + node.nodeValue.length >= this.state.posL){
-                        this.state.range.setStart(node, this.state.posL - count);
+            // let _restoreCollapsedRange;
+            // (_restoreCollapsedRange = () =>{
+            //     let count = 0;
+            //     let {commonAncestorContainer, startOffset} = this.state.range;
+            //     console.log(this.state.range)
+            //     parent = this.getNthChild(commonAncestorContainer, startOffset);
+            //     let _restore = (node) =>{
+            //         if(!node) return;
+            //         if(node.nodeValue && count + node.nodeValue.length >= this.state.posL){
+            //             this.state.range.setStart(node, this.state.posL - count);
+            //             this.state.range.collapse(true);
+            //         }
+            //         else{
+            //             count += node.nodeValue.length;
+            //             _restore(this.findNext(node));
+            //         }
+            //     };
+            //     _restore(node)
+            // })()
+            let {commonAncestorContainer, startOffset} = this.state.range;
+            let _restoreCollapsedRange, node = this.getNthChild(commonAncestorContainer, startOffset), count = 0;
+            (_restoreCollapsedRange = (cur) =>{
+                if(cur.nodeName === '#text'){
+                    if(cur.nodeValue && count + cur.nodeValue.length >= this.state.posL){
+                        this.state.range.setStart(cur, this.state.posL - count);
                         this.state.range.collapse(true);
+                        return;
                     }
                     else{
-                        count += node.nodeValue.length;
-                        _restore(this.findNext(node));
+                        count += cur.nodeValue.length;
                     }
-                };
-                _restore(node)
-            })()
+                }
+                else if(cur.hasChildNodes()){
+                    _restoreCollapsedRange(cur.firstChild);
+                }
+                else if(cur.nextSibling){
+                    _restoreCollapsedRange(cur.nextSibling)
+                }
+                else{
+                    let par = cur.parentNode;
+                    while(count < this.state.posL){
+                        if(par.nextSibling){
+                            _restoreCollapsedRange(par.nextSibling);
+                            break;
+                        }
+                        else{
+                            par = par.parentNode;
+                        }
+                    }
+                }
+            })(node)
         }
         if(this.state.t){
             this.state.t.remove();
             this.state.t = null;
         }
-        if(prop === 'color'){
-            console.log('coloer')
-            let li;
-            if((li = this.isBelongTag('LI', common))){
-                this._replayStyle(li);
-            }
-            else {
-                if((li = this.isBelongTag('LI', this.state.range.startContainer))){
-                    this._replayStyle(li);
-                }
-                if((li = this.isBelongTag('LI', this.state.range.endContainer))){
-                    this._replayStyle(li);
-                }
-            }
-        }
+        // if(prop === 'color'){
+        //     console.log('coloer')
+        //     let li;
+        //     if((li = this.isBelongTag('LI', common))){
+        //         this._replayStyle(li);
+        //     }
+        //     else {
+        //         if((li = this.isBelongTag('LI', this.state.range.startContainer))){
+        //             this._replayStyle(li);
+        //         }
+        //         if((li = this.isBelongTag('LI', this.state.range.endContainer))){
+        //             this._replayStyle(li);
+        //         }
+        //     }
+        // }
         return this.state.range;
     }
     reassignRange(range, constraint){
@@ -298,30 +331,30 @@ class EditorNodeTraveler{
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
         if(startOffset === 0 && (start !== common || constraint && start !== constraint)){
             let cur = start;
-            while(cur.parentNode !== this.root && (cur.parentNode !== common || cur.parentNode !== constraint)){
+            while(cur.parentNode !== this.root && (cur.parentNode !== common || cur !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.firstChild){
+                    range.setStartBefore(cur);
                     cur = par;
                 }
                 else{
                     break;
                 }
             }
-            range.setStartBefore(cur);
         }
         let br;
         if((end !== common || constraint && end !== constraint) && (end.hasChildNodes && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset)) && br.nodeName === 'BR' && br === end.lastChild)){
             let cur = end;
-            while(cur.parentNode !== this.root && (cur.parentNode !== common || cur.parentNode !== constraint)){
+            while(cur.parentNode !== this.root && (cur.parentNode !== common || cur !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.lastChild){
+                    range.setEndAfter(cur);
                     cur = par;
                 }
                 else{
                     break;
                 }
             }
-            range.setEndAfter(cur);
         }
         return range
     }
@@ -390,6 +423,7 @@ class EditorNodeTraveler{
         (checkBIU = ()=>{
             if(common.nodeName === 'SPAN' || collapsed || common.nodeName === '#text'){
                 if(common.nodeName === '#text') common = common.parentNode;
+                console.log(common, 3)
                 common.style.fontWeight === 'bold' ? state.bold = 2 : state.bold = 1;
                 common.style.fontStyle === 'italic' ? state.italic = 2 : state.italic = 1;
                 common.style.textDecoration === 'underline' ? state.underline = 2 : state.underline = 1;
@@ -512,6 +546,14 @@ class EditorNodeTraveler{
             }
         })();
         (checkList = ()=>{
+            if(common.nodeName === 'UL'){
+                state.unorder = 2;
+                return;
+            }
+            else if(common.nodeName === 'OL'){
+                state.order = 2;
+                return;
+            }
             let li, li1, li2;
             if(li = this.isBelongTag('LI', common)){
                 li.parentNode.nodeName === 'UL' ? state.unorder = 2 : state.order = 2;
@@ -955,7 +997,10 @@ class EditorNodeTraveler{
     }
     handleUnacessedSpan(span, bool){
         if(!span) return span;
-        if((span.nodeName === 'SPAN' || span.nodeName === 'P') && (!span.hasChildNodes() || span.childNodes.length === 1 && span.firstChild.nodeName === '#text' && span.nodeValue === '')){
+        if((span.nodeName === 'SPAN' || span.nodeName === 'P') && (!span.hasChildNodes() || span.childNodes.length === 1 && span.firstChild.nodeName === '#text' && span.firstChild.nodeValue === '')){
+            let r1 = new Range();
+            r1.selectNodeContents(span);
+            r1.deleteContents();
             span.appendChild(document.createElement('br'));
             return span;
         }
@@ -1487,12 +1532,14 @@ class EditorNodeTraveler{
         let li1 = this.isBelongTag('LI', range.startContainer);
         let li2 = this.isBelongTag('LI', range.endContainer);
         let r = new Range();
-        r.setStartBefore(li1);
-        r.setEndAfter(li2);
-        r = this.reassignRange(r);
+        li1 && r.setStartBefore(li1);
+        li2 && r.setEndAfter(li2);
+        // r = this.reassignRange(r);
         let ct = r.extractContents();
         let elem = document.createElement(type);
         r.insertNode(elem);
+        // this.resideRange(elem, r);
+        r.collapse(true);
         elem.appendChild(ct);
         this.reunion(elem, true);
         return r;
@@ -1501,8 +1548,8 @@ class EditorNodeTraveler{
         let li1 = this.isBelongTag('LI', range.startContainer);
         let li2 = this.isBelongTag('LI', range.endContainer);
         let r = new Range();
-        r.setStartBefore(li1);
-        r.setEndAfter(li2);
+        li1 && r.setStartBefore(li1);
+        li2 && r.setEndAfter(li2);
         r = this.reassignRange(r);
         let ct = r.extractContents();
         let common = r.commonAncestorContainer;
@@ -1642,25 +1689,43 @@ class EditorNodeTraveler{
         blq.style.fn = '16px';
         return blq;
     }
+    checkForUOPCommon = (r) =>{
+        let common= r.commonAncestorContainer;
+        let xnode;
+        if((xnode = this.isBelongTag('UL', common) || this.isBelongTag('OL', common) || this.isBelongTag('PRE', common))){
+            if(xnode.nodeName !== 'PRE'){
+                xnode = this.findMostOuterOUL(xnode);
+                this.reassignRange(r, xnode);
+            }
+            xnode = this.splitNodeX(xnode, r);
+            r.selectNode(xnode);
+        }
+        return xnode;
+    }
     convertToBLockquote(range){
         // range = range.cloneRange();
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range, x;
-        if((x = this.isBelongTag('P', start) || this.isBelongTag('LI', start) || this.isBelongTag('PRE', start))){
-            range.setStartBefore(start);
-        }
-        if((x = this.isBelongTag('P', end) || this.isBelongTag('LI', end) || this.isBelongTag('PRE', end))){
-            range.setEndAfter(end);
-        }
+        // if((x = this.isBelongTag('P', start) || this.isBelongTag('LI', start) || this.isBelongTag('PRE', start))){
+        //     range.setStartBefore(start);
+        // }
+        // if((x = this.isBelongTag('P', end) || this.isBelongTag('LI', end) || this.isBelongTag('PRE', end))){
+        //     range.setEndAfter(end);
+        // }
+        this.roundUpRange(range);
+        this.findPreBreakPoint(range);
+
         let xnode;
         let blq = this.createBlq();
-        if((xnode = this.isBelongTag('UL', common) || this.isBelongTag('OL', common) || this.isBelongTag('PRE', common))){
-            console.log(xnode, 0)
-            if(xnode.nodeName !== 'PRE'){
-                xnode = this.findMostOuterOUL(xnode);
-                console.log(xnode, 1)
-                this.reassignRange(range, xnode);
-            }
-            xnode = this.splitNodeX(xnode, range);
+        // if((xnode = this.isBelongTag('UL', common) || this.isBelongTag('OL', common) || this.isBelongTag('PRE', common))){
+        //     console.log(xnode, 0)
+        //     if(xnode.nodeName !== 'PRE'){
+        //         xnode = this.findMostOuterOUL(xnode);
+        //         this.reassignRange(range, xnode);
+        //     }
+        //     xnode = this.splitNodeX(xnode, range);
+        //     xnode.parentNode.replaceChild(blq, xnode);
+        // }
+        if((xnode = this.checkForUOPCommon(range))){
             xnode.parentNode.replaceChild(blq, xnode);
         }
         else{
@@ -1757,38 +1822,34 @@ class EditorNodeTraveler{
             if(cur.nodeName === '#text'){
                 text += cur.nodeValue;
             }
-            else if(cur.hasChildNodes()){
+            if(cur.hasChildNodes()){
                 _add(cur.firstChild);
             }
-            if(!cur.nextSibling && cur.parentNode.nodeName === '#document-fragment'){
-                return;
-            }
+            // if(!cur.nextSibling && cur.parentNode.nodeName === '#document-fragment'){
+            //     return;
+            // }
             if(cur.nextSibling){
                 _add(cur.nextSibling)
             }
-            else{
-                let par = cur.parentNode;
-                while(par.nodeName !== '#document-fragment'){
-                    if(par.nextSibling){
-                        _add(par.nextSibling);
-                    }
-                    else{
-                        par = par.parentNode;
-                    }
-                }
-            }
+            // else{    
+            //     let par = cur.parentNode;
+            //     while(par.nodeName !== '#document-fragment'){
+            //         if(par.nextSibling){
+            //             _add(par.nextSibling);
+            //             break;
+            //         }
+            //         else{
+            //             par = par.parentNode;
+            //         }
+            //     }
+            // }
         })(frag.firstChild)
         return text.length ? document.createTextNode(text): document.createElement('br')
     }
     convertToBlockCode = (r)=>{
-        let {startContainer: start, endContainer: end} = r, x, a, b;
-        if((x = this.isBelongTag('P', start) || this.isBelongTag('LI', start))){
-            r.setStartBefore(start);
-        }
-        if((x = this.isBelongTag('P', end) || this.isBelongTag('LI', end))){
-            r.setEndAfter(end);
-        }
+        this.roundUpRange(r)
         this.findPreBreakPoint(r);
+        this.checkForUOPCommon(r)
         this.reassignRange(r, true);
         console.log('...', r)
         let frag = r.extractContents();
@@ -1802,8 +1863,9 @@ class EditorNodeTraveler{
             r.collapse(true);
             return r;
         }
-        let _handle, r1 = new Range();
+        let _handle, r1 = new Range(), completed = false;
         (_handle = (cur) =>{
+            if(completed) return;
             let found = false;
             if(cur.childNodes.length > 1 && cur.lastChild.nodeName === 'BR'){
                 cur.lastChild.remove();
@@ -1845,6 +1907,7 @@ class EditorNodeTraveler{
                     }
             }
             if(!cur.nextSibling && cur.parentNode.nodeName === '#document-fragment'){
+                completed = true;
                 return;
             }
             if(found){
@@ -1858,6 +1921,7 @@ class EditorNodeTraveler{
                 while(par.nodeName !== '#document-fragment'){
                     if(par.nextSibling){
                         _handle(par.nextSibling);
+                        break;
                     }
                     else{
                         par = par.parentNode;
@@ -1910,7 +1974,7 @@ class EditorNodeTraveler{
         console.log(start)
         if((a = this.isBelongTag('PRE', start))){
             let cur, span;
-           if(start === a){cur = this.getNthChild(start, startOff - 1)}
+           if(start === a){cur = this.getNthChild(start, startOff)}
            else if(span = this.isBelongTag('SPAN', start)){
                cur = span;
            }
@@ -2014,10 +2078,10 @@ class EditorNodeTraveler{
     roundUpRange(r){
         let {startContainer: start, endContainer: end} = r, x;
         if((x = this.isBelongTag('P', start) || this.isBelongTag('LI', start))){
-            r.setStartBefore(start);
+            r.setStartBefore(x);
         }
         if((x = this.isBelongTag('P', end) || this.isBelongTag('LI', end))){
-            r.setEndAfter(end);
+            r.setEndAfter(x);
         }
     }
     convertToListX = (tagName, r) =>{
@@ -2028,18 +2092,23 @@ class EditorNodeTraveler{
         let constraint = (blq = this.isBelongTag('BLOCKQUOTE', r.commonAncestorContainer)) ? blq : true;
         this.reassignRange(r, constraint);
         let frag = r.extractContents();
+        console.log(frag.firstChild)
         let list = document.createElement(tagName);
         r.insertNode(list);
         if(list.nextSibling && list.nextSibling.nodeName === 'BR'){
             list.nextSibling.remove();
         }
         if(!frag.firstChild){
-            r.setStart(list, 0);
+            list.appendChild(document.createElement('li'));
+            list.firstChild.appendChild(document.createElement('br'));
+            r.setStart(list.firstChild, 0);
             r.collapse(true);
             return r;
         }
-        let _handle;
+        console.log(frag.firstChild,'fra')
+        let _handle, completed = false;
         (_handle = (cur) =>{
+            if(completed || !cur) return;
             if(cur.childNodes.length > 1 && cur.lastChild.nodeName === 'BR'){
                 cur.lastChild.remove();
             }
@@ -2074,44 +2143,51 @@ class EditorNodeTraveler{
                     }
             }
             if(!cur.nextSibling && cur.parentNode.nodeName === '#document-fragment'){
+                completed = true;
                 return;
             }
             if(cur.nextSibling){
                 _handle(cur.nextSibling)
             }
-            else{
-                let par = cur.parentNode;
-                while(par.nodeName !== '#document-fragment'){
-                    if(par.nextSibling){
-                        _handle(par.nextSibling);
-                    }
-                    else{
-                        par = par.parentNode;
-                    }
-                }
-            }
+            // else{
+            //     let par = cur.parentNode;
+            //     while(par.nodeName !== '#document-fragment'){
+            //         if(par.nextSibling){
+            //             _handle(par.nextSibling);
+            //             break
+            //         }
+            //         else{
+            //             par = par.parentNode;
+            //         }
+            //     }
+            // }
         })(frag.firstChild);
-        if(start.nodeName === '#text'){
-            r.setStart(start, startOff);
-            if(collapsed){
-                r.collapse(true);
-            }
-        }
-        else{
-            collapsed ? (r.setStartAfter(list.firstChild), r.collapse(true)) : r.setStartBefore(list.firstChild);
-        }
-        if(end.nodeName === '#text' && !collapsed){
-            r.setEnd(end, endOff);
-            if(collapsed){
-                r.collapse(true);
-            }
-        }
-        else if(!collapsed){
-            r.setEndAfter(list.lastChild)
-        }
+        // if(start.nodeName === '#text'){
+        //     r.setStart(start, startOff);
+        //     if(collapsed){
+        //         r.collapse(true);
+        //     }
+        // }
+        // else{
+        //     collapsed ? (r.setStartAfter(list.firstChild), r.collapse(true)) : r.setStartBefore(list.firstChild);
+        // }
+        // if(end.nodeName === '#text' && !collapsed){
+        //     r.setEnd(end, endOff);
+        //     if(collapsed){
+        //         r.collapse(true);
+        //     }
+        // }
+        // else if(!collapsed){
+        //     r.setEndAfter(list.lastChild)
+        // }
+        this.resideRange(list, r);
         return r;
     }
-    modifyStyleX = (r, prop, val) =>{
+    resideRange(list, r){
+        r.setStart(list.firstChild, 0);
+        list.lastChild.lastChild ? r.setEndAfter(list.lastChild.lastChild) : r.setEnd(list.lastChild, 0)
+    }
+    modifyStyleX = (r, {prop, val}) =>{
         let a, b;
         if((a = this.isBelongTag('PRE', r.startContainer) || this.isBelongTag('CODE', r.startContainer))){
             r.setStartAfter(a);
@@ -2120,13 +2196,84 @@ class EditorNodeTraveler{
             r.setEndBefore(a);
         }
         this.reassignRange(r, true);
-        let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r;
-        if(start.nodeName === '#text' && start.parentNode.style[prop]){
-
+        let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r, c = false, d = false;
+        if((a = start.nodeName === '#text') || start.nodeName === 'SPAN'){
+            if(a && (b = this.isBelongTag('SPAN', start))){
+                start = b;
+            }
+            if(a && !b || b && start.style[prop] !== val){
+                let r1 = r.cloneRange();
+                r1.setEndAfter(start)
+                start = this.splitNodeX(start, r1);
+                c = true;
+                // r.setStartBefore(start);
+                
+            }
         }
-        let r1 = r.cloneRange();
-
-
+        else{
+            start = this.getNthChild(start, startOff);
+            c = true;
+        }
+        if((a = end.nodeName === '#text') || end.nodeName === 'SPAN'){
+            if(a && (b = this.isBelongTag('SPAN', end))){
+                end = b;
+            }
+            if(a && !b || b && end.style[prop] !== val){
+                let r1 = r.cloneRange();
+                r1.setStartBefore(end)
+                end = this.splitNodeX(end, r1);
+                d = true;
+                // r.setEndAfter(end);
+            }
+        }
+        else{
+            end = this.getNthChild(end, endOff - 1);
+            d = true;
+        }
+        console.log(start, end, r)
+        let _modify, completed = false;
+        (_modify = (cur) =>{
+            console.log(1,cur)
+            if(completed) return;
+            if(cur.nodeName === '#text'){
+                let span = this.createSampleSpan(prop, val);
+                cur.parentNode.replaceChild(span, cur);
+                span.appendChild(cur);
+            }
+            else if(cur.nodeName === 'SPAN'){
+                if(cur.style[prop] !== val){
+                    cur.style[prop] = val;
+                }
+            }
+            else if(cur.hasChildNodes() && cur.nodeName !== 'PRE'){
+                if(cur.nodeName === 'LI' && prop === 'color'){
+                    cur.style.color = val;
+                }
+                _modify(cur.firstChild)
+            }
+            if(cur === end){
+                completed = true;
+                return;
+            }
+            else if(cur.nextSibling){
+                _modify(cur.nextSibling);
+            }
+            else{
+                let par = cur.parentNode;
+                while(par !== end && par !== this.root){
+                    if(par.nextSibling){
+                        _modify(par.nextSibling);
+                        break;
+                    }
+                    else{
+                        par = par.parentNode;
+                    }
+                }
+            }
+        })(start);
+        c && r.setStartBefore(start);
+        d && r.setEndAfter(end);
+        return r;
     }
 }
 export default EditorNodeTraveler;
