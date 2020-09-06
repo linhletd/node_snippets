@@ -327,23 +327,9 @@ class EditorApp extends React.Component{
         let sel = document.getSelection();
         if(!sel.rangeCount) return;
         let r = sel.getRangeAt(0);
-        let {startContainer, startOffset, commonAncestorContainer: cm} = r;
-        // if(startContainer.nodeName !== '#text'){
-        //     let n11 = this.traveler.getNthChild(startContainer, startOffset);
-        //     let n12 = n11 ? n11.nextSibling : null;
-        //     let n01 = n11 ? n11.previousSibling : null;
-        //     let n02 = n01 ? n01.previousSibling : null;
-        //     setTimeout(()=>{
-        //         if(n11 && n11.nodeName === 'BR' && (n12 && ['DIV', 'UL', 'OL'].indexOf(n12.nodeName) > -1)){
-        //             n11.remove();
-        //         }
-        //         if(n01 && n01.nodeName === 'BR' && (n02 && ['DIV', 'UL', 'OL'].indexOf(n02.nodeName) > -1)){
-        //             n01.remove();
-        //         }
-        //     }, 0)
-
-        // }
+        let {startContainer, startOffset, commonAncestorContainer: cm, collapsed} = r;
         if(e.keyCode !== 13 && (startContainer === this.props.editorNode || startContainer.nodeName === 'BLOCKQUOTE')){
+            //wrap p around text content
             !r.collapsed && this.traveler.reassignRange(r) && r.deleteContents();
             let p = document.createElement('p');
             p.appendChild(document.createElement('br'));
@@ -373,93 +359,139 @@ class EditorApp extends React.Component{
             this.data.waitElem = null;
         }
         else if(e.keyCode === 13  && !this.traveler.isBelongTag('LI', startContainer)){
-            let range = this.cutNode(r);
-            if(range){
-                e.preventDefault();
-                let {startOffset: off, commonAncestorContainer: cm} = range;
-                if(cm.nodeName === 'P'){
-                    console.log('ha')
-                    if(!cm.hasChildNodes() || cm.lastChild.nodeName === 'BR'){
-                        let br = document.createElement('br');
-                        cm.parentNode.replaceChild(br, cm);
-                        range.setStartAfter(br);
-                        range.collapse(true);
-                        if(!br.nextSibling){
-                            br.parentNode.appendChild(document.createElement('br'))
+            let block, x;
+            if(collapsed && (block = this.traveler.isBelongTag('PRE', cm) || this.traveler.isBelongTag('BLOCKQUOTE', cm))){
+                if(startOffset === 0 && this.isFirst(block, startContainer) && (!block.previousSibling || this.traveler.isBlockElem(block.previousSibling))){
+                    e.preventDefault();
+                    let br = document.createElement('br');
+                    block.parentNode.insertBefore(br, block);
+                    x = true;
+                }
+                else if(cm.nodeName !== '#text'){
+                    let node = this.traveler.isBelongTag('P', cm, block) || this.traveler.isBelongTag('SPAN', cm, block) || (cm === block && this.traveler.getNthChild(cm, startOffset));
+                    let a, b;
+                    console.log(node)
+                    if(node && node === block.lastChild && !this.traveler.hasRealText(node)){
+                        a = true;
+                    }
+                    if(!block.hasChildNodes() || a && node === block.firstChild){
+                        b = true;
+                    }
+                    if(b){
+                        e.preventDefault();
+                        !node && (node = document.createElement('br'));
+                        block.parentNode.replaceChild(node, block);
+                        x = true;
+                    }
+                    else if(a){
+                        e.preventDefault();
+                        !node && (node = document.createElement('br'))
+                        this.traveler.insertAfter(node, block);
+                        x = true;
+                    }
+                    if(x){
+                        if(node.nodeName === 'BR'){
+                            r.setStartBefore(node);
+                        }
+                        else{
+                            try{
+                                r.setStart(node.firstChild, 0)
+                            }
+                            catch{
+                                r.setStart(node, 0);
+                            }
+                        }
+                    }
+                }
+                if(x){
+                    r.collapse(true);
+                    this.currentRange = r;
+                    this.repopulateSelection();
+                }
+            }
+            if(!x){
+                let range = this.cutNode(r);
+                if(range){
+                    e.preventDefault();
+                    let {startOffset: off, commonAncestorContainer: cm} = range;
+                    if(cm.nodeName === 'P'){
+                        console.log('ha')
+                        if(!cm.hasChildNodes() || this.traveler.hasOnlyOneBr(cm)){
+                            let br = document.createElement('br');
+                            cm.parentNode.replaceChild(br, cm);
+                            range.setStartAfter(br);
+                            range.collapse(true);
+                            this.traveler.insertAfter(document.createElement('br'), br)
+                        }
+                        else{
+                            let p = cm.cloneNode(false);
+                            range.setEndAfter(cm.lastChild);
+                            this.traveler.insertAfter(p, cm);
+                            p.appendChild(range.extractContents());
+                            this.traveler.handleUnacessedSpan(cm.lastChild, true);
+                            this.traveler.handleUnacessedSpan(p.firstChild, true);
+                            this.traveler.handleUnacessedSpan(cm);
+                            this.traveler.handleUnacessedSpan(p);
+                            p.firstChild && p.firstChild.nodeName !== 'BR' ? range.setStart(p.firstChild, 0) : range.setStart(p, 0);
+                            range.collapse(true);
                         }
                     }
                     else{
-                        let p = cm.cloneNode(false);
-                        range.setEndAfter(cm.lastChild);
-                        this.traveler.insertAfter(p, cm);
-                        p.appendChild(range.extractContents());
-                        this.traveler.handleUnacessedSpan(cm.lastChild, true);
-                        console.log('mmmm')
-                        this.traveler.handleUnacessedSpan(p.firstChild, true);
-                        this.traveler.handleUnacessedSpan(cm);
-                        this.traveler.handleUnacessedSpan(p);
-                        p.firstChild && p.firstChild.nodeName !== 'BR' ? range.setStart(p.firstChild, 0) : range.setStart(p, 0);
-                        range.collapse(true);
-                    }
-                }
-                else{
-                    let bef = this.traveler.getNthChild(cm, off - 1);
-                    let af = this.traveler.getNthChild(cm, off);
-                    bef = this.traveler.handleUnacessedSpan(bef, true);
-                    af = this.traveler.handleUnacessedSpan(af, true);
-                    let pr,nx,x,y, pre;
-                    console.log(bef, af)
-                    if(!(pre = this.traveler.isBelongTag('PRE', cm))){
-                        if((x = bef && bef.nodeName !== 'BR' && !this.traveler.isBlockElem(bef) && (!(pr = bef.previousSibling) || (pr.nodeName !== '#text' && pr.nodeName !== 'SPAN')))){
-                            let p = document.createElement('p');
-                            cm.replaceChild(p, bef);
-                            p.appendChild(bef);
-                            this.traveler.handleUnacessedSpan(p);
-                            range.setStartAfter(p);
-                            range.collapse(true);
+                        let bef = this.traveler.getNthChild(cm, off - 1);
+                        let af = this.traveler.getNthChild(cm, off);
+                        bef = this.traveler.handleUnacessedSpan(bef, true);
+                        af = this.traveler.handleUnacessedSpan(af, true);
+                        let pr,nx,x,y, pre;
+                        console.log(bef, af)
+                        if(!(pre = this.traveler.isBelongTag('PRE', cm))){
+                            if((x = bef && bef.nodeName !== 'BR' && !this.traveler.isBlockElem(bef) && (!(pr = bef.previousSibling) || (pr.nodeName !== '#text' && pr.nodeName !== 'SPAN')))){
+                                let p = document.createElement('p');
+                                cm.replaceChild(p, bef);
+                                p.appendChild(bef);
+                                this.traveler.handleUnacessedSpan(p);
+                                range.setStartAfter(p);
+                                range.collapse(true);
+                            }
+                            if((y = af && af.nodeName !== 'BR' && !this.traveler.isBlockElem(af) && (!(nx = af.nextSibling) || (nx.nodeName !== '#text' && nx.nodeName !== 'SPAN')))){
+                                let p = document.createElement('p');
+                                cm.replaceChild(p, af);
+                                p.appendChild(af);
+                                this.traveler.handleUnacessedSpan(p);
+                                range.setStart(p, 0);
+                                range.collapse(true);
+                            }
                         }
-                        if((y = af && af.nodeName !== 'BR' && !this.traveler.isBlockElem(af) && (!(nx = af.nextSibling) || (nx.nodeName !== '#text' && nx.nodeName !== 'SPAN')))){
-                            let p = document.createElement('p');
-                            cm.replaceChild(p, af);
-                            p.appendChild(af);
-                            this.traveler.handleUnacessedSpan(p);
-                            range.setStart(p, 0);
-                            range.collapse(true);
-                        }
-                    }
-                    if(pre){
-                        let br = document.createElement('br');
-                        range.insertNode(br);
-                        range.collapse(false);
-                        if(!br.nextSibling){
-                            pre.appendChild(document.createElement('br'));
-                        }
-                    }
-                    else if(!y){
-                        console.log('af', af)
-                        if(!x){
+                        if(pre){
                             let br = document.createElement('br');
                             range.insertNode(br);
                             range.collapse(false);
+                            if(!br.nextSibling){
+                                pre.appendChild(document.createElement('br'));
+                            }
                         }
-                        if(af){
-                            af.nodeName === 'BR' ? range.setStartBefore(af) : range.setStart(af, 0);
-                            range.collapse(true)
-                        }
-                        else{
-                            let br = document.createElement('br');
-                            range.insertNode(br);
-                            range.collapse(true); 
-                        }
-                    }                   
+                        else if(!y){
+                            console.log('af', af)
+                            if(!x){
+                                let br = document.createElement('br');
+                                range.insertNode(br);
+                                range.collapse(false);
+                            }
+                            if(af){
+                                af.nodeName === 'BR' ? range.setStartBefore(af) : range.setStart(af, 0);
+                                range.collapse(true)
+                            }
+                            else{
+                                let br = document.createElement('br');
+                                range.insertNode(br);
+                                range.collapse(true); 
+                            }
+                        }                   
+                    }
+                    this.currentRange = range;
+                    this.repopulateSelection();
                 }
-
-                this.currentRange = range;
-                this.repopulateSelection();
             }
         }
-
-
     }
 
     // addEventListenerForEditor = (editor) =>{
