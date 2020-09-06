@@ -123,7 +123,6 @@ class EditorApp extends React.Component{
                 e.preventDefault();
                 par = li.parentNode;
                 if(par.parentNode.nodeName !== 'UL' || par.parentNode.nodeName !== 'OL'){
-                    console.log('hahahhaaeee')
                     let p = document.createElement('p');
                     li.remove();
                     r.setStartBefore(par);
@@ -370,7 +369,6 @@ class EditorApp extends React.Component{
                 else if(cm.nodeName !== '#text'){
                     let node = this.traveler.isBelongTag('P', cm, block) || this.traveler.isBelongTag('SPAN', cm, block) || (cm === block && this.traveler.getNthChild(cm, startOffset));
                     let a, b;
-                    console.log(node)
                     if(node && node === block.lastChild && !this.traveler.hasRealText(node)){
                         a = true;
                     }
@@ -415,7 +413,6 @@ class EditorApp extends React.Component{
                     e.preventDefault();
                     let {startOffset: off, commonAncestorContainer: cm} = range;
                     if(cm.nodeName === 'P'){
-                        console.log('ha')
                         if(!cm.hasChildNodes() || this.traveler.hasOnlyOneBr(cm)){
                             let br = document.createElement('br');
                             cm.parentNode.replaceChild(br, cm);
@@ -442,7 +439,6 @@ class EditorApp extends React.Component{
                         bef = this.traveler.handleUnacessedSpan(bef, true);
                         af = this.traveler.handleUnacessedSpan(af, true);
                         let pr,nx,x,y, pre;
-                        console.log(bef, af)
                         if(!(pre = this.traveler.isBelongTag('PRE', cm))){
                             if((x = bef && bef.nodeName !== 'BR' && !this.traveler.isBlockElem(bef) && (!(pr = bef.previousSibling) || (pr.nodeName !== '#text' && pr.nodeName !== 'SPAN')))){
                                 let p = document.createElement('p');
@@ -470,7 +466,6 @@ class EditorApp extends React.Component{
                             }
                         }
                         else if(!y){
-                            console.log('af', af)
                             if(!x){
                                 let br = document.createElement('br');
                                 range.insertNode(br);
@@ -651,6 +646,7 @@ class EditorApp extends React.Component{
         }
     }
     handleBlockquote = () =>{
+        if(!this.currentRange) return;
         if(this.props.toolbarState.quote === 2){
             this.currentRange = this.traveler.unQuote(this.currentRange);
         }
@@ -660,6 +656,7 @@ class EditorApp extends React.Component{
         this.repopulateSelection()
     }
     handleBlockCode = () =>{
+        if(!this.currentRange) return;
         if(this.props.toolbarState.code === 2){
             this.currentRange = this.traveler.unCode(this.currentRange);
         }
