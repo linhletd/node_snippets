@@ -1,7 +1,8 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import EditorNodeTraveler from '../utils/editor_node_traveler';
-import ToolBar from './editor_toolbar'
+import ToolBar from './editor_toolbar';
+import LinkPrompt from './popup_link';
 class EditorApp extends React.Component{
     constructor(props){
         super(props);
@@ -665,6 +666,16 @@ class EditorApp extends React.Component{
         }
         this.repopulateSelection()
     }
+    handleMouseDown = (e) =>{
+        if(!this.props.prompt.closed){
+            let {it} = this.props.prompt;
+            it && it.next(false);
+            this.props.prompt.it 
+            this.props.updateState({
+                type: 'CLOSEPROMPT',
+            })
+        }
+    }
     shouldComponentUpdate(){
         return false;
     }
@@ -689,6 +700,7 @@ class EditorApp extends React.Component{
         editor.onkeypress = this.handleKeyPress;
         editor.onkeydown = this.handleKeyDown;
         editor.oninput = this.handleInput;
+        editor.onmousedown = this.handleMouseDown;
         // this.addEventListenerForEditor(editor);
         this.props.historyManager.startObserving();
     }
@@ -717,6 +729,7 @@ class EditorApp extends React.Component{
         return (
             <div id = 'editor_app'>
                 <ToolBar click = {click}/>
+                <LinkPrompt/>
             </div>
         )
     }
@@ -726,7 +739,8 @@ function mapstateToProps(state){
     return {
         historyManager: state.editor.historyManager,
         editorNode: state.editor.editorNode,
-        toolbarState: state.toolbar
+        toolbarState: state.toolbar,
+        prompt: state.linkPrompt
     }
 }
 function mapDispatchToProps(dispatch){

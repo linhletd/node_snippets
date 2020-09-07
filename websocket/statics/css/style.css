@@ -98,6 +98,12 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
+    position: sticky;
+    position: -webkit-sticky;
+    top: 0;
+    background-color: white;
+    z-index: 1;
+    width: 100vh;
 }
 #editor_area p{
     margin: 0px 0px;
@@ -107,4 +113,8 @@
 }
 #editor_area *:not(pre){
     font-family: Arial, Helvetica, sans-serif;
+}
+#editor_area{
+    position: relative;
+    top: 0px;
 }

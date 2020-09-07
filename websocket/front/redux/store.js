@@ -20,7 +20,10 @@ const LOGIN = 'LOGIN',
       LEAVEGAME = 'LEAVEGAME',
       ENDGAME = 'ENDGAME',
 
-      TOOLBARCHANGE = 'TOOLBARCHANGE'
+      TOOLBARCHANGE = 'TOOLBARCHANGE',
+
+      OPENPROMPT = 'OPENPROMPT',
+      CLOSEPROMPT = 'CLOSEPROMPT'
     
 var user, socket, usersStatus = undefined;
 if(window.atob && /^InVzZXIi=|;InVzZXIi=/.test(document.cookie)){
@@ -152,7 +155,7 @@ editorNode.contentEditable = true;
 editorNode.id = 'editor_area'
 // editorNode.style.color = 'orange';
 // editorNode.style.backgroundColor = 'grey';
-editorNode.style.height = '90vh';
+editorNode.style.minHeight = '90vh';
 editorNode.style.outline = 'none';
 editorNode.style.border = '1px solid grey';
 editorNode.style.borderRadius = '5px';
@@ -192,11 +195,22 @@ function toolbar(state = initialEditorToolbar, {type, data}){
     }
     return state;
 }
+
+function linkPrompt(state = {}, {type, data}){
+    switch(type){
+        case OPENPROMPT:
+            return data; //{it, as}
+        case CLOSEPROMPT:
+            return {closed: true};
+    }
+    return state;
+} 
 let reducer = combineReducers({
     main,
     poong,
     editor,
-    toolbar
+    toolbar,
+    linkPrompt
 })
 const store = createStore(reducer);
 store.subscribe(()=>{

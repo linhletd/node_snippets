@@ -1244,18 +1244,28 @@ class EditorNodeTraveler{
         if(!blq.hasChildNodes){
             blq.appendChild(document.createElement('br'));
         }
-        try{
-            range.setStartAfter(blq.lastChild.lastChild);
+        if(blq.lastChild.nodeName === 'BR'){
+            range.setStartBefore(blq.lastChild);
         }
-        catch{
-            try{
-                range.setStart(blq.lastChild, 0);
+        else{
+            let lastChild = blq.lastChild;
+            while(lastChild.lastChild){
+                lastChild = lastChild.lastChild;
             }
-            catch{
-                range.setStart(blq, 0)
+            if(lastChild.nodeName === '#text'){
+                range.setStart(lastChild, lastChild.nodeValue.length);
             }
+            else{
+                try{
+                    range.setStart(lastChild, 0);
+                }
+                catch{
+                    range.setStartAfter(lastChild)
+                }
+            }
+
         }
-        range.collapse(true)
+        range.collapse(true);
         return range;
     }
     unQuoteOne =  (quote, r)=>{
@@ -1750,6 +1760,32 @@ class EditorNodeTraveler{
         c && r.setStartBefore(start);
         d && r.setEndAfter(end);
         return r;
+    }
+    handleCollapsedRange = (r) =>{
+
+    } 
+    convertToLink = (r) =>{
+        function *gen(){
+            let href = yield;
+            if(!href){
+                return;
+            }
+            console.log('okey')
+        }
+        let it = gen();
+        it.next();
+        this.updateStore({it})
+        // let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff, collapsed} = r;
+        // if(collapsed){
+        //     let span;
+        //     if((span = this.isBelongTag('SPAN', start))){
+        //         start = span;
+        //     }
+        // }
+    }
+    changeOrUnlink = () =>{
+        let as = this.state.links;
+        this.updateStore({as})
     }
 }
 export default EditorNodeTraveler;
