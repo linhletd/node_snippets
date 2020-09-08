@@ -10,9 +10,11 @@ class LinkPromt extends React.PureComponent{
         } 
     }
     validatedUrl = (text) => {
-        return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}((:[0-9]{1,5}\b)|(\.[a-z]{2,6}\b))([-a-zA-Z0-9@:%_\+.~#?&/=]*)/ig.test(text);
+        if(text[text.length - 1]) text = text + '/';
+        return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}((:[0-9]{1,5}\b)?(\.[a-z]{2,6}\b)|(?!(\.[a-z]{2,6}\b))(:[0-9]{1,5}\b)[^\.])([-a-zA-Z0-9@:%_\+.~#?&//=]*)?/ig.test(text);
     }
     link = () =>{
+        let {as, it} = this.props.prompt;
         if(this.state.urlValidated){
             if(as){
                 as.map(a =>{
@@ -20,10 +22,10 @@ class LinkPromt extends React.PureComponent{
                 })
             }
             else{
-                this.props.prompt.it.next(this.state.url)
+                it && it.next(this.state.url)
             }
         }
-        this.updateState({
+        this.props.updateState({
             type: 'CLOSEPROMPT',
         })
     }
@@ -37,7 +39,7 @@ class LinkPromt extends React.PureComponent{
             r.insertNode(ct);
         })
         it && it.next(false);
-        this.updateState({
+        this.props.updateState({
             type: 'CLOSEPROMPT',
         })
     }
@@ -56,9 +58,10 @@ class LinkPromt extends React.PureComponent{
     }
     render(){
         let {prompt} = this.props;
+        console.log(prompt)
         let style = {
             position: 'fixed',
-            display: 'flex',
+            display: !prompt.closed ? 'flex' : 'none',
             flexDirection: 'row',
             flexWrap: 'wrap',
             zIndex: 1,
@@ -67,16 +70,13 @@ class LinkPromt extends React.PureComponent{
             backgroundColor: this.state.urlValidated ? 'green' : 'pink',
             outline: 'none'
         }
-        if(!prompt.closed){
-            return (
-                <div id = 'link_prompt' style = {style}>
-                    <input type = 'url' value = {this.state.url} style = {inputStyle} onChange = {this.handleChange}/>
-                    <button onClick = {this.link} disabled = {this.state.urlValidated ? true : false}>link</button>
-                    <button onClick = {this.unlink}>unlink</button>
-                </div>
-            )
-        }
-        return '';
+        return (
+            <div id = 'link_prompt' style = {style}>
+                <input type = 'url' value = {this.state.url} style = {inputStyle} onChange = {this.handleChange}/>
+                <button onClick = {this.link} disabled = {this.state.urlValidated ? false : true}>link</button>
+                <button onClick = {this.unlink}>unlink</button>
+            </div>
+        )
     }
 }
 function mapstateToProps(state){
