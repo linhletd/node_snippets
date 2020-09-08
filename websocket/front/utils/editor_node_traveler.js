@@ -264,9 +264,10 @@ class EditorNodeTraveler{
     reassignRange(range, constraint){
         if(constraint === true) constraint = this.root;
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
-        if(startOffset === 0 && (start !== common || constraint && start !== constraint)){
+        if(!constraint) constraint = common;
+        if(startOffset === 0 && (start !== constraint)){
             let cur = start;
-            while(cur !== this.root && (cur !== common || cur !== constraint)){
+            while(cur !== this.root && (cur !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.firstChild){
                     range.setStartBefore(cur);
@@ -278,9 +279,9 @@ class EditorNodeTraveler{
             }
         }
         let br;
-        if((end !== common || constraint && end !== constraint) && (!end.hasChildNodes() && end.nodeName !== '#text' ||end.hasChildNodes() && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset)) && br.nodeName === 'BR' && br === end.lastChild)){
+        if((end !== constraint) && (!end.hasChildNodes() && end.nodeName !== '#text' ||end.hasChildNodes() && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset)) && br.nodeName === 'BR' && br === end.lastChild)){
             let cur = end;
-            while(cur !== this.root && (cur !== common || cur !== constraint)){
+            while(cur !== this.root && (cur !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.lastChild){
                     range.setEndAfter(cur);
@@ -293,99 +294,41 @@ class EditorNodeTraveler{
         }
         return range
     }
-    checkBIU = (r, state) =>{
-        r = r.cloneRange();
-        this.reassignRange(r)
-        let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r, a, b;
-        if((a = this.isBelongTag('SPAN', start))){
-            start = a;
-        }
-        else{
-            start = this.getNthChild(start, startOff);
-        }
-        if((a = this.isBelongTag('SPAN', end))){
-            end = a;
-        }
-        else{
-            end = this.getNthChild(end, endOff - 1);
-        }
-        let neededCheck = {
-            bold: 'fontWeight',
-            italic: 'fontStyle',
-            underline: 'textDecoration',
-            fontsize: 'fontSize',
-            fontfamily: 'fontFamily'
-        }
-        let temp = {
-            fontsize: undefined,
-            fontfamily: undefined
-        }
-        let _verify = (val, actual) =>{
-            if(!neededCheck[val]) return;
-            if(val === 'fontsize'){
-                !actual && (actual = state.fontsize);
-                !temp.fontsize && (temp.fontsize = actual);
-                if(size.indexOf(actual) === -1 || actual !== temp.fontsize){
-                    state.fontsize = 'false';
-                    delete neededCheck.fontsize
+    reassignRange_r = (range, constraint) =>{
+        if(!range.collapsed) return range;
+        if(constraint === true) constraint = this.root;
+        let {startContainer: end, endContainer: start, commonAncestorContainer: common, startOffset, endOffset} = range;
+        if(!constraint) constraint = common;
+        if(startOffset === 0 && (start !== constraint)){
+            let cur = start;
+            while(cur !== this.root && (cur !== constraint)){
+                let par = cur.parentNode;
+                if(cur === par.firstChild){
+                    range.setEndBefore(cur);
+                    cur = par;
+                }
+                else{
+                    break;
                 }
             }
-            else if(val === 'fontfamily'){
-                !actual && (actual = state.fontfamily);
-                !temp.fontfamily && (temp.fontfamily = actual.match(/^\"?(.*?)\"?\,/)[1]);
-                if(!font[temp.fontfamily] ||actual.match(/^\"?(.*?)\"?\,/)[1] !== temp.fontfamily){
-                    state.fontfamily = 'false';
-                    delete neededCheck.fontfamily
+            range.collapse(false);
+        }
+        let br;
+        if((end !== constraint) && (!end.hasChildNodes() && end.nodeName !== '#text' ||end.hasChildNodes() && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset)) && br.nodeName === 'BR' && br === end.lastChild)){
+            let cur = end;
+            while(cur !== this.root && (cur !== constraint)){
+                let par = cur.parentNode;
+                if(cur === par.lastChild){
+                    range.setStartAfter(cur);
+                    cur = par;
+                }
+                else{
+                    break;
                 }
             }
-            else if(actual !== val){
-                state[val] = 1;
-                delete neededCheck[val];
-            }
+            range.collapse(true);
         }
-        let _check, completed = false;
-        _check = (cur)=>{
-            let keys = Object.keys(neededCheck).length;
-            if(!Object.keys(neededCheck).length || completed){
-                return;
-            }
-            if(['CODE', 'IMG', 'PRE'].indexOf(cur.nodeName) > -1 || keys.length === 0){
-                
-            }
-            else if(cur.nodeName === 'SPAN' || cur.nodeName === '#text'){
-                Object.keys(neededCheck).map((val) =>{
-                    let prop = neededCheck[val];
-                    let actual = cur.nodeName === '#text' ? cur.parentNode.style[prop] : cur.style[prop];
-                    _verify(val, actual)
-                })
-            }
-            else if(!cur.hasChildNodes() || cur.nodeName === 'BR'){
-                Object.keys(neededCheck).map(val =>{
-                    if(val !== 'fontsize' && val !== 'fontfamily'){
-                        state[val] = 1;
-                        delete neededCheck[val];
-                    }
-                    else{
-                        _verify(val);
-                    }
-                })
-            }
-            else{
-                _check(cur.firstChild);
-            }
-            if(cur === end){
-                completed = true;
-                return;
-            }
-            if(cur.nextSibling){
-                _check(cur.nextSibling);
-            }
-        };
-        Object.keys(neededCheck).map(key => {
-            state[key] = 2;
-            key === 'fontfamily' && (state.fontfamily = font[temp.fontfamily]);
-            key === 'fontsize' && (state.fontsize = temp.fontsize);
-        })
+        return range
     }
     checkRange = (range) =>{
         let font = {
@@ -440,26 +383,36 @@ class EditorNodeTraveler{
         (checkBIU = () =>{
             let r = range.cloneRange();
             let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff, collapsed} = r, a, b;
-            if((a = this.isBelongTag('SPAN', start))){
+            if((a = this.isBelongTag('PRE', start)|| this.isBelongTag('CODE', start))){
                 start = a;
             }
-            else if(start.nodeName === '#text'){
-                start = start
-            }
-            else if(collapsed){
-                start = start.cloneNode(false);
-            }
             else{
-                start = this.getNthChild(start, startOff);
+                if((a = this.isBelongTag('SPAN', start))){
+                    start = a;
+                }
+                else if(start.nodeName === '#text'){
+                    start = start
+                }
+                else if(collapsed){
+                    start = start.cloneNode(false);
+                }
+                else{
+                    start = this.getNthChild(start, startOff);
+                }
             }
-            if((a = this.isBelongTag('SPAN', end))){
+            if((a = this.isBelongTag('PRE', end) || this.isBelongTag('CODE', end))){
                 end = a;
             }
-            else if(end.nodeName === '#text'){
-                end = end
-            }
-            else if(!collapsed){
-                end = this.getNthChild(end, endOff - 1);
+            else{
+                if((a = this.isBelongTag('SPAN', end))){
+                    end = a;
+                }
+                else if(end.nodeName === '#text'){
+                    end = end
+                }
+                else if(!collapsed){
+                    end = this.getNthChild(end, endOff - 1);
+                }
             }
             let neededCheck = {
                 bold: 'fontWeight',
@@ -495,34 +448,37 @@ class EditorNodeTraveler{
                     delete neededCheck[val];
                 }
             }
-            let _check, completed = false;
+            let _check, completed = false, test = false;
             (_check = (cur)=>{
                 if(!Object.keys(neededCheck).length || completed){
                     return;
                 }
                 if(['CODE', 'IMG', 'PRE'].indexOf(cur.nodeName) > -1){
-                    
-                }
-                else if(cur.nodeName === 'SPAN' || cur.nodeName === '#text'){
-                    Object.keys(neededCheck).map((val) =>{
-                        let prop = neededCheck[val];
-                        let actual = cur.nodeName === '#text' ? cur.parentNode.style[prop] : cur.style[prop];
-                        _verify(val, actual)
-                    })
-                }
-                else if(!cur.hasChildNodes() || cur.nodeName === 'BR'){
-                    Object.keys(neededCheck).map(val =>{
-                        if(val !== 'fontsize' && val !== 'fontfamily'){
-                            state[val] = 1;
-                            delete neededCheck[val];
-                        }
-                        else{
-                            _verify(val);
-                        }
-                    })
+                    //ignore
                 }
                 else{
-                    _check(cur.firstChild);
+                    test = true // makesure range does not only contain ignore nodes: code, pre...
+                    if(cur.nodeName === 'SPAN' || cur.nodeName === '#text'){
+                        Object.keys(neededCheck).map((val) =>{
+                            let prop = neededCheck[val];
+                            let actual = cur.nodeName === '#text' ? cur.parentNode.style[prop] : cur.style[prop];
+                            _verify(val, actual)
+                        })
+                    }
+                    else if(!cur.hasChildNodes() || cur.nodeName === 'BR'){
+                        Object.keys(neededCheck).map(val =>{
+                            if(val !== 'fontsize' && val !== 'fontfamily'){
+                                state[val] = 1;
+                                delete neededCheck[val];
+                            }
+                            else{
+                                _verify(val);
+                            }
+                        })
+                    }
+                    else{
+                        _check(cur.firstChild);
+                    }
                 }
                 if(cur === end){
                     completed = true;
@@ -545,9 +501,16 @@ class EditorNodeTraveler{
                 }
             })(start);
             Object.keys(neededCheck).map(key => {
-                state[key] = 2;
-                key === 'fontfamily' && (state.fontfamily = font[temp.fontfamily]);
-                key === 'fontsize' && (state.fontsize = temp.fontsize);
+                if(test){
+                    state[key] = 2;
+                    key === 'fontfamily' && (state.fontfamily = font[temp.fontfamily]);
+                    key === 'fontsize' && (state.fontsize = temp.fontsize);
+                }
+                else{
+                    state[key] = 1;
+                    key === 'fontfamily' && (state.fontfamily = 'false');
+                    key === 'fontsize' && (state.fontsize = 'false');
+                }
             })
         })();
         // (checkBIU = ()=>{
@@ -984,6 +947,12 @@ class EditorNodeTraveler{
         };
         return false;
     }
+    isBlockElem_a(node){
+        if(node && ['UL', 'OL', 'LI', 'P', 'BLOCKQUOTE'].indexOf(node.nodeName) > -1){
+            return node;
+        };
+        return false;
+    }
     handleUnacessedSpan(span, bool){
         if(!span) return span;
         if((span.nodeName === 'SPAN' || span.nodeName === 'P') && (!span.hasChildNodes() || span.childNodes.length === 1 && span.firstChild.nodeName === '#text' && span.firstChild.nodeValue === '')){
@@ -1241,7 +1210,7 @@ class EditorNodeTraveler{
         }
         blq.appendChild(xnode);
         if(blq.nextSibling && blq.nextSibling.nodeName === 'BR'){blq.nextSibling.remove()}
-        if(!blq.hasChildNodes){
+        if(!blq.hasChildNodes()){
             blq.appendChild(document.createElement('br'));
         }
         if(blq.lastChild.nodeName === 'BR'){
@@ -1577,7 +1546,6 @@ class EditorNodeTraveler{
     convertToListX = (tagName, r) =>{
         this.findPreBreakPoint(r);
         this.roundUpRange(r);
-        console.log(r, 1);
         let blq;
         let constraint = (blq = this.isBelongTag('BLOCKQUOTE', r.commonAncestorContainer)) ? blq : true;
         this.reassignRange(r, constraint);
@@ -1635,6 +1603,7 @@ class EditorNodeTraveler{
             }
         })(frag.firstChild);
         this.resideRange(list, r);
+        this.reunion(list, true);
         return r;
     }
     resideRange(list, r){
@@ -1649,7 +1618,6 @@ class EditorNodeTraveler{
         if((a = this.isBelongTag('PRE', r.endContainer) || this.isBelongTag('CODE', r.endContainer))){
             r.setEndBefore(a);
         }
-        console.log(r, -1)
         this.reassignRange(r, true);
         if(r.collapsed){
             return r;
@@ -1765,27 +1733,108 @@ class EditorNodeTraveler{
 
     } 
     convertToLink = (r) =>{
-        function *gen(){
+        let self = this;
+        let gen = function *(){
             let href = yield;
             if(!href){
                 return;
             }
-            console.log('okey')
+            let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff, collapsed} = r;
+            if(collapsed){
+                let span;
+                if((span = self.isBelongTag('SPAN', start))){
+                    start = span;
+                }
+                if(start.nodeName === '#text' || start.nodeName === 'SPAN'){
+                    let node = self.splitNodeX(start, r);
+                    r.selectNode(node);
+                    node.remove();
+                }
+                let a = document.createElement('A');
+                a.href = href;
+                a.innerText = href;
+                if(start === self.root || start.nodeName == 'BLOCKQUOTE'){
+                    let p = document.createElement('p');
+                    p.appendChild(a);
+                    a = p;
+                }
+                r.insertNode(a);
+                if(a.nextSibling && a.nextSibling.nodeName === 'BR'){
+                    a.nextSibling.remove();
+                }
+            }
+            else{
+                let a, b;
+                if((a = this.isBelongTag('PRE', r.startContainer) || this.isBelongTag('CODE', r.startContainer))){
+                    r.setStartAfter(a);
+                }
+                if((a = this.isBelongTag('PRE', r.endContainer) || this.isBelongTag('CODE', r.endContainer))){
+                    r.setEndBefore(a);
+                }
+                if(r.collapsed){
+                    return;
+                }
+                let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r, c = false, d = false;
+                console.log(start, end,0)
+                if(this.isBelongTag('P', common) || this.isBelongTag('LI', common)){
+                    if(common.parentNode.nodeName === 'SPAN'){
+                        common = common.parentNode;
+                    }
+                    common = this.splitNodeX(common, r);
+                    r.selectNode(common);
+                    common = r.extractContents();
+                    a = this.createElement('a');
+                    a.href = href;
+                    r.insertNode(a);
+                    a.appendChild(common);
+                    return;
+                }
+                else if((a = start.nodeName === '#text') || start.nodeName === 'SPAN'){
+                    a ? start.parentNode.nodeName === 'SPAN'? b = start.parentNode.parentNode : b = start.parentNode : b = start.parentNode;
+                    if(b.style[prop] !== val){
+                        b = b.nodeName === 'SPAN' ? b : start
+                        let r1 = r.cloneRange();
+                        r1.setEndAfter(b)
+                        start = this.splitNodeX(b, r1);
+                        c = true;
+                    }
+                    else{
+                        start = start;
+                    }
+                }
+                else{
+                    start = this.getNthChild(start, startOff);
+                    c = true;
+                }
+                if((a = end.nodeName === '#text') || end.nodeName === 'SPAN'){
+                    a ? b = end.parentNode : b = end;
+                    if(b.style[prop] !== val){
+                        b = b.nodeName === 'SPAN' ? b : end
+                        let r1 = r.cloneRange();
+                        r1.setStartBefore(b)
+                        end = this.splitNodeX(b, r1);
+                        d = true;
+                    }
+                }
+                else{
+                    end = this.getNthChild(end, endOff - 1);
+                    d = true;
+                }
+            }
         }
         let it = gen();
-        it.next();
-        this.updateStore({it})
-        // let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff, collapsed} = r;
-        // if(collapsed){
-        //     let span;
-        //     if((span = this.isBelongTag('SPAN', start))){
-        //         start = span;
-        //     }
-        // }
+        console.log(it.next().value);
+        this.updateStore({
+            type: 'OPENPROMPT',
+            data: {it}
+        })
     }
     changeOrUnlink = () =>{
         let as = this.state.links;
-        this.updateStore({as})
+        this.updateStore({
+            type: 'OPENPROMPT',
+            data: {as}
+        })
     }
 }
 export default EditorNodeTraveler;

@@ -144,39 +144,7 @@ class EditorApp extends React.Component{
                     par.remove();
                 }
             }
-            // else if(li){
-            //     if(li.firstChild && li.firstChild.nodeName !== 'SPAN'){
-            //         //do nothing;
-            //     }
-            //     else{
-            //         if(collapsed && off === 1 && this.traveler.hasRealText(li)){
-            //             console.log('hahah')
-            //             e.preventDefault();
-            //             start.remove();
-            //             let span = li.firstChild;
-            //             r.selectNodeContents(li);
-            //             r.deleteContents();
-            //             if(!span.hasChildNodes()){
-            //                 let br = document.createElement('br');
-            //                 span.appendChild(br);
-            //             }
-            //             li.appendChild(span)
-            //             this.currentRange.setStart(li.firstChild, 0);
-            //             this.currentRange.collapse(true);
-            //         }
-            //         else if(!collapsed && off === 0 && endOff === start.length){
-            //             e.preventDefault();
-            //             let span = li.firstChild;
-            //             let br = document.createElement('br');
-            //             span.insertBefore(br, span.firstChild);
-            //             r.setStartAfter(br);
-            //             this.traveler.reassignRange(r)
-            //             r.deleteContents();
-            //             this.currentRange.setStartBefore(br);
-            //             this.currentRange.collapse(true);
-            //         }
-            //     }
-            // }
+
         }
         else if(e.keyCode === 13 && (li = this.traveler.isBelongTag('LI', common))){
             par = li.parentNode;
@@ -285,13 +253,9 @@ class EditorApp extends React.Component{
         return this.currentRange;
     }
     cutNode = (range) =>{
-        let common = range.commonAncestorContainer;
-        if(common.nodeName === 'SPAN' || common.nodeName === '#text'){
-            let cc;
-            if((cc = this.traveler.isBelongTag('SPAN', common))){
-                common = cc;
-            }
-            !range.collapsed && range.deleteContents();
+        let common = range.commonAncestorContainer, cm;
+        if((cm = this.traveler.isBelongTag('A', common) || this.traveler.isBelongTag('SPAN', common) || this.traveler.isBelongTag('#text', common))){
+            common = cm;
             let r1 = range.cloneRange();
             r1.setStartBefore(common);
             let ct1 = r1.extractContents()
@@ -306,6 +270,12 @@ class EditorApp extends React.Component{
             };
             if(ct2.firstChild){
                 let fst = ct2.firstChild;
+                if(fst.nodeName === 'A' && !this.traveler.hasRealText(fst)){
+                    console.log(fst)
+                    r1.selectNodeContents(fst);
+                    ct2 = r1.extractContents();
+                    fst = ct2.firstChild;
+                }
                 r2.insertNode(ct2);
                 range.setStartBefore(fst);
                 range.collapse(true);
@@ -440,6 +410,7 @@ class EditorApp extends React.Component{
                         bef = this.traveler.handleUnacessedSpan(bef, true);
                         af = this.traveler.handleUnacessedSpan(af, true);
                         let pr,nx,x,y, pre;
+                        console.log(bef, af)
                         if(!(pre = this.traveler.isBelongTag('PRE', cm))){
                             if((x = bef && bef.nodeName !== 'BR' && !this.traveler.isBlockElem(bef) && (!(pr = bef.previousSibling) || (pr.nodeName !== '#text' && pr.nodeName !== 'SPAN')))){
                                 let p = document.createElement('p');
@@ -666,6 +637,11 @@ class EditorApp extends React.Component{
         }
         this.repopulateSelection()
     }
+    handleLink = () =>{
+        if(this.props.toolbarState.link){
+            this.traveler.convertToLink(this.currentRange)
+        }
+    }
     handleMouseDown = (e) =>{
         if(!this.props.prompt.closed){
             let {it} = this.props.prompt;
@@ -725,6 +701,7 @@ class EditorApp extends React.Component{
             handleDecreaseListLevel: this.handleDecreaseListLevel,
             handleBlockquote: this.handleBlockquote,
             handleBlockCode: this.handleBlockCode,
+            handleLink: this.handleLink,
         }
         return (
             <div id = 'editor_app'>

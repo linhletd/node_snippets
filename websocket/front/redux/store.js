@@ -196,7 +196,7 @@ function toolbar(state = initialEditorToolbar, {type, data}){
     return state;
 }
 
-function linkPrompt(state = {}, {type, data}){
+function linkPrompt(state = {closed: true}, {type, data}){
     switch(type){
         case OPENPROMPT:
             return data; //{it, as}
