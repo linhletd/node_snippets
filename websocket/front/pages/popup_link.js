@@ -11,7 +11,7 @@ class LinkPromt extends React.PureComponent{
     }
     validatedUrl = (text) => {
         if(text[text.length - 1]) text = text + '/';
-        return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}((:[0-9]{1,5}\b)?(\.[a-z]{2,6}\b)|(?!(\.[a-z]{2,6}\b))(:[0-9]{1,5}\b)[^\.])([-a-zA-Z0-9@:%_\+.~#?&//=]*)?/ig.test(text);
+        return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}((:[0-9]{1,5}\b)?(\.[a-z]{2,6}\b)|(?!(\.[a-z]{2,6}\b))(:[0-9]{1,5}\b)[^\.])([-na-zA-Z0-9@:%_\+.~#?&//=]*)?/ig.test(text);
     }
     link = () =>{
         let {as, it} = this.props.prompt;
