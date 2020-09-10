@@ -76,9 +76,9 @@ class LinkPromt extends React.PureComponent{
             borderRadius: '3px',
             widthMin: '100px',
         }
-        // setTimeout(()=>{
-        //     document.querySelector('#link_prompt>input').focus();
-        // },100);
+        setTimeout(()=>{
+            document.querySelector('#link_prompt>input').focus();
+        },100);
         return (
             <div id = 'link_prompt' style = {style}>
                 <input type = 'url' value = {this.state.url} style = {inputStyle} onChange = {this.handleChange} autoFocus = {true}/>

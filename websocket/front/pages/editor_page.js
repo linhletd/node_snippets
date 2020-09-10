@@ -6,8 +6,9 @@ import LinkPrompt from './popup_link';
 class EditorApp extends React.Component{
     constructor(props){
         super(props);
-        this.setToolbarState = undefined;
-        this.currentRange = undefined;
+        this.currentRange = new Range();
+        this.currentRange.setStart(props.editorNode, 0);
+        this.currentRange.collapse(true);
         this.data = {
             waitElem: null,
             focused: false
@@ -680,9 +681,6 @@ class EditorApp extends React.Component{
         editor.oninput = this.handleInput;
         editor.onmousedown = this.handleMouseDown;
         this.props.historyManager.startObserving();
-        this.currentRange = new Range();
-        this.currentRange.setStart(editor, 0);
-        this.currentRange.collapse(true);
     }
     componentWillUnmount(){
     }

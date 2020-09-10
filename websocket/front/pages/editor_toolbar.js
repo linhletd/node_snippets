@@ -57,7 +57,7 @@ class ToolBar extends React.PureComponent{
                         <option value = 'Verdana,Geneva,sans-serif' style = {{fontFamily: 'Verdana,Geneva,sans-serif'}}>Verdana</option>
                         <option value = '"Courier New",Courier,monospace' style = {{fontFamily: '"Courier New",Courier,monospace'}}>Courier New</option>
                         <option value = '"Lucida Console",Monaco,monospace' style = {{fontFamily: '"Lucida Console",Monaco,monospace'}}>Lucida Console</option>
-                        {state.fontFamily === 'false' ? <option value = 'false' style = {emptyFontStyle}></option> : ''}
+                        {state.fontfamily === 'false' ? <option value = 'false' style = {emptyFontStyle}></option> : ''}
 
                     </select>
                     <select onChange = {click.handleFontSize} value = {state.fontsize}>
