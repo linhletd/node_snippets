@@ -295,12 +295,11 @@ class EditorNodeTraveler{
         return range
     }
     reassignRange_r = (range, constraint) =>{
-        if(!range.collapsed) return range;
         if(constraint === true) constraint = this.root;
-        let {startContainer: end, endContainer: start, commonAncestorContainer: common, startOffset, endOffset} = range;
+        let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset, collapsed} = range;
         if(!constraint) constraint = common;
-        if(startOffset === 0 && (start !== constraint)){
-            let cur = start;
+        if(endOffset === 0 && (end !== constraint)){
+            let cur = end;
             while(cur !== this.root && (cur !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.firstChild){
@@ -311,11 +310,10 @@ class EditorNodeTraveler{
                     break;
                 }
             }
-            range.collapse(false);
+            collapsed && range.collapse(false);
         }
-        let br;
-        if((end !== constraint) && (!end.hasChildNodes() && end.nodeName !== '#text' ||end.hasChildNodes() && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset)) && br.nodeName === 'BR' && br === end.lastChild)){
-            let cur = end;
+        if((start !== constraint) && (!start.hasChildNodes() && start.nodeName !== '#text' ||start.hasChildNodes() && endOffset === start.childNodes.length || start.nodeValue && startOffset === start.nodeValue.length)){
+            let cur = start;
             while(cur !== this.root && (cur !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.lastChild){
@@ -326,7 +324,7 @@ class EditorNodeTraveler{
                     break;
                 }
             }
-            range.collapse(true);
+            collapsed && range.collapse(true);
         }
         return range
     }
@@ -365,12 +363,6 @@ class EditorNodeTraveler{
         
         };
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset, collapsed} = range;
-        if(this.isBelongTag('A', common)){
-            state.link = 2;
-        }
-        else{
-            state.link = 1;
-        }
         if(this.isBelongTag('OL', common) || this.isBelongTag('UL', common)){
             state.inclevel = 1;
             state.declevel = 1;
@@ -379,10 +371,156 @@ class EditorNodeTraveler{
             state.inclevel = 0;
             state.declevel = 0;
         };
-        let checkList, checkBIU, checkQuote, checkCode, test;
+        let checkList, checkBIU, checkQuote, checkCode, checkLink, test;
+        (checkList = ()=>{
+            if(common.nodeName === 'UL'){
+                state.unorder = 2;
+                return;
+            }
+            else if(common.nodeName === 'OL'){
+                state.order = 2;
+                return;
+            }
+            let li, li1, li2;
+            if(li = this.isBelongTag('LI', common)){
+                li.parentNode.nodeName === 'UL' ? state.unorder = 2 : state.order = 2;
+                return;
+            }
+            else if(!(li1 = this.isBelongTag('LI', start)) || !(li2 = this.isBelongTag('LI', end)) || li1 && li2 && li1.parentNode.nodeName !== li2.parentNode.nodeName){
+                state.order = 1;
+                state.unorder = 1;
+                return;
+            }
+            else{
+                let tempType = li1.parentNode.nodeName;
+                let _checkLeft, _checkRight;
+                this._getInitialLeftNode(range);
+                this._getInitialRightNode(range);
+                (_checkLeft = (cur) =>{
+                    if(cur === this.state.bigRight){
+                        return;
+                    }
+                    else if(cur.nodeName !== 'LI' && cur.nodeName !== tempType){
+                        state.order = 1;
+                        state.unorder = 1;
+                        tempType = undefined;
+                        return;
+                    }
+                    else if(cur.nextSibling){
+                        _checkLeft(cur.nextSibling);
+                    }
+                    else{
+                        while(!cur.parentNode.nextSibling){
+                            if(cur.parentNode === this.root) return;
+                            cur = cur.parentNode;
+                        }
+                        _checkLeft(cur.parentNode.nextSibling);
+                    }
+                })(li1);
+                (_checkRight = (cur) =>{
+                    if(!tempType || cur === this.state.bigRight.previousSibling){
+                        return;
+                    }
+                    else if(cur.nodeName !== 'LI' && cur.nodeName !== tempType){
+                        state.order = 1;
+                        state.unorder = 1;
+                        tempType = undefined;
+                        return;
+                    }
+                    else if(cur.previousSibling){
+                        _checkLeft(cur.previousSibling);
+                    }
+                    else{
+                        while(!cur.parentNode.previousSibling){
+                            cur = cur.parentNode;
+                        }
+                        _checkLeft(cur.parentNode.previousSibling);
+                    }
+                })(li2);
+                if(tempType){
+                    tempType === 'UL' ? state.unorder = 2 : state.order = 2;
+                }
+            }
+        })();
+        (checkCode = checkQuote = (type, stateName) =>{
+            let a, x;
+            if(stateName === 'code'){
+                x = this.state.code = [];
+            }
+            if((a = this.isBelongTag(type, common))){
+                state[stateName] = 2;
+                x && x.push(common);
+                return;
+            }
+            a = this.isBelongTag(type, start);
+            if(!a){
+                state[stateName] = 1;
+                return;
+            }
+            let b = this.isBelongTag(type, end);
+            if(!b){
+                state[stateName] = 1;
+                return;
+            }
+            let _check;
+            state[stateName] = 2;
+            (_check = (cur) =>{
+                if(x && cur.nodeName === type){
+                    x.push(cur);
+                }
+                else if(type === 'BLOCKQUOTE'){
+                    if(cur.nodeName !== type){
+                        state[stateName] = 1;
+                        return;
+                    }
+                }
+                else if(type === 'PRE'){
+                    if(cur.nodeName === 'BLOCKQUOTE'){
+                        if(!cur.hasChildNodes()){
+                            state[stateName] = 1;
+                            return;
+                        }
+                        else{
+                            _check(cur.firstChild)
+                        }
+                    }
+                    else{
+                        if(cur.nodeName !== type){
+                            state[stateName] = 1;
+                            return;
+                        }
+                    }
+                }
+                if(cur === b){
+                    return;
+                }
+                else if(cur.nextSibling){
+                    _check(cur.nextSibling)
+                }
+                else if(stateName === 'code'){
+                    cur = cur.parentNode;
+                    while(cur !== b && cur !== this.root){
+                        if(cur.nextSibling){
+                            _check(cur.nextSibling);
+                            break;
+                        }
+                        cur = cur.parentNode;
+                    }
+                }
+            })(a)
+        })('BLOCKQUOTE', 'quote');
+        checkCode('PRE', 'code');
         (checkBIU = () =>{
             let r = range.cloneRange();
-            let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff, collapsed} = r, a, b;
+            let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff, collapsed, commonAncestorContainer: cm} = r, a, b;
+            if(cm.nodeName === 'IMG' || state.code1 === 2 || state.code === 2){
+                state.bold = 0;
+                state.italic = 0;
+                state.underline = 0;
+                state.fontfamily = 'false';
+                state.fontsize = 'false';
+                return;
+            }
             if((a = this.isBelongTag('PRE', start)|| this.isBelongTag('CODE', start))){
                 start = a;
             }
@@ -426,6 +564,7 @@ class EditorNodeTraveler{
                 fontfamily: undefined
             }
             let _verify = (val, actual) =>{
+               !test && (test = true) // makesure range does not only contain ignore nodes: code, pre...
                 if(!neededCheck[val]) return;
                 if(val === 'fontsize'){
                     !actual && (actual = state.fontsize);
@@ -457,7 +596,6 @@ class EditorNodeTraveler{
                     //ignore
                 }
                 else{
-                    test = true // makesure range does not only contain ignore nodes: code, pre...
                     if(cur.nodeName === 'SPAN' || cur.nodeName === '#text'){
                         Object.keys(neededCheck).map((val) =>{
                             let prop = neededCheck[val];
@@ -513,230 +651,88 @@ class EditorNodeTraveler{
                 }
             })
         })();
-        // (checkBIU = ()=>{
-        //     if(common.nodeName === 'SPAN' || collapsed || common.nodeName === '#text'){
-        //         if(common.nodeName === '#text') common = common.parentNode;
-        //         common.style.fontWeight === 'bold' ? state.bold = 2 : state.bold = 1;
-        //         common.style.fontStyle === 'italic' ? state.italic = 2 : state.italic = 1;
-        //         common.style.textDecoration === 'underline' ? state.underline = 2 : state.underline = 1;
-        //         let fnt;
-        //         if(common.style.fontSize === ''){
-        //             //do nothing
-        //         }
-        //         else if(size.indexOf(common.style.fontSize) === -1){
-        //             state.fontsize = 'false';
-        //         }
-        //         else{
-        //             state.fontsize = common.style.fontSize;
-        //         }
-        //         if(common.style.fontFamily === ''){
-        //             //do nothing
-        //         }
-        //         else if(!(fnt = font[common.style.fontFamily.match(/^\"?(.*?)\"?\,/)[1]])){
-        //             state.fontfamily = 'false';
-        //         }
-        //         else{
-        //             state.fontfamily = fnt;
-        //         }
-        //     }
-        //     else{
-        //         let _check, head, tail;
-        //         let neededCheck = {
-        //             bold: 'fontWeight',
-        //             italic: 'fontStyle',
-        //             underline: 'textDecoration',
-        //             fontsize: 'fontSize',
-        //             fontfamily: 'fontFamily'
-        //         }
-        //         let temp = {
-        //             fontsize: undefined,
-        //             fontfamily: undefined
-        //         }
-        //         if(start.nodeName === '#text'){
-        //             head = start;
-        //         }
-        //         else{
-        //             head = this.getNthChild(start, startOffset)
-        //         }
-        //         if(end.nodeName === '#text'){
-        //             tail = end;
-        //         }
-        //         else{
-        //             tail = this.getNthChild(end, endOffset - 1);
-        //         }
-        //         this._getInitialLeftNode(range);
-        //         this._getInitialRightNode(range);
-        //         let _verify = (cur)=>{
-        //             let keys = Object.keys(neededCheck);
-        //             if(!keys.length || cur.hasChildNodes() && cur.nodeName !== 'SPAN') return;
-        //             !test && (test = true);
-        //             keys.map((val) =>{
-        //                 let prop = neededCheck[val];
-        //                 let actual = cur.nodeName === '#text' ? cur.parentNode.style[prop] : cur.style[prop];
-        //                 if(val === 'fontsize'){
-        //                     actual === '' && (actual = state.fontsize);
-        //                     !temp.fontsize && (temp.fontsize = actual);
-        //                     if(size.indexOf(actual) === -1 || actual !== temp.fontsize){
-        //                         state.fontsize = 'false';
-        //                         delete neededCheck.fontsize
-        //                     }
-        //                 }
-        //                 else if(val === 'fontfamily'){
-        //                     actual === '' && (actual = state.fontfamily);
-        //                     !temp.fontfamily && (temp.fontfamily = actual.match(/^\"?(.*?)\"?\,/)[1]);
-        //                     if(!font[temp.fontfamily] ||actual.match(/^\"?(.*?)\"?\,/)[1] !== temp.fontfamily){
-        //                         state.fontfamily = 'false';
-        //                         delete neededCheck.fontfamily
-        //                     }
-        //                 }
-        //                 else if(actual !== val){
-        //                     state[val] = 1;
-        //                     delete neededCheck[val];
-        //                 }
-        //             })
-        //         };
-        //         (_check = (cur, side) =>{
-        //             if(!cur || side === 'nextSibling' && cur === this.state.bigRight || side === 'previousSibling' && this.state.bigRight && (cur === this.state.bigRight.previousSibling)){
-        //                 return;
-        //             }
-        //             if(['IMG', 'HR', 'BR', 'PRE'].indexOf(cur.nodeName) > -1){
-        //                 //do nothing
-        //             }
-        //             else{
-        //                 _verify(cur);
-        //                 if(!Object.keys(neededCheck).length){
-        //                     return;
-        //                 }
-        //             }
-        //             if(cur.hasChildNodes() && cur.nodeName !== 'SPAN'){
-        //                 return _check(cur.firstChild, side);
-        //             }
-        //             else if(cur[side]){
-        //                 return _check(cur[side], side);
-        //             }
-        //             else{
-        //                 let par = cur.parentNode;
-        //                 while(par !== common){
-        //                     if(par[side]){
-        //                         return _check(par[side], side);
-        //                     }
-        //                     par = par.parentNode;
-        //                 }
-        //                 // endChecked = true;
-        //             }
-        //         })(head, 'nextSibling');
-        //         if(Object.keys(neededCheck).length && (this.state.initRight)){
-        //             _check(tail, 'previousSibling')
-        //         }
-        //         Object.keys(neededCheck).map(key => {
-        //             if(test){
-        //                 state[key] = 2;
-        //             }
-        //             key === 'fontfamily' && (state.fontfamily = font[temp.fontfamily]);
-        //             key === 'fontsize' && (state.fontsize = temp.fontsize);
-        //         })
-        //     }
-        // })();
-        (checkList = ()=>{
-            if(common.nodeName === 'UL'){
-                state.unorder = 2;
+        (checkLink = () =>{
+            let x1;
+            if(state.code === 2 || this.isBelongTag('IMG', common)){
+                state.link = 0;
                 return;
             }
-            else if(common.nodeName === 'OL'){
-                state.order = 2;
+            if((x1 = this.isBelongTag('A', common))){
+                this.state.as = [];
+                this.state.as.push(x1);
+                state.link = 2;
                 return;
             }
-            let li, li1, li2;
-            if(li = this.isBelongTag('LI', common)){
-                li.parentNode.nodeName === 'UL' ? state.unorder = 2 : state.order = 2;
+            let x2;
+            x1 = this.isBelongTag('A', start);
+            if(!x1 && (collapsed || start.nodeName === '#text' || start.nodeName === 'SPAN' || end.nodeName === 'CODE' || end.nodeName === 'PRE')){
+                state.link = 1;
+                this.state.as = null;
                 return;
             }
-            else if(!(li1 = this.isBelongTag('LI', start)) || !(li2 = this.isBelongTag('LI', end)) || li1 && li2 && li1.parentNode.nodeName !== li2.parentNode.nodeName){
-                state.order = 1;
-                state.unorder = 1;
+            x2 = this.isBelongTag('A', end);
+            if(!x2 && (end.nodeName === '#text' || end.nodeName === 'SPAN' || end.nodeName === 'CODE' || end.nodeName === 'PRE')){
+                state.link = 1;
+                this.state.as = null;
                 return;
             }
-            else{
-                let tempType = li1.parentNode.nodeName;
-                let _checkLeft, _checkRight;
-                (_checkLeft = (cur) =>{
-                    if(cur === this.state.bigRight){
-                        return;
-                    }
-                    else if(cur.nodeName !== 'LI' && cur.nodeName !== tempType){
-                        state.order = 1;
-                        state.unorder = 1;
-                        tempType = undefined;
-                        return;
-                    }
-                    else if(cur.nextSibling){
-                        _checkLeft(cur.nextSibling);
-                    }
-                    else{
-                        while(!cur.parentNode.nextSibling){
-                            if(cur.parentNode === this.root) return;
-                            cur = cur.parentNode;
+            else if(!x2){
+                x2 = this.getNthChild(end, endOffset - 1)
+            }
+            if(!x1){
+                x1 = this.getNthChild(start, startOffset)
+            }
+            state.link = 2;
+            let _check, completed;
+            this.state.as = [];
+            console.log(x1, x2);
+            (_check = (cur) =>{
+                console.log(1, cur)
+                if(completed) return;
+                switch(cur.nodeName){
+                    case 'A':
+                        this.state.as.push(cur);
+                        break;
+                    case 'P': case 'LI': case 'UL': case 'OL': case 'BLOCKQUOTE':
+                        if(!cur.hasChildNodes()){
+                            state.link = 1;
+                            this.state.as = null;
+                            completed = true;
+                            return;
                         }
-                        _checkLeft(cur.parentNode.nextSibling);
-                    }
-                })(li1);
-                (_checkRight = (cur) =>{
-                    if(!tempType || cur === this.state.bigRight.previousSibling){
-                        return;
-                    }
-                    else if(cur.nodeName !== 'LI' && cur.nodeName !== tempType){
-                        state.order = 1;
-                        state.unorder = 1;
-                        tempType = undefined;
-                        return;
-                    }
-                    else if(cur.previousSibling){
-                        _checkLeft(cur.previousSibling);
-                    }
-                    else{
-                        while(!cur.parentNode.previousSibling){
-                            cur = cur.parentNode;
-                        }
-                        _checkLeft(cur.parentNode.previousSibling);
-                    }
-                })(li2);
-                if(tempType){
-                    tempType === 'UL' ? state.unorder = 2 : state.order = 2;
+                        _check(cur.firstChild);
+                        break;
+                    default:
+                        state.link = 1;
+                        this.state.as = null;
+                        completed = true;
+                        return; 
                 }
-            }
-        })();
-        (checkCode = checkQuote = (type, stateName) =>{
-            let a;
-            this.state[stateName] = [];
-            if((a = this.isBelongTag(type, common))){
-                state[stateName] = 2;
-                this.state[stateName].push(a)
-                return;
-            }
-            a = this.isBelongTag(type, start);
-            if(!a){
-                state[stateName] = 1;
-                return;
-            }
-            let b = this.isBelongTag(type, end);
-            if(!b){
-                state[stateName] = 1;
-                return;
-            }
-            let stop = b.nextSibling;
-            let cur = a;
+                if(cur === x2){
+                    completed = true;
+                    if(!this.state.as.length){
+                        state.link = 0;
+                        this.state.as = null
+                    }
+                    return; 
+                }
+                else if(cur.nextSibling){
+                    _check(cur.nextSibling);
+                }
+                else{
+                    cur = cur.parentNode;
+                    while(cur !== x2 && cur !== this.root){
+                        if(cur.nextSibling){
+                            _check(cur.nextSibling);
+                            break;
+                        }
+                        cur = cur.parentNode;
+                    }
+                }
+            })(x1);
 
-            state[stateName] = 2;
-            while(cur && cur !== stop){
-                if(cur.nodeName !== type){
-                    state[stateName] = 1;
-                    return;
-                }
-                else{this.state[stateName].push(cur)}
-                cur = cur.nextSibling;
-            }
-        })('BLOCKQUOTE', 'quote');
-        checkCode('PRE', 'code');
+        })();
+
         this.updateStore({
             type: 'TOOLBARCHANGE',
             data: state
@@ -1732,108 +1728,235 @@ class EditorNodeTraveler{
     handleCollapsedRange = (r) =>{
 
     } 
-    convertToLink = (r) =>{
-        let self = this;
-        let gen = function *(){
-            let href = yield;
-            if(!href){
-                return;
-            }
-            let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff, collapsed} = r;
-            if(collapsed){
-                let span;
-                if((span = self.isBelongTag('SPAN', start))){
-                    start = span;
-                }
-                if(start.nodeName === '#text' || start.nodeName === 'SPAN'){
-                    let node = self.splitNodeX(start, r);
-                    r.selectNode(node);
+    createA(href){
+        let a = document.createElement('a');
+        a.href = href;
+        return a;
+    }
+    _RemoveChildLink = (link) =>{
+        link.childNodes.forEach(node =>{
+            if(node.nodeName === 'A'){
+                if(this.isSpanEmpty(node)){
                     node.remove();
                 }
-                let a = document.createElement('A');
-                a.href = href;
-                a.innerText = href;
-                if(start === self.root || start.nodeName == 'BLOCKQUOTE'){
-                    let p = document.createElement('p');
-                    p.appendChild(a);
-                    a = p;
-                }
-                r.insertNode(a);
-                if(a.nextSibling && a.nextSibling.nodeName === 'BR'){
-                    a.nextSibling.remove();
+                else{
+                    let r = new Range();
+                    r.selectNodeContents(node);
+                    let ct = r.extractContents();
+                    r.selectNode(node);
+                    node.remove();
+                    r.insertNode(ct);
                 }
             }
-            else{
-                let a, b;
-                if((a = this.isBelongTag('PRE', r.startContainer) || this.isBelongTag('CODE', r.startContainer))){
-                    r.setStartAfter(a);
-                }
-                if((a = this.isBelongTag('PRE', r.endContainer) || this.isBelongTag('CODE', r.endContainer))){
-                    r.setEndBefore(a);
-                }
-                if(r.collapsed){
-                    return;
-                }
-                let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r, c = false, d = false;
-                console.log(start, end,0)
-                if(this.isBelongTag('P', common) || this.isBelongTag('LI', common)){
-                    if(common.parentNode.nodeName === 'SPAN'){
-                        common = common.parentNode;
-                    }
-                    common = this.splitNodeX(common, r);
-                    r.selectNode(common);
-                    common = r.extractContents();
-                    a = this.createElement('a');
-                    a.href = href;
-                    r.insertNode(a);
-                    a.appendChild(common);
-                    return;
-                }
-                else if((a = start.nodeName === '#text') || start.nodeName === 'SPAN'){
-                    a ? start.parentNode.nodeName === 'SPAN'? b = start.parentNode.parentNode : b = start.parentNode : b = start.parentNode;
-                    if(b.style[prop] !== val){
-                        b = b.nodeName === 'SPAN' ? b : start
-                        let r1 = r.cloneRange();
-                        r1.setEndAfter(b)
-                        start = this.splitNodeX(b, r1);
-                        c = true;
-                    }
-                    else{
-                        start = start;
-                    }
-                }
-                else{
-                    start = this.getNthChild(start, startOff);
-                    c = true;
-                }
-                if((a = end.nodeName === '#text') || end.nodeName === 'SPAN'){
-                    a ? b = end.parentNode : b = end;
-                    if(b.style[prop] !== val){
-                        b = b.nodeName === 'SPAN' ? b : end
-                        let r1 = r.cloneRange();
-                        r1.setStartBefore(b)
-                        end = this.splitNodeX(b, r1);
-                        d = true;
-                    }
-                }
-                else{
-                    end = this.getNthChild(end, endOff - 1);
-                    d = true;
-                }
-            }
-        }
-        let it = gen();
-        console.log(it.next().value);
-        this.updateStore({
-            type: 'OPENPROMPT',
-            data: {it}
         })
     }
-    changeOrUnlink = () =>{
-        let as = this.state.links;
-        this.updateStore({
-            type: 'OPENPROMPT',
-            data: {as}
+    convertToLink = (r) =>{
+        let self = this;
+        return new Promise((resolve, reject) =>{
+            let gen = function *(){
+                let href = yield;
+                resolve(r);
+                if(!href){
+                    return;
+                }
+                let {startContainer: start, collapsed} = r;
+                if(collapsed){
+                    let span;
+                    if((span = self.isBelongTag('SPAN', start))){
+                        start = span;
+                    }
+                    if(start.nodeName === '#text' || start.nodeName === 'SPAN'){
+                        let node = self.splitNodeX(start, r);
+                        r.selectNode(node);
+                        node.remove();
+                    }
+                    let a = self.createA(href);
+                    a.innerText = href;
+                    if(start === self.root || start.nodeName == 'BLOCKQUOTE'){
+                        let p = document.createElement('p');
+                        p.appendChild(a);
+                        a = p;
+                    }
+                    r.insertNode(a);
+                    if(a.nextSibling && a.nextSibling.nodeName === 'BR'){
+                        a.nextSibling.remove();
+                    }
+                }
+                else{
+                    let a;
+                    if((a = self.isBelongTag('PRE', r.startContainer) || self.isBelongTag('CODE', r.startContainer))){
+                        r.setStartAfter(a);
+                    }
+                    if((a = self.isBelongTag('PRE', r.endContainer) || self.isBelongTag('CODE', r.endContainer))){
+                        r.setEndBefore(a);
+                    }
+                    if(r.collapsed){
+                        return;
+                    }
+                    
+                    let common = r.commonAncestorContainer;
+                    if(self.isBelongTag('P', common) || self.isBelongTag('LI', common)){
+                        if(common.parentNode.nodeName === 'SPAN'){
+                            common = common.parentNode;
+                        }
+                        common = self.splitNodeX(common, r);
+                        r.selectNode(common);
+                        common = r.extractContents();
+                        a = self.createA(href);
+                        r.insertNode(a);
+                        a.appendChild(common);
+                        self._RemoveChildLink(a);
+                        return;
+                    }
+                    self.reassignRange_r(r);
+                    if(r.collapsed){
+                        return;
+                    }
+                    let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r, b, c = false, d = false, _addLink, r1 = new Range();
+                    if((b = self.isBelongTag('P', start) || self.isBelongTag('LI', start))){
+                        r1 = r.cloneRange();
+                        if(!b.hasChildNodes()){
+                            b.appendChild(document.createElement('br'));
+                        }
+                        r1.setEndAfter(b.lastChild);
+                        self.reassignRange(r1, b);
+                        let ct = r1.extractContents();
+                        a = self.createA(href);
+                        r1.insertNode(a);
+                        a.appendChild(ct);
+                        start = b;
+                           c = true;
+                    }
+                    else{
+                        start = self.getNthChild(start, startOff);
+                    }
+                    if((b = self.isBelongTag('P', end) || self.isBelongTag('LI', end))){
+                        r1 = r.cloneRange();
+                        if(!b.hasChildNodes()){
+                            b.appendChild(document.createElement('br'));
+                            r1.setEndAfter(b.lastChild)
+                        }
+                        r1.setStartBefore(b.firstChild);
+                        self.reassignRange(r1, b);
+                        let ct = r1.extractContents();
+                        a = self.createA(href);
+                        r1.insertNode(a);
+                        a.appendChild(ct);
+                        self._RemoveChildLink(a);
+                        end = b;
+                        d = true;
+                    }
+                    else{
+                        end = self.getNthChild(end, endOff - 1);
+                    }
+                    let ct, completed = false;
+                    (_addLink = (cur) =>{
+                        if(completed) return;
+                        if(['IMG', 'PRE', 'CODE'].indexOf(cur.nodeName) > -1 || cur === start && c || cur === end && d){
+                            //ignore
+                        }
+                        else{
+                            switch(cur.nodeName){
+                                case 'BR':
+                                    a = self.createA(href);
+                                    let p = document.createElement('p');
+                                    p.appendChild(a);
+                                    a.appendChild(cur);
+                                    self._RemoveChildLink(a);
+                                    break;
+                                case 'LI': case 'P':
+                                    r1.selectNodeContents(cur);
+                                    ct = r1.extractContents()
+                                    a = self.createA(href);
+                                    r1.insertNode(a);
+                                    a.appendChild(ct);
+                                    self._RemoveChildLink(a);
+                                    if(!a.hasChildNodes()){
+                                        a.appendChild(document.createElement('br'));
+                                    }
+                                    break;
+                                case 'OL': case 'UL': case 'BLOCKQUOTE':
+                                    if(!cur.hasChildNodes() && cur.nodeName === 'BLOCKQUOTE'){
+                                        cur.appendChild(document.createElement('br'));
+                                    }
+                                    _addLink(cur.firstChild);
+                                    break;
+                            }
+                        }
+                        if(cur === end){
+                            completed = true;
+                            return
+                        }
+                        else if(cur.nextSibling){
+                            _addLink(cur.nextSibling);
+                        }
+                        else{
+                            cur = cur.parentNode;
+                            while(cur !== end && cur !== self.root){
+                                if(cur.nextSibling){
+                                    _addLink(cur.nextSibling);
+                                    break;
+                                }
+                                cur = cur.parentNode;
+                            }
+                        }
+                    })(start);
+                    if(c){
+                        r.setStartBefore(start.lastChild);
+                    }
+                    else{
+                        r.setStartBefore(start);
+                    }
+                    if(d){
+                        r.setEndAfter(end.firstChild);
+                    }
+                    else{
+                        r.setEndAfter(end);
+                    }
+                }
+            }
+            let it = gen();
+            it.next();
+            this.updateStore({
+                type: 'OPENPROMPT',
+                data: {it}
+            });
+        })
+    }
+    changeOrUnlink = (r) =>{
+        let {as} = this.state;
+        return new Promise((resolve, reject) =>{
+            function *gen(){
+                let href = yield;
+                resolve(r)
+                if(href === as[0].href){
+                    return;
+                }
+                if(!href){
+                    let r1 = new Range(), ct, f, l;
+                    as.map((a, idx) =>{
+                        r1.selectNodeContents(a);
+                        ct = r1.extractContents();
+                        idx === 0 && (f = ct.firstChild);
+                        idx === as.length -1 && (l = ct.lastChild);
+                        r1.selectNode(a);
+                        a.remove();
+                        r1.insertNode(ct);
+                    });
+                    r.setStartBefore(f);
+                    r.setEndAfter(l);
+                    return;
+                }
+                as.map(a =>{
+                    a.href = href;
+                })
+            }
+            let it = gen();
+            it.next();
+            this.updateStore({
+                type: 'OPENPROMPT',
+                data: {as, it}
+            })
         })
     }
 }

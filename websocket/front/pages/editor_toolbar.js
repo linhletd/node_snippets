@@ -13,23 +13,18 @@ class ToolBar extends React.PureComponent{
             <div id = 'tool_bar'>
                 <div onClick = {click.undo} className = {state.undo ? '' : 'disabled'}><i className="fa fa-reply"></i></div>
                 <div onClick = {click.redo} className = {state.redo ? 'space' : 'space disabled'}><i className="fa fa-share"></i></div>
-                <div onClick = {click.handleClickBold} className = {state.bold === 2 ? 'activated' : ''}><i className="fa fa-bold"></i></div>
-                <div onClick = {click.handleClickItalic} className = {state.italic === 2 ? 'activated' : ''}><i className="fa fa-italic"></i></div>
-                <div onClick = {click.handleClickUnderline} className = {state.underline === 2 ? 'space activated' : 'space'}><i className="fa fa-underline"></i></div>
+                <div onClick = {click.handleClickBold} className = {state.bold === 0 ? 'disabled' : state.bold === 2 ? 'activated' : ''}><i className="fa fa-bold"></i></div>
+                <div onClick = {click.handleClickItalic} className = {state.italic === 0 ? 'disabled' : state.italic === 2 ? 'activated' : ''}><i className="fa fa-italic"></i></div>
+                <div onClick = {click.handleClickUnderline} className = {state.underline === 0 ? 'space disabled' : state.underline === 2 ? 'space activated' : 'space'}><i className="fa fa-underline"></i></div>
                 <div onClick = {click.handleClickUList} className = {state.unorder === 2 ? 'activated' : ''}><i className="fa fa-list-ul"></i></div>
                 <div onClick = {click.handleClickOList} className = {state.order === 2 ? 'activated' : ''}><i className="fa fa-list-ol"></i></div>
                 <div onClick = {click.handleIncreaseListLevel} className = {state.inclevel === 0 ? 'disabled' : ''}><i className="fa fa-indent"></i></div>
                 <div onClick = {click.handleDecreaseListLevel} className = {state.declevel === 0 ? 'space disabled' : 'space'}><i className="fa fa-outdent"></i></div>
                 <div onClick = {click.handleBlockquote} className = {state.quote === 2 ? 'activated' : ''}><i className="fa fa-quote-left"></i></div>
                 <div onClick = {click.handleBlockCode} className = {state.code === 0 ? 'disabled' : state.code === 2 ? 'activated' : ''}><i className="fa fa-code"></i></div>
-                <div onClick = {click.handleLink}  className = {state.link === 2 ? 'activated space' : 'space'}><i className="fa fa-link"></i></div>
-                {/* <div className = 'ctn fill space'>
-                    <i className="fa fa-font prev-i" style = {{backgroundColor: 'yellow'}}></i>
-                    <i className="fa fa-caret-down i-wrapper">
-                        <input type = 'color' className = 'color-select'/>
-                    </i>
-                </div> */}
-                <div className = 'ctn colr'>
+                <div><i className="fa fa-file-image-o"></i></div>
+                <div onClick = {click.handleLink}  className = {state.link === 0 ? 'disabled space' : state.link === 2 ? 'activated space' : 'space'}><i className="fa fa-link"></i></div>
+                <div className = {state.bold === 0 ? 'disabled ctn colr' : 'ctn colr'}>
                     <div className = 'prev-i' onClick = {click.handleBgroundColor}>
                         <i className="fa fa-font" style = {{backgroundColor: state.fill}}></i>
                         <div style = {{backgroundColor: state.fill}}></div>
@@ -38,7 +33,7 @@ class ToolBar extends React.PureComponent{
                         <input type = 'color' className = 'color-select' onInput = {click.handleBgroundColor}/>
                     </i>
                 </div>
-                <div className = 'ctn colr space'>
+                <div className = {state.bold === 0 ? 'disabled ctn colr space' : 'ctn colr space'}>
                     <div className = 'prev-i' onClick = {click.handleClickFontColor}>
                         <i className="fa fa-font" style = {{color: state.color}}></i>
                         <div style = {{backgroundColor: state.color}}></div>
@@ -62,7 +57,7 @@ class ToolBar extends React.PureComponent{
                         <option value = 'Verdana,Geneva,sans-serif' style = {{fontFamily: 'Verdana,Geneva,sans-serif'}}>Verdana</option>
                         <option value = '"Courier New",Courier,monospace' style = {{fontFamily: '"Courier New",Courier,monospace'}}>Courier New</option>
                         <option value = '"Lucida Console",Monaco,monospace' style = {{fontFamily: '"Lucida Console",Monaco,monospace'}}>Lucida Console</option>
-                        <option value = 'false' style = {emptyFontStyle}></option>
+                        {state.fontFamily === 'false' ? <option value = 'false' style = {emptyFontStyle}></option> : ''}
 
                     </select>
                     <select onChange = {click.handleFontSize} value = {state.fontsize}>
@@ -83,12 +78,9 @@ class ToolBar extends React.PureComponent{
                         <option value = '54px'>54</option>
                         <option value = '62px'>62</option>
                         <option value = '72px'>72</option>
-                        <option value = 'false' style = {emptySizeStyle}></option>
+                        {state.fontsize === 'false' ? <option value = 'false' style = {emptySizeStyle}></option> : ''}
                     </select>
                 </div>
-
-                {/* <label>highlight</label>
-                <input type = 'color'/> */}
             </div>
         )
     }

@@ -3,7 +3,7 @@ import {connect} from 'react-redux';
 class LinkPromt extends React.PureComponent{
     constructor(props){
         super(props);
-        let {as, it} = this.props.prompt;
+        let {as} = this.props.prompt;
         this.state = {
             urlValidated: as ? true : false,
             url: as ? as[0].href : ''
@@ -14,30 +14,30 @@ class LinkPromt extends React.PureComponent{
         return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}((:[0-9]{1,5}\b)?(\.[a-z]{2,6}\b)|(?!(\.[a-z]{2,6}\b))(:[0-9]{1,5}\b)[^\.])([-na-zA-Z0-9@:%_\+.~#?&//=]*)?/ig.test(text);
     }
     link = () =>{
-        let {as, it} = this.props.prompt;
-        if(this.state.urlValidated){
-            if(as){
-                as.map(a =>{
-                    a.href = this.state.url
-                })
-            }
-            else{
-                it && it.next(this.state.url)
-            }
-        }
+        let {it} = this.props.prompt;
+        // if(this.state.urlValidated){
+        //     if(as){
+        //         as.map(a =>{
+        //             a.href = this.state.url
+        //         })
+        //     }
+        //     else{
+        it && it.next(this.state.url)
+            // }
+        // }
         this.props.updateState({
             type: 'CLOSEPROMPT',
         })
     }
     unlink = () =>{
-        let r = new Range(), ct, {as, it} = this.props.prompt;
-        as && as.map(a =>{
-            r.selectNodeContents(a);
-            ct = r.extractContents();
-            r.selectNode(a);
-            a.remove();
-            r.insertNode(ct);
-        })
+        let {it} = this.props.prompt;
+        // as && as.map(a =>{
+        //     r.selectNodeContents(a);
+        //     ct = r.extractContents();
+        //     r.selectNode(a);
+        //     a.remove();
+        //     r.insertNode(ct);
+        // })
         it && it.next(false);
         this.props.updateState({
             type: 'CLOSEPROMPT',
@@ -58,21 +58,30 @@ class LinkPromt extends React.PureComponent{
     }
     render(){
         let {prompt} = this.props;
-        console.log(prompt)
         let style = {
-            position: 'fixed',
+            position: 'sticky',
+            top: '29px',
             display: !prompt.closed ? 'flex' : 'none',
             flexDirection: 'row',
             flexWrap: 'wrap',
             zIndex: 1,
+            marginBottom: '3px',
+            backgroundColor: 'white'
         }
         let inputStyle = {
-            backgroundColor: this.state.urlValidated ? 'green' : 'pink',
-            outline: 'none'
+            backgroundColor: this.state.urlValidated ? '#9fdf9f' : '#ffbb99',
+            opacity: this.state.urlValidated ? 1 : 0.5,
+            outline: 'none',
+            border: 'solid 1px grey',
+            borderRadius: '3px',
+            widthMin: '100px',
         }
+        // setTimeout(()=>{
+        //     document.querySelector('#link_prompt>input').focus();
+        // },100);
         return (
             <div id = 'link_prompt' style = {style}>
-                <input type = 'url' value = {this.state.url} style = {inputStyle} onChange = {this.handleChange}/>
+                <input type = 'url' value = {this.state.url} style = {inputStyle} onChange = {this.handleChange} autoFocus = {true}/>
                 <button onClick = {this.link} disabled = {this.state.urlValidated ? false : true}>link</button>
                 <button onClick = {this.unlink}>unlink</button>
             </div>

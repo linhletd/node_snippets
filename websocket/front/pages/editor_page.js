@@ -488,7 +488,7 @@ class EditorApp extends React.Component{
         },0)
     }
     changeStyle = ({prop, val}) =>{
-        if(!this.currentRange) return;
+        if(!this.currentRange || this.props.toolbarState.bold === 0) return;
         let state = this.props.toolbarState;
         (prop === 'fontWeight' && state.bold === 2 ||
         prop === 'fontStyle' && state.italic === 2 ||
@@ -566,12 +566,6 @@ class EditorApp extends React.Component{
             this.data.waitElem = null;
         }
         this.currentRange = this.traveler.convertToListX('UL', this.currentRange).cloneRange();
-        // let wt = this.data.waitElem, li;
-        // if(wt && (li = wt.parentNode).nodeName === 'LI' && li.childNodes.length === 1){
-        //     this.data.waitElem = null;
-        //     let br = document.createElement('br');
-        //     wt.appendChild(br);
-        // }
         this.repopulateSelection();
     }
     handleClickOList = () =>{
@@ -582,13 +576,7 @@ class EditorApp extends React.Component{
         if(this.data.waitElem){
             this.data.waitElem = null;
         }
-        this.currentRange = this.traveler.convertToList('OL', this.currentRange).cloneRange();
-        let wt = this.data.waitElem, li;
-        // if(wt && (li = wt.parentNode).nodeName === 'LI' && li.childNodes.length === 1){
-        //     this.data.waitElem = null;
-        //     let br = document.createElement('br');
-        //     wt.appendChild(br);
-        // }
+        this.currentRange = this.traveler.convertToListX('OL', this.currentRange).cloneRange();
         this.repopulateSelection();
     }
     handleIncreaseListLevel = ()=>{
@@ -625,6 +613,7 @@ class EditorApp extends React.Component{
         else{
             this.currentRange = this.traveler.convertToBLockquote(this.currentRange);
         }
+        console.log(this.currentRange)
         this.repopulateSelection()
     }
     handleBlockCode = () =>{
@@ -635,18 +624,31 @@ class EditorApp extends React.Component{
         else{
             this.currentRange = this.traveler.convertToBlockCode(this.currentRange);
         }
+        console.log(this.currentRange)
         this.repopulateSelection()
     }
     handleLink = () =>{
-        if(this.props.toolbarState.link){
-            this.traveler.convertToLink(this.currentRange)
+        let {link} = this.props.toolbarState;
+        if(link === 0){
+            return;
         }
+        let p;
+        if(link === 2){
+            p = this.traveler.changeOrUnlink(this.currentRange);
+        }
+        else if(link === 1){
+            p = this.traveler.convertToLink(this.currentRange);
+        }
+        p.then((r) =>{
+            this.currentRange = r;
+            this.repopulateSelection();
+        })
+
     }
     handleMouseDown = (e) =>{
         if(!this.props.prompt.closed){
-            let {it} = this.props.prompt;
-            it && it.next(false);
-            this.props.prompt.it 
+            let {it, as} = this.props.prompt;
+            !as && it.next(false);
             this.props.updateState({
                 type: 'CLOSEPROMPT',
             })
@@ -677,11 +679,12 @@ class EditorApp extends React.Component{
         editor.onkeydown = this.handleKeyDown;
         editor.oninput = this.handleInput;
         editor.onmousedown = this.handleMouseDown;
-        // this.addEventListenerForEditor(editor);
         this.props.historyManager.startObserving();
+        this.currentRange = new Range();
+        this.currentRange.setStart(editor, 0);
+        this.currentRange.collapse(true);
     }
     componentWillUnmount(){
-        // this.removeEventListenerForEditor(this.props.editorNode);
     }
     render(){
         let click = {

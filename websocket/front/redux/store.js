@@ -152,7 +152,8 @@ function poong(state = initialPoong, {type, data}){
 
 let editorNode = document.createElement('div');
 editorNode.contentEditable = true;
-editorNode.id = 'editor_area'
+editorNode.id = 'editor_area';
+// editorNode.autofocus = true;
 // editorNode.style.color = 'orange';
 // editorNode.style.backgroundColor = 'grey';
 editorNode.style.minHeight = '90vh';
