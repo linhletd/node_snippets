@@ -4,6 +4,9 @@ class ToolBar extends React.PureComponent{
     constructor(props){
         super(props);  
     }
+    selectFile(e){
+        document.getElementById('img').click();
+    }
     render(){
         let {click, state} = this.props;
         // console.log(2222, state)
@@ -22,7 +25,11 @@ class ToolBar extends React.PureComponent{
                 <div onClick = {click.handleDecreaseListLevel} className = {state.declevel === 0 ? 'space disabled' : 'space'}><i className="fa fa-outdent"></i></div>
                 <div onClick = {click.handleBlockquote} className = {state.quote === 2 ? 'activated' : ''}><i className="fa fa-quote-left"></i></div>
                 <div onClick = {click.handleBlockCode} className = {state.code === 0 ? 'disabled' : state.code === 2 ? 'activated' : ''}><i className="fa fa-code"></i></div>
-                <div><i className="fa fa-file-image-o"></i></div>
+                <div className = {state.bold === 0 ? 'disabled' : ''}>
+                    <i className= "fa fa-file-image-o i-wrapper" onClick = {this.selectFile}>
+                        <input type = 'file' name = 'img' id = 'img' accept = 'image/*'/>
+                    </i>
+                </div>                
                 <div onClick = {click.handleLink}  className = {state.link === 0 ? 'disabled space' : state.link === 2 ? 'activated space' : 'space'}><i className="fa fa-link"></i></div>
                 <div className = {state.bold === 0 ? 'disabled ctn colr' : 'ctn colr'}>
                     <div className = 'prev-i' onClick = {click.handleBgroundColor}>

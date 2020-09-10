@@ -118,3 +118,11 @@
     position: relative;
     top: 0px;
 }
+#img{
+    width: 0.1px;
+    height: 0.1px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    opacity: 0;
+}
