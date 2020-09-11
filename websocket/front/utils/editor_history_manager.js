@@ -20,23 +20,16 @@ class HistoryStackManager {
             switch(type){
                 case 'attributes':{
                     this.clearTextTimeOut();
-                    // if(mutations.length === 1 && this.current.change.record && target.innerText === ''){
-                    //     console.log(this.current)
-                    //     this.current.change.record.push({
-                    //         type,
-                    //         target,
-                    //         attributeName,
-                    //         oldValue,
-                    //         newValue: target.attributes[attributeName].value
-                    //     });
-                    //     return;
-                    // }
+                    let newValue = target.attributes[attributeName].value;
+                    if(target.nodeName === 'IMG' && oldValue === 'img_focus' || newValue === 'img_focus'){
+                        break;
+                    }
                     record.push({
                         type,
                         target,
                         attributeName,
                         oldValue,
-                        newValue: target.attributes[attributeName].value
+                        newValue
                     });
                     break;
                 }
