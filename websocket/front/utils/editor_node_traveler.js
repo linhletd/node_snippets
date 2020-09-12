@@ -4,6 +4,16 @@ target: to optimize dom tree:
     no textnode right after textnode;
     no span right after a span that it 'isEqualTo';
 */
+// import Worker from 'worker-loader!../workers/blob_to_dataurl';
+// let worker = new Worker()
+// var blob = new Blob([
+//     `onmessage = function(e){
+//         let blob = e.data[0];
+//         console.log(typeof blob);
+//     }`]);
+
+// var blobURL = window.URL.createObjectURL(blob);
+// var worker = new Worker(blobURL);
 class EditorNodeTraveler{
     constructor(root, updateState, observer){
         this.root = root;
@@ -358,6 +368,7 @@ class EditorNodeTraveler{
             link: 1,
             quote: 0,
             code: 0,
+            img: 1,
             fontsize: '16px',
             fontfamily: 'Arial,Helvetica,sans-serif'
         
@@ -710,7 +721,7 @@ class EditorNodeTraveler{
                 }
                 if(cur === x2){
                     completed = true;
-                    if(!this.state.as.length){
+                    if(this.state.as && !this.state.as.length){
                         state.link = 0;
                         this.state.as = null
                     }
@@ -732,7 +743,12 @@ class EditorNodeTraveler{
             })(x1);
 
         })();
-
+        let checkImg;
+        (_checkImg = () =>{
+            if(this.isBelongTag('PRE', start) || start.classList.contains('img_ctn')){
+                state.img = 0;
+            }
+        })();
         this.updateStore({
             type: 'TOOLBARCHANGE',
             data: state
@@ -1958,6 +1974,150 @@ class EditorNodeTraveler{
                 data: {as, it}
             })
         })
+    }
+    createSpanX(){
+        let spanx = document.createElement('span');
+        spanx.innerHTML = '&#65279;';
+        spanx.className = 'zero_space';
+        return spanx;
+    }
+    createCap(){
+        let cap = document.createElement('figcaption');
+        cap.className = 'holder_before';
+        return cap;
+    }
+    createFig = (img) =>{
+        let fig = document.createElement('figure');
+        let div = document.createElement('div');
+        div.className = 'close_img';
+        div.innerText = 'X';
+        div.style.fontSize = '14px';
+        let cap = this.createCap();
+        fig.onclick = (e) =>{
+            fig.querySelectorAll('img, div').forEach(node =>{
+                node.classList.add('img_focus')
+            })
+        }
+        fig.onmouseleave = ()=>{
+            fig.querySelectorAll('img, div').forEach(node =>{
+                node.classList.remove('img_focus')
+            })
+        }
+        div.onclick = (e) =>{
+            if(fig.parentNode.querySelectorAll('figure').length === 1){
+                fig.parentNode.remove();
+            }
+            else{
+                fig.previousSibling.remove();
+                fig.remove();
+            }
+        }
+        fig.appendChild(div);
+        fig.appendChild(img);
+        fig.appendChild(cap);
+        return fig;
+    }
+    insertFig = (wrapper, fig, spanx) =>{
+        if(!wrapper.classList.contains('img_ctn')){
+            wrapper.classList.add('img_ctn')
+        }
+        if(!spanx){
+            spanx = this.createSpanX();
+            wrapper.appendChild(spanx)
+        }
+        let spanx0 = this.createSpanX();
+        wrapper.insertBefore(spanx0, spanx);
+        wrapper.insertBefore(fig, spanx);
+    }
+    createPX = (p) =>{
+        if(!p){
+            p = document.createElement('p');
+        }
+        p.className = 'img_ctn';
+        if(p.hasChildNodes()){
+            let r = newRange();
+            r.selectNodeContents(p);
+            r.deleteContents();
+        }
+        p.appendChild(this.createSpanX());
+        return p;
+    }
+    createIMG = (dataurl, name) =>{
+        let img = document.createElement('img');
+        img.style.zIndex = 0;
+        img.src = dataurl;
+        img.alt = name;
+        // img.onclick = ()=>{
+        //     img.classList.add('img_focus');
+        //     this.updateStore({
+        //         type: 'PROMPTIMG',
+        //         data: {img, cb: this.deleteIMG}
+        //     })
+        // }
+        // img.onmouseout = ()=>{
+        //     img.classList.remove('img_focus');
+        // }
+        return img;
+    }
+    insertImage = (r, blob, filename) =>{
+        r.collapse(true);
+        let {startContainer: common, startOffset: startOff} = r, p;
+        let reader = new FileReader();
+        reader.readAsDataURL(blob);
+        reader.onload = () => {
+            let img = this.createIMG(reader.result, name);
+            let fig = this.createFig(img);
+            let r1 = new Range();
+            if(common.nodeName === 'BLOCKQUOTE'|| common === this.root){
+                p = this.createPX();
+                this.insertFig(p, fig);
+                r.insertNode(p)
+                if(p.nextSibling && p.nextSibling.nodeName == 'BR'){
+                    p.nextSibling.remove();
+                }
+            }
+            else{
+                let p1;
+                if((p1 = this.isBelongTag('P', common) || this.isBelongTag('LI', common) && !this.hasRealText(p1))){
+                    r1.selectNodeContents(p1);
+                    r1.deleteContents();
+                    this.insertFig(p1, fig);
+                }
+                else if(common.classList.contains('zero_space')){
+                    this.insertFig(common.parentNode, fig, common);
+                }
+                else if(p1){
+                    this.reassignRange(r);
+                    this.reassignRange_r(r);
+                    common = r.startContainer; startOff = r.startOffset;
+                    if(common === p1 && startOff === 0){
+                        p = document.createElement(common.nodeName);
+                        this.insertFig(p, fig);
+                        p1.parentNode.insertBefore(p, p1);
+                    }
+                    else if(common === p1 && startOff === p.childNodes.length){
+                        p = document.createElement(common.nodeName);
+                        this.insertFig(p, fig);
+                        this.insertAfter(p, p1)
+                    }
+                    else{
+                        r.setEndBefore(p1);
+                        let ct = r.extractContents();
+                        r.insertNode(ct);
+                        r.collapse(false);
+                        p = p1.cloneNode(false);
+                        this.insertFig(p, fig);
+                        r.insertNode(p)
+                    }
+                    //maybe need to handle more cases.
+                }
+            }
+          };
+        
+        reader.onerror = function() {
+            console.log(reader.error);
+          };
+
     }
 }
 export default EditorNodeTraveler;

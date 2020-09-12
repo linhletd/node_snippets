@@ -461,21 +461,6 @@ class EditorApp extends React.Component{
             }
         }
     }
-
-    // addEventListenerForEditor = (editor) =>{
-    //     editor.addEventListener('mouseup',this.updateRangeFromSelection);
-    //     editor.addEventListener('keypress', this.handleKeyPress);
-    //     editor.addEventListener('keydown', this.handleKeyDown);
-    //     editor.addEventListener('input', this.handleInput)
-    //     // editor.addEventListener('paste', this.handlePasteData);
-    // }
-    // removeEventListenerForEditor = (editor) =>{
-    //     editor.removeEventListener('mouseup', this.updateRangeFromSelection);
-    //     editor.removeEventListener('keypress', this.handleKeyPress);
-    //     editor.removeEventListener('keydown', this.handleKeyDown);
-    //     editor.removeEventListener('input', this.handleInput)
-    //     // editor.removeEventListener('paste', this.handlePasteData)
-    // }
     repopulateSelection = (bool) =>{
         this.props.editorNode.focus();
         if(!bool){
@@ -644,7 +629,12 @@ class EditorApp extends React.Component{
             this.currentRange = r;
             this.repopulateSelection();
         })
-
+    }
+    handleImage = () =>{
+        let img = document.getElementById('img');
+        let name = img.value.match(/.+[\\\/](.+)$/)[1];
+        let blob = img.files[0];
+        this.traveler.insertImage(this.currentRange, blob, name);
     }
     handleMouseDown = (e) =>{
         if(!this.props.prompt.closed){
@@ -703,6 +693,7 @@ class EditorApp extends React.Component{
             handleBlockquote: this.handleBlockquote,
             handleBlockCode: this.handleBlockCode,
             handleLink: this.handleLink,
+            handleImage: this.handleImage,
         }
         return (
             <div id = 'editor_app'>

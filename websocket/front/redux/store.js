@@ -161,7 +161,7 @@ editorNode.style.outline = 'none';
 editorNode.style.border = '1px solid grey';
 editorNode.style.borderRadius = '5px';
 editorNode.style.fontSize = '16px';
-editorNode.style.padding = '5px 5px';
+editorNode.style.padding = '10px 10px';
 editorNode.style.fontFamily = 'Arial, Helvetica, sans-serif'
 
 let initialEditor = {
@@ -184,6 +184,7 @@ let initialEditorToolbar = {
     link: 1,
     quote: 1,
     code: 1,
+    img: 1,
     fill: 'yellow',
     color: 'red',
     fontsize: '16px',
