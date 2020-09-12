@@ -744,8 +744,8 @@ class EditorNodeTraveler{
 
         })();
         let checkImg;
-        (_checkImg = () =>{
-            if(this.isBelongTag('PRE', start) || start.classList.contains('img_ctn')){
+        (checkImg = () =>{
+            if(this.isBelongTag('PRE', start) || start.classList && start.classList.contains('img_ctn')){
                 state.img = 0;
             }
         })();
@@ -2039,7 +2039,6 @@ class EditorNodeTraveler{
             r.selectNodeContents(p);
             r.deleteContents();
         }
-        p.appendChild(this.createSpanX());
         return p;
     }
     createIMG = (dataurl, name) =>{
@@ -2065,9 +2064,10 @@ class EditorNodeTraveler{
         let reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onload = () => {
-            let img = this.createIMG(reader.result, name);
+            let img = this.createIMG(reader.result, filename);
             let fig = this.createFig(img);
             let r1 = new Range();
+            console.log(r)
             if(common.nodeName === 'BLOCKQUOTE'|| common === this.root){
                 p = this.createPX();
                 this.insertFig(p, fig);
@@ -2077,14 +2077,17 @@ class EditorNodeTraveler{
                 }
             }
             else{
-                let p1;
-                if((p1 = this.isBelongTag('P', common) || this.isBelongTag('LI', common) && !this.hasRealText(p1))){
+                console.log(common.parentNode.classList, 111)
+                let p1, span;
+                if((p1 = this.isBelongTag('P', common) || this.isBelongTag('LI', common)) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
+                    console.log(true)
                     r1.selectNodeContents(p1);
                     r1.deleteContents();
                     this.insertFig(p1, fig);
                 }
-                else if(common.classList.contains('zero_space')){
-                    this.insertFig(common.parentNode, fig, common);
+                else if(common.parentNode.classList.contains('zero_space')){
+                    console.log(common.parentNode)
+                    this.insertFig(common.parentNode.parentNode, fig, common.parentNode);
                 }
                 else if(p1){
                     this.reassignRange(r);
