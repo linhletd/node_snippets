@@ -731,7 +731,7 @@ class EditorNodeTraveler{
         })();
         let checkImg;
         (checkImg = () =>{
-            if(this.isBelongTag('PRE', start) || start.classList && start.classList.contains('img_ctn')){
+            if(this.isBelongTag('PRE', start) || this.isBelongTag('FIGCAPTION', start) || start.classList && start.classList.contains('img_ctn')){
                 state.img = 0;
             }
         })();
@@ -2044,71 +2044,64 @@ class EditorNodeTraveler{
         img.style.zIndex = 0;
         img.src = dataurl;
         img.alt = name;
-        // img.onclick = ()=>{
-        //     img.classList.add('img_focus');
-        //     this.updateStore({
-        //         type: 'PROMPTIMG',
-        //         data: {img, cb: this.deleteIMG}
-        //     })
-        // }
-        // img.onmouseout = ()=>{
-        //     img.classList.remove('img_focus');
-        // }
         return img;
     }
-    insertImage = (r, blob, filename) =>{
+    _insertImg = (r, fig) =>{
         r.collapse(true);
         let {startContainer: common, startOffset: startOff} = r, p;
+        let r1 = new Range();
+        if(common.nodeName === 'BLOCKQUOTE'|| common === this.root){
+            p = this.createPX();
+            this.insertFig(p, fig);
+            r.insertNode(p)
+            if(p.nextSibling && p.nextSibling.nodeName == 'BR'){
+                p.nextSibling.remove();
+            }
+        }
+        else{
+            let p1;
+            if((p1 = this.isBelongTag('P', common) || this.isBelongTag('LI', common)) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
+                r1.selectNodeContents(p1);
+                r1.deleteContents();
+                this.insertFig(p1, fig);
+            }
+            else if(common.parentNode.classList.contains('zero_space')){
+                this.insertFig(common.parentNode.parentNode, fig, common.parentNode);
+            }
+            else if(p1){
+                this.reassignRange(r, p1);
+                this.reassignRange_r(r, p1);
+                common = r.startContainer; startOff = r.startOffset;
+                if(common === p1 && startOff === 0){
+                    p = document.createElement(common.nodeName);
+                    this.insertFig(p, fig);
+                    p1.parentNode.insertBefore(p, p1);
+                }
+                else if(common === p1 && startOff === p1.childNodes.length){
+                    p = document.createElement(common.nodeName);
+                    this.insertFig(p, fig);
+                    this.insertAfter(p, p1)
+                }
+                else{
+                    r.setStartBefore(p1);
+                    let ct = r.extractContents();
+                    r.insertNode(ct);
+                    r.collapse(false);
+                    p = p1.cloneNode(false);
+                    this.insertFig(p, fig);
+                    r.insertNode(p)
+                }
+                //maybe need to handle more cases.
+            }
+        }
+    }
+    insertImage = (r, blob, filename) =>{
         let reader = new FileReader();
         reader.readAsDataURL(blob);
         reader.onload = () => {
             let img = this.createIMG(reader.result, filename);
             let fig = this.createFig(img);
-            let r1 = new Range();
-            if(common.nodeName === 'BLOCKQUOTE'|| common === this.root){
-                p = this.createPX();
-                this.insertFig(p, fig);
-                r.insertNode(p)
-                if(p.nextSibling && p.nextSibling.nodeName == 'BR'){
-                    p.nextSibling.remove();
-                }
-            }
-            else{
-                let p1;
-                if((p1 = this.isBelongTag('P', common) || this.isBelongTag('LI', common)) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
-                    r1.selectNodeContents(p1);
-                    r1.deleteContents();
-                    this.insertFig(p1, fig);
-                }
-                else if(common.parentNode.classList.contains('zero_space')){
-                    this.insertFig(common.parentNode.parentNode, fig, common.parentNode);
-                }
-                else if(p1){
-                    this.reassignRange(r, p1);
-                    this.reassignRange_r(r, p1);
-                    common = r.startContainer; startOff = r.startOffset;
-                    if(common === p1 && startOff === 0){
-                        p = document.createElement(common.nodeName);
-                        this.insertFig(p, fig);
-                        p1.parentNode.insertBefore(p, p1);
-                    }
-                    else if(common === p1 && startOff === p1.childNodes.length){
-                        p = document.createElement(common.nodeName);
-                        this.insertFig(p, fig);
-                        this.insertAfter(p, p1)
-                    }
-                    else{
-                        r.setStartBefore(p1);
-                        let ct = r.extractContents();
-                        r.insertNode(ct);
-                        r.collapse(false);
-                        p = p1.cloneNode(false);
-                        this.insertFig(p, fig);
-                        r.insertNode(p)
-                    }
-                    //maybe need to handle more cases.
-                }
-            }
+            this._insertImg(r, fig)
           };
         
         reader.onerror = function() {

@@ -25,7 +25,28 @@ class EditorApp extends React.Component{
     }
 
     handlePasteData = (e) => {
-        let clipboard = e.clipboarData
+        let clipboard = e.clipboardData;
+        let types = clipboard.types;
+        if(types.length === 1 && types[0] === 'Files'){
+            e.preventDefault();
+            let blob = clipboard.items[0].getAsFile();
+            this.handleImage(blob);
+            return;
+        }
+        if(this.currentRange.commonAncestorContainer.parentNode.classList.contains('zero_space')){
+            e.preventDefault();
+            return;
+        }
+        if(types.indexOf('text/html') > -1){
+            let html = clipboard.getData('text/html');
+            if(/(content=Excel\.Sheet)/.test(html)){
+                html = html.match(/(<table.+<\/table>)/)[1];
+                let div = document.createElement('div');
+                div.innerHTML = html;
+                let table = div.querySelector('table');
+
+            }
+        }
     }
     isBelongTag = (nodeName, node) =>{
         if(node.nodeNome == nodeName) return true;
@@ -113,6 +134,9 @@ class EditorApp extends React.Component{
             }
         let {startContainer: start, startOffset: off, endOffset: endOff, endContainer: end, collapsed, commonAncestorContainer: common} = r;
         if(common.parentNode.classList.contains('zero_space')){
+            if(e.keyCode === 86 && e.ctrlKey){
+                return;
+            }
             let spanx = common.parentNode, ctn = spanx.parentNode;
             e.preventDefault();
             if(e.keyCode === 13 && spanx === ctn.firstChild){
@@ -698,15 +722,21 @@ class EditorApp extends React.Component{
             this.repopulateSelection();
         })
     }
-    handleImage = () =>{
+    handleImage = (blob) =>{
         let {img} = this.props.toolbarState;
         if(img === 0){
             return;
         }
-        img = document.getElementById('img');
-        let name = img.value.match(/.+[\\\/](.+)$/)[1];
-        let blob = img.files[0];
+        let name;
+        if(!(blob instanceof Blob)){
+            img = document.getElementById('img');
+            name = img.value.match(/.+[\\\/](.+)$/)[1];
+            blob = img.files[0];
+            console.log(typeof blob)
+        }
+        !name && (name = 'default')
         this.traveler.insertImage(this.currentRange, blob, name);
+
     }
     handleMouseDown = (e) =>{
         if(!this.props.prompt.closed){
@@ -743,6 +773,7 @@ class EditorApp extends React.Component{
         editor.onkeydown = this.handleKeyDown;
         editor.oninput = this.handleInput;
         editor.onmousedown = this.handleMouseDown;
+        editor.onpaste = this.handlePasteData;
         this.props.historyManager.startObserving();
     }
     componentWillUnmount(){
