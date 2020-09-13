@@ -731,7 +731,9 @@ class EditorNodeTraveler{
         })();
         let checkImg;
         (checkImg = () =>{
-            if(this.isBelongTag('PRE', start) || this.isBelongTag('FIGCAPTION', start) || start.classList && start.classList.contains('img_ctn')){
+            if(this.isBelongTag('PRE', start) || this.isBelongTag('FIGCAPTION', start) 
+            || this.isBelongTag('IMG', start) || this.isBelongTag('TABLE', start)
+            || start.classList && start.classList.contains('img_ctn')){
                 state.img = 0;
             }
         })();
@@ -1992,12 +1994,12 @@ class EditorNodeTraveler{
         div.style.fontSize = '14px';
         let cap = this.createCap();
         fig.onclick = (e) =>{
-            fig.querySelectorAll('img, div').forEach(node =>{
+            fig.querySelectorAll('img, div, table').forEach(node =>{
                 !node.classList.contains('img_focus') && node.classList.add('img_focus')
             })
         }
         fig.onmouseleave = ()=>{
-            fig.querySelectorAll('img, div').forEach(node =>{
+            fig.querySelectorAll('img, div, table').forEach(node =>{
                 node.classList.contains('img_focus') && node.classList.remove('img_focus')
             })
         }
@@ -2024,8 +2026,8 @@ class EditorNodeTraveler{
             wrapper.appendChild(spanx)
         }
         let spanx0 = this.createSpanX();
-        wrapper.insertBefore(spanx0, spanx);
-        wrapper.insertBefore(fig, spanx);
+        this.insertAfter(spanx0, spanx);
+        wrapper.insertBefore(fig, spanx0);
     }
     createPX = (p) =>{
         if(!p){

@@ -40,12 +40,17 @@ class EditorApp extends React.Component{
         if(types.indexOf('text/html') > -1){
             let html = clipboard.getData('text/html');
             if(/(content=Excel\.Sheet)/.test(html)){
-                html = html.match(/(<table.+<\/table>)/)[1];
+                e.preventDefault();
                 let div = document.createElement('div');
                 div.innerHTML = html;
                 let table = div.querySelector('table');
-
+                let fig = this.traveler.createFig(table);
+                this.traveler._insertImg(this.currentRange, fig);
+                return;
             }
+        }
+        if(types.indexOf('text/plain') > -1){
+            // let div = 
         }
     }
     isBelongTag = (nodeName, node) =>{
@@ -134,7 +139,7 @@ class EditorApp extends React.Component{
             }
         let {startContainer: start, startOffset: off, endOffset: endOff, endContainer: end, collapsed, commonAncestorContainer: common} = r;
         if(common.parentNode.classList.contains('zero_space')){
-            if(e.keyCode === 86 && e.ctrlKey){
+            if(e.keyCode === 86 && e.ctrlKey || e.keyCode === 32 || e.keyCode === 8 && off !== 0 && common.innerHTML !== '&#65279;'){
                 return;
             }
             let spanx = common.parentNode, ctn = spanx.parentNode;
