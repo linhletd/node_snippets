@@ -163,6 +163,7 @@ editorNode.style.borderRadius = '5px';
 editorNode.style.fontSize = '16px';
 editorNode.style.padding = '10px 10px';
 editorNode.style.fontFamily = 'Arial, Helvetica, sans-serif'
+editorNode.style.overflow = 'scroll';
 
 let initialEditor = {
     editorNode,
@@ -199,6 +200,7 @@ function toolbar(state = initialEditorToolbar, {type, data}){
 }
 
 function linkPrompt(state = {closed: true}, {type, data}){
+    console.log(type);
     switch(type){
         case OPENPROMPT:
             return data; //{it, as}

@@ -133,7 +133,7 @@
     align-items: stretch;
     width: 100%;
     background-color: turquoise;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
 }
 .close_img{
     opacity: 0;

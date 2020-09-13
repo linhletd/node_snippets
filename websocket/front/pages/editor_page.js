@@ -13,8 +13,12 @@ class EditorApp extends React.Component{
             waitElem: null,
             focused: false
         }
-        this.traveler = new EditorNodeTraveler(props.editorNode, props.updateState, props.historyManager);
-        props.historyManager.props = props;
+        this.toolbar = props.toolbarState;
+        this.traveler = new EditorNodeTraveler(props.editorNode, props.updateState, props.historyManager, this.toolbar);
+        props.historyManager.props = {
+            updateState: props.updateState,
+            toolbarState: this.toolbar
+        };
         this.undo = props.historyManager.undo.bind(props.historyManager, this);
         this.redo = props.historyManager.redo.bind(props.historyManager, this);
 
@@ -84,6 +88,18 @@ class EditorApp extends React.Component{
         })(cur)
     }
     handleKeyDown = (e) =>{
+        if(e.keyCode === 90){
+            if(e.shiftKey && e.ctrlKey){
+                e.preventDefault();
+                this.redo();
+                return;
+            }
+            else if(e.ctrlKey){
+                e.preventDefault();
+                this.undo();
+                return;
+            }
+        }
         let sel = document.getSelection();
         if(!sel.rangeCount) return;
         let r = sel.getRangeAt(0);
@@ -96,6 +112,62 @@ class EditorApp extends React.Component{
                 },0)
             }
         let {startContainer: start, startOffset: off, endOffset: endOff, endContainer: end, collapsed, commonAncestorContainer: common} = r;
+        if(common.parentNode.classList.contains('zero_space')){
+            let spanx = common.parentNode, ctn = spanx.parentNode;
+            e.preventDefault();
+            if(e.keyCode === 13 && spanx === ctn.firstChild){
+                if(ctn.nodeName === 'P'){
+                    ctn.parentNode.insertBefore(document.createElement('br'), ctn);
+                }
+                else if(ctn.nodeName === 'LI'){
+                    let li = document.createElement('LI');
+                    li.appendChild(document.createElement('br'));
+                    ctn.parentNode.insertBefore(li, ctn);
+                }
+            }
+            if(e.keyCode === 13 && spanx === ctn.lastChild){
+                if(ctn.nodeName === 'P'){
+                    let br = document.createElement('br');
+                    this.traveler.insertAfter(br, ctn);
+                    this.currentRange.setStartBefore(br);
+                }
+                else if(ctn.nodeName === 'LI'){
+                    let li = document.createElement('LI');
+                    li.appendChild(document.createElement('br'));
+                    this.traveler.insertAfter(li, ctn);
+                    this.currentRange.setStart(li, 0);
+                }
+                this.currentRange.collapse(true);
+                this.repopulateSelection();
+            }
+            return;
+        }
+        if(common.parentNode.classList.contains('cap') || common.classList && common.classList.contains('cap')){
+            if(common.nodeName === 'FIGCAPTION'){
+                setTimeout(()=>{
+                    if(common.firstChild && common.firstChild.nodeName !== 'BR'){
+                        common.classList.remove('holder_before');
+                    }
+                }, 100)
+            }
+            if(e.keyCode === 8 || e.keyCode === 46 && common.nodeName === '#text'){
+                let cap = common.parentNode;
+                setTimeout(() =>{
+                    if(!cap.hasChildNodes() || !this.traveler.hasRealText(cap)){
+                        if(cap.firstChild){
+                            cap.firstChild.remove();
+                        }
+                        !cap.classList.contains('holder_before') && cap.classList.add('holder_before');
+                    }
+                },100)
+            }
+            if(e.keyCode === 13 || common.nodeName === '#text' 
+            && off === common.nodeValue.length && e.keyCode === 46 
+            ||common.nodeName === 'FIGCAPTION' && (e.keyCode === 8 || e.keyCode === 46)){
+                e.preventDefault();
+                return;
+            }
+        }
         let li, par;
         li = this.traveler.isBelongTag('LI', start);
         if(e.keyCode === 8){
@@ -272,7 +344,6 @@ class EditorApp extends React.Component{
             if(ct2.firstChild){
                 let fst = ct2.firstChild;
                 if(fst.nodeName === 'A' && !this.traveler.hasRealText(fst)){
-                    console.log(fst)
                     r1.selectNodeContents(fst);
                     ct2 = r1.extractContents();
                     fst = ct2.firstChild;
@@ -411,7 +482,6 @@ class EditorApp extends React.Component{
                         bef = this.traveler.handleUnacessedSpan(bef, true);
                         af = this.traveler.handleUnacessedSpan(af, true);
                         let pr,nx,x,y, pre;
-                        console.log(bef, af)
                         if(!(pre = this.traveler.isBelongTag('PRE', cm))){
                             if((x = bef && bef.nodeName !== 'BR' && !this.traveler.isBlockElem(bef) && (!(pr = bef.previousSibling) || (pr.nodeName !== '#text' && pr.nodeName !== 'SPAN')))){
                                 let p = document.createElement('p');
@@ -599,7 +669,6 @@ class EditorApp extends React.Component{
         else{
             this.currentRange = this.traveler.convertToBLockquote(this.currentRange);
         }
-        console.log(this.currentRange)
         this.repopulateSelection()
     }
     handleBlockCode = () =>{
@@ -610,7 +679,6 @@ class EditorApp extends React.Component{
         else{
             this.currentRange = this.traveler.convertToBlockCode(this.currentRange);
         }
-        console.log(this.currentRange)
         this.repopulateSelection()
     }
     handleLink = () =>{
@@ -631,7 +699,11 @@ class EditorApp extends React.Component{
         })
     }
     handleImage = () =>{
-        let img = document.getElementById('img');
+        let {img} = this.props.toolbarState;
+        if(img === 0){
+            return;
+        }
+        img = document.getElementById('img');
         let name = img.value.match(/.+[\\\/](.+)$/)[1];
         let blob = img.files[0];
         this.traveler.insertImage(this.currentRange, blob, name);
@@ -645,7 +717,8 @@ class EditorApp extends React.Component{
             })
         }
     }
-    shouldComponentUpdate(){
+    shouldComponentUpdate(nextProps){
+        this.toolbar = Object.assign(this.toolbar, nextProps.toolbarState);
         return false;
     }
     componentDidMount(){

@@ -1,24 +1,13 @@
 /*
 target: to optimize dom tree:
     each span node has only textnode inside;
-    no textnode right after textnode;
-    no span right after a span that it 'isEqualTo';
 */
-// import Worker from 'worker-loader!../workers/blob_to_dataurl';
-// let worker = new Worker()
-// var blob = new Blob([
-//     `onmessage = function(e){
-//         let blob = e.data[0];
-//         console.log(typeof blob);
-//     }`]);
-
-// var blobURL = window.URL.createObjectURL(blob);
-// var worker = new Worker(blobURL);
 class EditorNodeTraveler{
-    constructor(root, updateState, observer){
+    constructor(root, updateState, observer, toolbarState){
         this.root = root;
         this.updateStore = updateState;
         this.observer = observer;
+        this.toolbarState = toolbarState;
         this.state = {
             range: null,
             modifyingStyle: null,
@@ -216,7 +205,6 @@ class EditorNodeTraveler{
                 }
                 let {node: n1, off: o1} = x1.value,
                     {node: n2, off: o2} = x2.value;
-                    console.log(n1, o1, n2, o2)
                 o1 === true ? this.state.range.setStartBefore(n1): this.state.range.setStart(n1, o1);
                 o2 === true ? this.state.range.setEndAfter(n2): this.state.range.setEnd(n2, o2);
                 //continue...
@@ -696,9 +684,7 @@ class EditorNodeTraveler{
             state.link = 2;
             let _check, completed;
             this.state.as = [];
-            console.log(x1, x2);
             (_check = (cur) =>{
-                console.log(1, cur)
                 if(completed) return;
                 switch(cur.nodeName){
                     case 'A':
@@ -749,10 +735,20 @@ class EditorNodeTraveler{
                 state.img = 0;
             }
         })();
-        this.updateStore({
-            type: 'TOOLBARCHANGE',
-            data: state
-        });
+        let same = true, currentState = this.toolbarState;
+        let keys = Object.keys(state);
+        for(let i = 0; i < keys.length; i++){
+            if(currentState[keys[i]] != state[keys[i]]){
+                same = false;
+                break;
+            }
+        }
+        if(!same){
+            this.updateStore({
+                type: 'TOOLBARCHANGE',
+                data: state
+            });
+        }
     }
     OULWrapper(li, limit){
         let par = li.parentNode;
@@ -1132,7 +1128,10 @@ class EditorNodeTraveler{
                     r1.selectNodeContents(node);
                     let p = document.createElement('p');
                     r0.insertNode(p);
-                    p.appendChild(r1.extractContents());
+                    ct1 = r1.extractContents();
+                    let f = ct1.firstChild;
+                    p.appendChild(ct1);
+                    f && f.classList && f.classList.contains('zero_space') && p.classList.add('img_ctn');
                     this.handleUnacessedSpan(p.firstChild);
                     idx === len - 1 && (r.setStartAfter(p.lastChild), r.collapse(true));
                 }
@@ -1451,7 +1450,6 @@ class EditorNodeTraveler{
            else{
             cur = start;
            }
-           console.log(cur)
            while(cur && cur.nodeName !== 'BR'){
                cur = cur.previousSibling;
            }
@@ -1576,9 +1574,7 @@ class EditorNodeTraveler{
             return r;
         }
         let _handle;
-        console.log([...frag.childNodes],1);
         (_handle = (cur) =>{
-            console.log(cur);
             switch(cur.nodeName){
                 case 'BR':{
                     let li = document.createElement('li');
@@ -1591,6 +1587,9 @@ class EditorNodeTraveler{
                     list.appendChild(li);
                     r.selectNodeContents(cur);
                     li.appendChild(r.extractContents());
+                    if(li.firstChild && li.firstChild.classList && li.firstChild.classList.contains('zero_space')){
+                        li.classList.add('img_ctn');
+                    }
                     this._replayStyle(li);
                     break;
                 }
@@ -1635,7 +1634,6 @@ class EditorNodeTraveler{
             return r;
         }
         let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r, c = false, d = false;
-        console.log(start, end,0)
         if((a = start.nodeName === '#text') || start.nodeName === 'SPAN'){
             a ? b = start.parentNode : b = start;
             if(b.style[prop] !== val){
@@ -1667,7 +1665,6 @@ class EditorNodeTraveler{
             end = this.getNthChild(end, endOff - 1);
             d = true;
         }
-        console.log(start, end, 1)
         let _modify, completed = false;
         (_modify = (cur) =>{
             if(completed) return;
@@ -1983,7 +1980,8 @@ class EditorNodeTraveler{
     }
     createCap(){
         let cap = document.createElement('figcaption');
-        cap.className = 'holder_before';
+        cap.classList.add('cap');
+        cap.classList.add('holder_before');
         return cap;
     }
     createFig = (img) =>{
@@ -1995,12 +1993,12 @@ class EditorNodeTraveler{
         let cap = this.createCap();
         fig.onclick = (e) =>{
             fig.querySelectorAll('img, div').forEach(node =>{
-                node.classList.add('img_focus')
+                !node.classList.contains('img_focus') && node.classList.add('img_focus')
             })
         }
         fig.onmouseleave = ()=>{
             fig.querySelectorAll('img, div').forEach(node =>{
-                node.classList.remove('img_focus')
+                node.classList.contains('img_focus') && node.classList.remove('img_focus')
             })
         }
         div.onclick = (e) =>{
@@ -2067,7 +2065,6 @@ class EditorNodeTraveler{
             let img = this.createIMG(reader.result, filename);
             let fig = this.createFig(img);
             let r1 = new Range();
-            console.log(r)
             if(common.nodeName === 'BLOCKQUOTE'|| common === this.root){
                 p = this.createPX();
                 this.insertFig(p, fig);
@@ -2077,34 +2074,31 @@ class EditorNodeTraveler{
                 }
             }
             else{
-                console.log(common.parentNode.classList, 111)
-                let p1, span;
+                let p1;
                 if((p1 = this.isBelongTag('P', common) || this.isBelongTag('LI', common)) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
-                    console.log(true)
                     r1.selectNodeContents(p1);
                     r1.deleteContents();
                     this.insertFig(p1, fig);
                 }
                 else if(common.parentNode.classList.contains('zero_space')){
-                    console.log(common.parentNode)
                     this.insertFig(common.parentNode.parentNode, fig, common.parentNode);
                 }
                 else if(p1){
-                    this.reassignRange(r);
-                    this.reassignRange_r(r);
+                    this.reassignRange(r, p1);
+                    this.reassignRange_r(r, p1);
                     common = r.startContainer; startOff = r.startOffset;
                     if(common === p1 && startOff === 0){
                         p = document.createElement(common.nodeName);
                         this.insertFig(p, fig);
                         p1.parentNode.insertBefore(p, p1);
                     }
-                    else if(common === p1 && startOff === p.childNodes.length){
+                    else if(common === p1 && startOff === p1.childNodes.length){
                         p = document.createElement(common.nodeName);
                         this.insertFig(p, fig);
                         this.insertAfter(p, p1)
                     }
                     else{
-                        r.setEndBefore(p1);
+                        r.setStartBefore(p1);
                         let ct = r.extractContents();
                         r.insertNode(ct);
                         r.collapse(false);

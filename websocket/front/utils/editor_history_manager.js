@@ -21,7 +21,8 @@ class HistoryStackManager {
                 case 'attributes':{
                     this.clearTextTimeOut();
                     let newValue = target.attributes[attributeName].value;
-                    if(target.nodeName === 'IMG' && oldValue === 'img_focus' || newValue === 'img_focus'){
+                    let regex = /(?:img_focus|holder_before)$/
+                    if(oldValue === newValue || attributeName === 'class' && (regex.test(oldValue)|| regex.test(newValue))){
                         break;
                     }
                     record.push({
@@ -36,7 +37,6 @@ class HistoryStackManager {
                 case 'characterData':{
                     let prevChange, len;
                     this.current.change.record && (prevChange = this.current.change.record, len = prevChange.length) 
-                    // console.log(prevChange, prevChange.length == 1, prevChange[0].type == type, prevChange[0].target == target, this.data.textTimer, mutations.length == 1)
                     if(prevChange && len <= 2 && prevChange[len -1].type == type && prevChange[len -1].target == target && 
                         this.data.textTimer && mutations.length == 1) {
                         prevChange[len -1].newValue = target.nodeValue;
