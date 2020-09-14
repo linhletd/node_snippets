@@ -15,29 +15,13 @@ class LinkPromt extends React.PureComponent{
     }
     link = () =>{
         let {it} = this.props.prompt;
-        // if(this.state.urlValidated){
-        //     if(as){
-        //         as.map(a =>{
-        //             a.href = this.state.url
-        //         })
-        //     }
-        //     else{
         it && it.next(this.state.url)
-            // }
-        // }
         this.props.updateState({
             type: 'CLOSEPROMPT',
         })
     }
     unlink = () =>{
         let {it} = this.props.prompt;
-        // as && as.map(a =>{
-        //     r.selectNodeContents(a);
-        //     ct = r.extractContents();
-        //     r.selectNode(a);
-        //     a.remove();
-        //     r.insertNode(ct);
-        // })
         it && it.next(false);
         this.props.updateState({
             type: 'CLOSEPROMPT',

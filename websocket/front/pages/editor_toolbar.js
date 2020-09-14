@@ -12,7 +12,6 @@ class ToolBar extends React.PureComponent{
     }
     render(){
         let {click, state} = this.props;
-        // console.log(2222, state)
         let emptyFontStyle = state.fontfamily === 'false' ? {display: 'none'} : {display: 'block'};
         let emptySizeStyle = state.fontsize === 'false' ? {display: 'none'} : {display: 'block'}
         return (

@@ -100,7 +100,6 @@ class HistoryStackManager {
                 }
             }
         });
-        console.log('recorded');
         let change, newNode;
         record.length && (change = {range: undefined, record}) && (newNode = this.createNewHistoryNode(change));
         this.addNewHistoryNode(newNode);
@@ -238,7 +237,6 @@ class HistoryStackManager {
     }
     redo = (subject) =>{
         if(!this.current.next){
-            console.log('stop')
             return;
         }
         this.stopObserving();
@@ -288,7 +286,6 @@ class HistoryStackManager {
     }
     undo = (subject)=>{
         if(this.current === this.head){
-            console.log('stop');
             return;
         }
         this.stopObserving();

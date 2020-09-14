@@ -25,6 +25,7 @@ class EditorApp extends React.Component{
     }
 
     handlePasteData = (e) => {
+        let {commonAncestorContainer: common} = this.currentRange;
         let clipboard = e.clipboardData;
         let types = clipboard.types;
         if(types.length === 1 && types[0] === 'Files'){
@@ -33,7 +34,7 @@ class EditorApp extends React.Component{
             this.handleImage(blob);
             return;
         }
-        if(this.currentRange.commonAncestorContainer.parentNode.classList.contains('zero_space')){
+        if(common.parentNode.classList.contains('zero_space')){
             e.preventDefault();
             return;
         }
@@ -50,7 +51,8 @@ class EditorApp extends React.Component{
             }
         }
         if(types.indexOf('text/plain') > -1){
-            // let div = 
+            e.preventDefault();
+            this.traveler.pastePlainText(this.currentRange, clipboard.getData('text/plain'))
         }
     }
     isBelongTag = (nodeName, node) =>{
@@ -114,6 +116,10 @@ class EditorApp extends React.Component{
         })(cur)
     }
     handleKeyDown = (e) =>{
+        if(e.keyCode === 65 && e.ctrlKey){
+            if(this.currentRange.selectNodeContents(this.props.editorNode));
+            return;
+        }
         if(e.keyCode === 90){
             if(e.shiftKey && e.ctrlKey){
                 e.preventDefault();
@@ -327,7 +333,6 @@ class EditorApp extends React.Component{
         sel.removeAllRanges();
         sel.addRange(r);
         this.rememberRange();
-        // setTimeout(this.rememberRange,0)
     }
     handleInput = (e) =>{
         setTimeout(() => {
@@ -335,14 +340,10 @@ class EditorApp extends React.Component{
         },0)
     }
     updateRangeFromSelection = () =>{
-        // let sel = document.getSelection();
         setTimeout(()=>{
-            this.currentRange = this.rememberRange();//sel.getRangeAt(0);
+            this.currentRange = this.rememberRange();
             this.traveler.checkRange(this.currentRange);
         }, 0)
-        // this.currentRange = this.rememberRange();//sel.getRangeAt(0);
-        // this.traveler.checkRange(this.currentRange);
-        
     }
     rememberRange = (range)=>{
         let sel;
@@ -737,7 +738,6 @@ class EditorApp extends React.Component{
             img = document.getElementById('img');
             name = img.value.match(/.+[\\\/](.+)$/)[1];
             blob = img.files[0];
-            console.log(typeof blob)
         }
         !name && (name = 'default')
         this.traveler.insertImage(this.currentRange, blob, name);

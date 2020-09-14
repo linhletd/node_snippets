@@ -1,6 +1,6 @@
 /*
-target: to optimize dom tree:
-    each span node has only textnode inside;
+target: span node has only textnode inside;
+p or li tag contains only 1 line;
 */
 class EditorNodeTraveler{
     constructor(root, updateState, observer, toolbarState){
@@ -259,16 +259,17 @@ class EditorNodeTraveler{
         }
         return this.state.range;
     }
-    reassignRange(range, constraint){
+    reassignRange(range, constraint, bool){
         if(constraint === true) constraint = this.root;
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
         if(!constraint) constraint = common;
-        if(startOffset === 0 && (start !== constraint)){
+        if(bool !== false && startOffset === 0 && (start !== constraint)){
+            range.setStartBefore(start);
             let cur = start;
-            while(cur !== this.root && (cur !== constraint)){
+            while(cur.parentNode !== this.root && (cur.parentNode !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.firstChild){
-                    range.setStartBefore(cur);
+                    range.setStartBefore(par);
                     cur = par;
                 }
                 else{
@@ -278,11 +279,12 @@ class EditorNodeTraveler{
         }
         let br;
         if((end !== constraint) && (!end.hasChildNodes() && end.nodeName !== '#text' ||end.hasChildNodes() && endOffset === end.childNodes.length || end.nodeValue && endOffset === end.nodeValue.length || (br = this.getNthChild(end, endOffset)) && br.nodeName === 'BR' && br === end.lastChild)){
+            range.setEndAfter(end);
             let cur = end;
-            while(cur !== this.root && (cur !== constraint)){
+            while(cur.parentNode !== this.root && (cur.parentNode !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.lastChild){
-                    range.setEndAfter(cur);
+                    range.setEndAfter(par);
                     cur = par;
                 }
                 else{
@@ -297,11 +299,12 @@ class EditorNodeTraveler{
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset, collapsed} = range;
         if(!constraint) constraint = common;
         if(endOffset === 0 && (end !== constraint)){
+            range.setEndBefore(end);
             let cur = end;
-            while(cur !== this.root && (cur !== constraint)){
+            while(cur.parentNode !== this.root && (cur.parentNode !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.firstChild){
-                    range.setEndBefore(cur);
+                    range.setEndBefore(par);
                     cur = par;
                 }
                 else{
@@ -311,11 +314,12 @@ class EditorNodeTraveler{
             collapsed && range.collapse(false);
         }
         if((start !== constraint) && (!start.hasChildNodes() && start.nodeName !== '#text' ||start.hasChildNodes() && endOffset === start.childNodes.length || start.nodeValue && startOffset === start.nodeValue.length)){
+            range.setStartAfter(start);
             let cur = start;
-            while(cur !== this.root && (cur !== constraint)){
+            while(cur.parentNode !== this.root && (cur.parentNode !== constraint)){
                 let par = cur.parentNode;
                 if(cur === par.lastChild){
-                    range.setStartAfter(cur);
+                    range.setStartAfter(par);
                     cur = par;
                 }
                 else{
@@ -912,7 +916,7 @@ class EditorNodeTraveler{
         if(node.nodeName === nodeName) return node;
         try{
             while((constraint ? node !== constraint : node !== this.root && node.nodeName !== '#document-fragment') && node.nodeName !== nodeName){
-            node = node.parentNode;
+                node = node.parentNode;
             } 
         }
         catch(e){
@@ -2109,7 +2113,146 @@ class EditorNodeTraveler{
         reader.onerror = function() {
             console.log(reader.error);
           };
-
+    }
+    connectAdjacentText(start, end){
+        let off = start && start.nodeName === '#text' ? start.nodeValue.length : 0;
+        if(end && end.nodeName === '#text' && end.previousSibling && end.previousSibling.nodeName === '#text'){
+            end.nodeValue = end.previousSibling.nodeValue + end.nodeValue;
+            end.previousSibling.remove();
+            off = end.nodeValue.length;
+        }
+        if(start && start.nodeName === '#text' && start.nextSibling && start.nextSibling.nodeName === '#text'){
+            off = start.nodeValue.length;
+            start.nodeValue = start.nodeValue + start.nextSibling.nodeValue;
+            start.nextSibling.remove();
+        }
+        return off;
+    }
+    properDeleteContent(r){
+        let pli;
+        if((pli =this.isBelongTag('P', r.startContainer) || this.isBelongTag('LI', r.startContainer)) && pli.classList.contains('img_ctn')){
+            r.setStartAfter(pli);
+        }
+        if((pli =this.isBelongTag('P', r.endContainer) || this.isBelongTag('LI', r.endContainer)) && pli.classList.contains('img_ctn')){
+            r.setEndBefore(pli);
+        }
+        let end = r.endContainer, start = r.startContainer, off = r.startOffset;
+        if((pli =this.isBelongTag('P', end) || this.isBelongTag('LI', end))){
+            let remain;
+            let r1 = r.cloneRange();
+            r1.collapse(false);
+            pli.lastChild && r1.setEndAfter(pli.lastChild);
+            !r1.collapsed && (remain = r1.extractContents());
+            r1.setStart(start, r.startOffset);
+            this.reassignRange(r1, true, false);
+            r1.deleteContents();
+            r.setStart(start, off);
+            r.collapse(true);
+            return {r, remain}
+        }
+        r.deleteContents();
+        r.setStart(start, off);
+        r.collapse(true);
+        return {r};
+    }
+    pastePlainText = (r, text)=>{
+        let div = document.createElement('div'), pre;
+        div.innerText = text;
+        let r1 = new Range();
+        if((pre = this.isBelongTag('PRE', r.commonAncestorContainer))){
+            r1.selectNodeContents(div);
+            let ct = r1.extractContents();
+            let l = ct.lastChild;
+            let f = ct.firstChild;
+            this.reassignRange(r, pre);
+            !r.collapsed && r.deleteContents()
+            r.insertNode(ct);
+            if(f && f.nodeName === '#text'){
+                this.connectAdjacentText(null, f)
+            }
+            if(l && l.nodeName === '#text'){
+                f = this.connectAdjacentText(l);
+                r.setStart(l, f);
+            }
+            else if(l){
+                r.setStartAfter(l);
+            }
+            r.collapse(true);
+            return;
+        }
+        let {remain} = this.properDeleteContent(r);
+        let {startContainer: start, commonAncestorContainer: common} = r;
+        if((pre = this.isBelongTag('PRE', common, true))){
+            r1.selectNodeContents(div);
+            let ct = r1.extractContents();
+            let l = ct.lastChild;
+            let f = ct.firstChild;
+            pre.appendChild(ct);
+            this.connectAdjacentText(start);
+            remain && pre.appendChild(this.normalizeText(remain));
+            if(f && f.nodeName === '#text'){
+                this.connectAdjacentText(null, f)
+            }
+            if(l && l.nodeName === '#text'){
+                f = this.connectAdjacentText(l);
+                r.setStart(l, f);
+            }
+            else if(l){
+                r.setStartAfter(l);
+            }
+            else{
+                this.connectAdjacentText(start);
+            }
+            r.collapse(true);
+            return;
+        }
+        let textNodes = [...div.childNodes].filter(node => node.nodeName === '#text');
+        let len = textNodes.length;
+        if(common === this.root || common.nodeName === 'BLOCKQUOTE'){
+            textNodes.map((text, idx) =>{
+                let p = document.createElement('p');
+                p.appendChild(text);
+                r.insertNode(p);
+                r.collapse(false);
+                if(idx === len-1){
+                    p.nextSibling && p.nextSibling.nodeName === 'BR' && p.nextSibling.remove();
+                    remain && p.appendChild(remain);
+                    let off = this.connectAdjacentText(text);
+                    r.setStart(text, this.connectAdjacentText(text));
+                    r.collapse(true);
+                }
+            });
+            return;
+        }
+        let pli = this.isBelongTag('P', start) || this.isBelongTag('LI', start);
+        if(pli){
+            let copy = pli.cloneNode(false);
+            let text0 = textNodes.shift();
+            if(pli.lastChild && pli.lastChild.nodeName === 'SPAN'){
+                copy.appendChild(pli.lastChild.cloneNode(false));
+                pli.lastChild.appendChild(text0);
+            }
+            else{
+                pli.appendChild(text0);
+            }
+            if(len === 1){
+                remain && pli.appendChild(remain);
+                let off = this.connectAdjacentText(text0, text0);
+                r.setStart(text0, off)
+                r.collapse(true);
+                return;    
+            }
+            this.connectAdjacentText(null, text0);
+            textNodes.map((text, idx) =>{
+                let c = idx == len -2 ? copy : copy.cloneNode(true);
+                c.hasChildNodes() ? c.firstChild.appendChild(text) : c.appendChild(text);
+                if(idx === len - 2 && remain){
+                    c.appendChild(remain);
+                    r.setStart(text, this.connectAdjacentText(text));
+                    r.collapse(true);
+                }
+            });
+        }
     }
 }
 export default EditorNodeTraveler;

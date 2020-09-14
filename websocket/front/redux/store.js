@@ -200,7 +200,6 @@ function toolbar(state = initialEditorToolbar, {type, data}){
 }
 
 function linkPrompt(state = {closed: true}, {type, data}){
-    console.log(type);
     switch(type){
         case OPENPROMPT:
             return data; //{it, as}
@@ -217,7 +216,4 @@ let reducer = combineReducers({
     linkPrompt
 })
 const store = createStore(reducer);
-store.subscribe(()=>{
-    console.log('dispatch')
-})
 export default store;
