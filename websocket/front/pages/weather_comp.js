@@ -3,6 +3,7 @@ class WeatherApp extends React.PureComponent{
     state = {
         weather: {},
         input: '',
+        showInput: true
     }
     handleInputChange = (e) =>{
         let input = e.target;
@@ -30,12 +31,13 @@ class WeatherApp extends React.PureComponent{
             return res.json()
         })
         .then(data =>{
+            if(data.err) throw new Error(data.err);
             return {
                 location: data.city ? data.city.split(/\s\//)[0] + ", " + data.name + ", " + data.sys.country : data.name + ", " + data.sys.country,
                 name: data.name,
                 description: data.weather[0].main + ", " + data.weather[0].description,
                 temp: data.main.temp,
-                visibility: (data.visibility/1000).toFixed(1),
+                visibility: (data.visibility/1000).toFixed(0),
                 sunrise: new Date(data.sys.sunrise * 1000).toTimeString().slice(0,5),
                 sunset: new Date(data.sys.sunset * 1000).toTimeString().slice(0,5),
                 humidity: data.main.humidity,
@@ -59,32 +61,35 @@ class WeatherApp extends React.PureComponent{
         }
     }
     handleClickFind = (e) =>{
-        e.preventDefault();
-        console.log('find')
-        if(this.state.input){
+        e && e.preventDefault();
+        if(!this.state.showInput){
+            this.setState({
+                showInput: true,
+            },()=>{document.getElementById('search_bar').querySelector('input').focus();})
+        }
+        else if(this.state.input){
             this.fetchData({q: this.state.input})
             .then((data) => {
-                this.setState({weather: data, input: ''})
+                this.setState({weather: data, input: '', showInput: false})
             })
         }
     }
     handleClickGetGeo = (e) =>{
-        console.log('get goe')
         e.preventDefault();
         this.getDataByLatLon().then((data) => {
-            this.setState({weather: data})
+            this.setState({weather: data, showInput: false})
         })
     }
     componentDidMount(){
         this.fetchData({q: 'hanoi'})
         .then((data) => {
-            this.setState({weather: data})
+            this.setState({weather: data, showInput: false})
         });
         this.itv = setInterval(() =>{
             if(this.state.weather.name){
                 this.fetchData({q: this.state.weather.name})        
                 .then((data) => {
-                    this.setState({weather: data})
+                    this.setState({weather: data, showInput: false})
                 });;
             }
         }, 3600 * 1000 * 2);
@@ -95,29 +100,39 @@ class WeatherApp extends React.PureComponent{
     render(){
         let {weather, input} = this.state;
         console.log(weather)
-        let searchBar = <div id = "search-bar">
-                            <input value = {input} placeholder = 'e.g: thai nguyen' onKeyDown = {this.handleInputEnter} onChange = {this.handleInputChange}></input>
-                            <button onClick = {this.handleClickFind} ><i className="fa fa-search"></i></button>
+        if(weather.err){
+            this.state.showInput = true;
+        }
+        let searchBar = <div id = "search_bar" style = {{paddingLeft: this.state.showInput ? 'auto' : '30px'}}>
+                            {this.state.showInput ? <input value = {input} placeholder = 'e.g: thai nguyen' onKeyDown = {this.handleInputEnter} onChange = {this.handleInputChange}/> : ''}
+                            <button onClick = {this.handleClickFind}><i className="fa fa-search"></i></button>
                             <button onClick = {this.handleClickGetGeo} ><i className="fa fa-map-marker"></i></button>
                         </div>
-        let WeatherInfo = !weather.name && !weather.err ? '' : weather.err ? <div id = "weather-show" style = {{color: 'red'}}>{weather.err}</div> :
-                    <div id = "weather-show">
-                        <p>{weather.location}</p>
-                        <div>
-                            <img src = {"http://openweathermap.org/img/wn/"+weather.icon+"@2x.png"}></img>
-                            <span style = {{fontSize: '20px'}}>{weather.temp} &#8451;</span>
-                            <p>{weather.description}</p>
-                        </div>
-                        <div>
-                            <div><i className="fa fa-eye"/><span>{weather.visibility + 'km'}</span></div>
-                            <div><i className="fa fa-tint"/><span>{weather.humidity + '%'}</span></div>
-                            <div><i className="fa fa-sun-o"/><span>{weather.sunrise}</span></div>
-                            <div><i className="fa fa-moon-o"/><span>{weather.sunset}</span></div>
+        let location = weather.location ? <p>{weather.location}</p> : ''
+        let WeatherInfo = !weather.name && !weather.err ? '' : weather.err ? <div id = "weather_show" style = {{color: '#ff3333'}}>{weather.err}</div> :
+                    <div id = "weather_show">
+                        <div id = 'info'>
+                            <div id = 'weather_main'>
+                                <p>{weather.description}</p>
+                                <div>
+                                    <img src = {"http://openweathermap.org/img/wn/"+weather.icon+"@2x.png"}></img>
+                                    <span style = {{fontSize: '17px'}}>{weather.temp} &#8451;</span>
+                                </div>
+                            </div>
+                            <div id = 'weather_sub'>
+                                <div style = {{marginLeft: '0px'}}><i className="fa fa-eye" style = {{color: '#008000'}}/><span>{weather.visibility + 'km'}</span></div>
+                                <div><i className="fa fa-tint" style = {{color: '#3366cc'}}/><span>{weather.humidity + '%'}</span></div>
+                                <div><i className="fa fa-sun-o" style = {{color: '#ff6600'}}/><span>{weather.sunrise}</span></div>
+                                <div style = {{marginRight: '0px'}}><i className="fa fa-moon-o" style = {{color: '#669999'}}/><span>{weather.sunset}</span></div>
+                            </div>
                         </div>
                     </div>
         return (
             <div id = 'weather_app'>
-                {searchBar}
+                <div style = {{display: 'flex', flexDirection: this.state.showInput ? 'column' : 'row-reverse', alignItems: 'center', justifyContent: 'center'}}>
+                    {searchBar}
+                    {location}
+                </div>
                 {WeatherInfo}
             </div>
         )
