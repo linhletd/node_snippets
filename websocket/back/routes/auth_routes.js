@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const apisf = require('../apis/apis.js');
+const others = require('../apis/other_apis');
 const dotenv = require('dotenv').config({path: '../../../.env'});
 
 module.exports = function(app){
@@ -11,5 +12,6 @@ module.exports = function(app){
     app.get('/discuss/data/content/:topic_id', apis.getTopicContentById);
     app.post('/discuss/comment', apis.postComment);
     app.get('/users/status', apis.getUserSignal);
-    // router here
+
+    app.post('/others/currentweather', others.currentWeather)
 }

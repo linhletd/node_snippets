@@ -7,7 +7,8 @@ import SubDiscussLayout from '../layouts/sub_discuss_layout';
 import PrimaryHeader from '../ui/primary_header.js';
 import SubUserLayout from '../layouts/sub_user_layout';
 import SubGameLayout from '../layouts/sub_game_layout';
-import EditorApp from '../pages/editor_page'
+import EditorApp from '../pages/editor_page';
+import WeatherApp from '../pages/weather_comp'
 import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
 class AuthLayout extends React.Component{
@@ -131,6 +132,7 @@ class AuthLayout extends React.Component{
         return(
             <div>
                 <PrimaryHeader/>
+                <WeatherApp/>
                 {/* {usersStatusBoard} */}
                 <Switch>
                     <Route exact path = '/'>

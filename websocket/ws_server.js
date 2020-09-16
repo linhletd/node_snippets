@@ -22,7 +22,7 @@ module.exports = function applyWebsocket(server, app){
         sessionParser(req, {}, function next(){
             if(req.session.passport && req.session.passport.user){
                 let socketID = uuid.v4();
-                console.log(req.session.passport)
+                // console.log(req.session.passport)
                 let user = req.session.passport.user;
                 let sessionID = req.sessionID;
                 wss.handleUpgrade(req, socket, head, (ws) =>{

@@ -3,6 +3,10 @@ const { session } = require("passport");
 module.exports = function(app){
     return {
         ensureAuthenticated(req, res, next){
+            // if(!req.isAuthenticated()){
+            //     return res.redirect('/auth/login');
+            // }
+            console.log(req.isAuthenticated(), req.path, req.url)
             let {sessionMap} = app;
             let sockets = app.sessionMap.get(req.sessionID);
             if(req.user){

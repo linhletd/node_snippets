@@ -102,15 +102,15 @@ class WeatherApp extends React.PureComponent{
                         </div>
         let WeatherInfo = !weather.name && !weather.err ? '' : weather.err ? <div id = "weather-show" style = {{color: 'red'}}>{weather.err}</div> :
                     <div id = "weather-show">
-                        <h2>{weather.location}</h2>
+                        <p>{weather.location}</p>
                         <div>
                             <img src = {"http://openweathermap.org/img/wn/"+weather.icon+"@2x.png"}></img>
                             <span style = {{fontSize: '20px'}}>{weather.temp} &#8451;</span>
                             <p>{weather.description}</p>
                         </div>
                         <div>
-                            <div><i className="fa fa-eye"/><span>{weather.visibility + 'KM'}</span></div>
-                            <div><i className="fa fa-tint"/><span>{weather.humidity + ' %'}</span></div>
+                            <div><i className="fa fa-eye"/><span>{weather.visibility + 'km'}</span></div>
+                            <div><i className="fa fa-tint"/><span>{weather.humidity + '%'}</span></div>
                             <div><i className="fa fa-sun-o"/><span>{weather.sunrise}</span></div>
                             <div><i className="fa fa-moon-o"/><span>{weather.sunset}</span></div>
                         </div>

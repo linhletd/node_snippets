@@ -10,6 +10,7 @@ const useUnauthRoute = require('../routes/unauth_routes');
 const useAuthRoute = require('../routes/auth_routes')
 module.exports = function config(app){
     useHelmet(app);
+    app.use(morgan('tiny'))
     app.get('/script',(req, res) => {
         res.sendFile(process.cwd() + '/bundle.js')
     })
