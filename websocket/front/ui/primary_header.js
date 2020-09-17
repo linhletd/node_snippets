@@ -7,7 +7,7 @@ let PrimaryHeader = (props) =>{
             <NavLink exact to = '/' activeClassName = 'active' >Home</NavLink>
             <NavLink to = '/discuss' activeClassName = 'active'>Topic</NavLink>
             <NavLink to = '/game' activeClassName = 'active'>Game</NavLink>
-            <NavLink to = '/similar_app' activeClassName = 'active'>Similar App</NavLink>
+            <NavLink to = '/similarity' activeClassName = 'active'>Similar App</NavLink>
             <NavLink to = '/sql_query' activeClassName = 'active'>SQL query</NavLink>
             <NavLink to = '/user' activeClassName = 'active'>User</NavLink>
             <NavLink to = '/editor' activeClassName = 'active'>editor</NavLink>

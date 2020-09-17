@@ -13,5 +13,6 @@ module.exports = function(app){
     app.post('/discuss/comment', apis.postComment);
     app.get('/users/status', apis.getUserSignal);
 
-    app.post('/others/currentweather', others.currentWeather)
+    app.post('/others/currentweather', others.currentWeather);
+    app.post('/others/similarity', others.similarity)
 }

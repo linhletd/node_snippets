@@ -1,5 +1,6 @@
 let qs = require('query-string');
 let http = require('http');
+let similarity = require('../helpers/similarity_cal')
 module.exports = {
     //'https://us1.locationiq.com/v1/reverse.php?key=pk.fef54894c32d28253d8379d17512351e&lat=21.5602008&lon=105.9201406&format=json'
     currentWeather: function(req, res, next){
@@ -59,12 +60,11 @@ module.exports = {
             }
         }).end()
     },
-    // similarity: function(req, res, next){
-    //     if(!req.body.src || !req.body.des){
-    //         res.writeHead(400,'input values must not be empty strings');
-    //         res.end();
-    //     }
-    //     res.json(similarity(req.body.src, req.body.des));
-    // }
+    similarity: function(req, res, next){
+        if(!req.body.src || !req.body.des){
+            res.json({err: 'input values must not be empty strings'})
+        }
+        res.json(similarity(req.body.src, req.body.des));
+    }
 }
 

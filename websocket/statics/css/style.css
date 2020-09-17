@@ -1,3 +1,8 @@
+body *{
+    margin: 0px 0px;
+    padding: 0px 0px;
+    outline: none;
+}
 .active {
     background-color: blueviolet;
 }
@@ -195,4 +200,136 @@ figure>img{
 td, thead{
     border: 1px solid grey;
     text-align: center;
+}
+#weather_app{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+#weather_app>div>p{
+    font-weight: bold;
+    font-size: large;
+}
+#search_bar>button{
+    background: transparent;
+    border: none;
+    font-size: large;
+    margin-left: 10px;
+    width: 20px;
+    outline: none;
+}
+#search_bar>input{
+    border: 2px solid black;
+    border-radius: 3px;
+    outline: none;
+}
+#weather_show{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#info{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#weather_main{
+    display: flex;
+    flex-direction: column;
+}
+#weather_sub>*{
+    margin-left: 10px;
+    margin-right: 10px;
+}
+#weather_sub{
+    display: flex;
+    flex-direction: row;
+}
+
+#similar_app{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+#input_data{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+}
+#input_data>div{
+    display: flex;
+    flex-wrap: wrap;
+}
+#input_data>div>div:first-child>input{
+    margin-right: 10px;
+}
+#input_data>button{
+    width: 50px;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+#display_result{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+#display_result>p{
+    font-size: medium;
+    font-weight: bold;
+}
+#display_result>div{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 15px;
+}
+#display_result>div>table{
+    margin-right: 50px;
+}
+#display_result ol .illustrate{
+    letter-spacing: 2px;
+    text-align: center;
+}
+#display_result ol .tail{
+    opacity: 0.7;
+}
+#display_result ol .insert{
+    background-color:  #42f342c7;
+    border-radius: 4px;
+}
+#display_result ol .substitute{
+    background-color:  rgba(255, 255, 0, 0.782);
+    border-radius: 4px;
+
+}
+#display_result ol .delete{
+    background-color:  rgba(238, 32, 32, 0.7);
+    border-radius: 4px;
+}
+#display_result table td{
+    min-width: 20px
+}
+#display_result table .best{
+    background-color:  #00b33c8e;
+}
+@media screen and (max-width:500px){
+    #input_data>div{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: flex-end;
+    }
+    #input_data>button{
+        align-self: center;
+    }
+    #input_data>div>div:first-child>input{
+        margin-right: 0px;
+        margin-bottom: 10px;
+    }
 }

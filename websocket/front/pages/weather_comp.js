@@ -99,7 +99,6 @@ class WeatherApp extends React.PureComponent{
     }
     render(){
         let {weather, input} = this.state;
-        console.log(weather)
         if(weather.err){
             this.state.showInput = true;
         }

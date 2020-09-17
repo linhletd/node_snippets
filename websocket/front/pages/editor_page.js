@@ -11,7 +11,6 @@ class EditorApp extends React.Component{
         this.currentRange.collapse(true);
         this.data = {
             waitElem: null,
-            focused: false
         }
         this.toolbar = props.toolbarState;
         this.traveler = new EditorNodeTraveler(props.editorNode, props.updateState, props.historyManager, this.toolbar);
@@ -767,12 +766,6 @@ class EditorApp extends React.Component{
         editor.onselectstart = ()=>{
             this.data.waitElem && (this.data.waitElem.remove(), this.data.waitElem = null);
         }
-        editor.onfocus = () =>{
-            this.data.focused = true;
-        }
-        editor.onblur = () =>{
-            this.data.focused = false;
-        }
         editor.onmouseup = this.updateRangeFromSelection;
         editor.onkeypress = this.handleKeyPress;
         editor.onkeydown = this.handleKeyDown;
@@ -780,6 +773,7 @@ class EditorApp extends React.Component{
         editor.onmousedown = this.handleMouseDown;
         editor.onpaste = this.handlePasteData;
         this.props.historyManager.startObserving();
+        editor.focus();
     }
     componentWillUnmount(){
     }

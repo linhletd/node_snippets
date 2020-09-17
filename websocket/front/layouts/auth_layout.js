@@ -8,14 +8,11 @@ import PrimaryHeader from '../ui/primary_header.js';
 import SubUserLayout from '../layouts/sub_user_layout';
 import SubGameLayout from '../layouts/sub_game_layout';
 import EditorApp from '../pages/editor_page';
-import WeatherApp from '../pages/weather_comp'
+import WeatherApp from '../pages/weather_comp';
+import SimilarApp from '../pages/similar_comp';
 import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
 class AuthLayout extends React.Component{
-    constructor(props){
-        super(props);
-        this.getInitialUsersStatus();
-    }
     handleInviteMsg = ({type, payload}) =>{
         let notice = {
             inviteId: payload.inviteId,
@@ -38,7 +35,7 @@ class AuthLayout extends React.Component{
             }));
             socket.onmessage = (event)=>{
                 let {type, payload} = JSON.parse(event.data);
-                document.getElementById('message').innerText = type + JSON.stringify(payload);
+                // document.getElementById('message').innerText = type + JSON.stringify(payload);
                 (()=>{
                     switch(type){
                         case 'update board': case 'update comment':
@@ -124,6 +121,7 @@ class AuthLayout extends React.Component{
         })
     }
     componentDidMount(){
+        this.getInitialUsersStatus();
         this.handleIncomingMsg();
     }
     render(){
@@ -132,11 +130,11 @@ class AuthLayout extends React.Component{
         return(
             <div>
                 <PrimaryHeader/>
-                <WeatherApp/>
                 {/* {usersStatusBoard} */}
                 <Switch>
                     <Route exact path = '/'>
                         <HomePage/>
+                        <WeatherApp/>
                     </Route>
                     <Route path = '/user'>
                         <SubUserLayout/>
@@ -149,6 +147,9 @@ class AuthLayout extends React.Component{
                     </Route>
                     <Route path = '/editor'>
                         <EditorApp/>
+                    </Route>
+                    <Route path = '/similarity'>
+                        <SimilarApp/>
                     </Route>
                 </Switch>
                 <InviteBoard/>
