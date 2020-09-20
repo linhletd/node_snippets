@@ -21,15 +21,17 @@ const UserStatus = (props) => {
     return (
         <div className = {status._id + (childClass ? " " + childClass : '')}>
             <div className = "icon">
-                <img src = {status.Avartar} alt = {`${status.Username} avartar`} width = "45" heigh = "45"/>
+                <img src = {status.Avartar} alt = {`${status.Username} avartar`}/>
                 <div className = {status.isOnline ? "signal online" : "signal offline"}/>
             </div>
-            <a href = {`/user?id=${status._id}`}>{status.Username}</a>
-            {Child}
+            <div>
+                <a href = {`/user?id=${status._id}`}>{status.Username}</a>
+                {Child}
+            </div>
         </div>
     )
 }
-function mapStateToProps(state, ownProp){
+function mapStateToProps(state){
     return {
         usersStatus: state.main.usersStatus
     }
