@@ -31,7 +31,9 @@ class SelectPoong extends React.Component {
         this.closeInviteBoard.bind(this)();
     }
     closeInviteBoard = () =>{
-        this.setState({showList: false})
+        if(this.state.showList){
+            this.setState({showList: false})
+        }
     }
     render(){
         let SelectPoongBtn = () => (<button onClick = {this.openInviteBoard}>click to call friend</button>)
@@ -41,7 +43,7 @@ class SelectPoong extends React.Component {
                 {
                     this.state.showList ? 
                     <BrowseUserPage children = {this.InviteButton} filter = {this.props.user._id} 
-                    attr = {{id: 'invite_list'}} childClass = 'medium'/>
+                    attr = {{id: 'invite_list', className: 'board'}} childClass = 'small' closable = {true} close = {this.closeInviteBoard}/>
                     : ""
                  }
                  <WaitingPlayer/>
