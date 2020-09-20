@@ -2,14 +2,10 @@ import React from 'react';
 import {Route, Switch, NavLink, withRouter, Redirect} from 'react-router-dom';
 import {connect} from 'react-redux';
 import PoongGame from '../pages/poong_game_page';
+import GameOfLife from '../pages/game_of_life_comp';
 import SelectPoong from '../pages/select_poong_page';
 
-//import LifeGame from '../pages/life_game_page';
-
 class SubGameLayout extends React.Component{
-    constructor(props){
-        super(props);  
-    }
     render(){
         const SelectLife = () => (<button>game of life</button>)
         let {path} = this.props.match;
@@ -20,7 +16,7 @@ class SubGameLayout extends React.Component{
                     <NavLink to = {`${path}/life`} activeClassName = 'active'>life</NavLink>
                     <NavLink to = {`${path}/poong`} activeClassName = 'active'>poong</NavLink>
                 </nav>
-
+                <GameOfLife/>
                 <Switch>
                     <Route exact path = {path}>
                         <SelectPoong/>

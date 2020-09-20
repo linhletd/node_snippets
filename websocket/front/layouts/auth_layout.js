@@ -104,6 +104,7 @@ class AuthLayout extends React.Component{
         fetchReq('/users/status', {
             method: 'get'
         }).then(({data}) => {
+            console.log(data)
             if(data && data.length){
                 let entries = data.map(cur => {
                     return [cur._id, cur];

@@ -3,6 +3,100 @@ body *{
     padding: 0px 0px;
     outline: none;
 }
+footer{
+    background-color: #f2f2f2;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 14px;
+    padding: 10px;
+    height: 15vh;
+    justify-self: end;
+    margin-top: 10px;
+}
+footer a{
+    color: #131418;
+}
+footer>#contact{
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: 1fr;
+    column-gap: 10px;
+    font-size: 17px;
+    justify-items: center;
+}
+footer>#info{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    grid-template-rows: 1fr;
+    column-gap: 7px;
+    text-decoration: underline;
+}
+/**/
+#login_page{
+    padding: 4px;
+    width: 250px;
+}
+#login_page>#signup{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 2px;
+}
+#login_page input,
+#login_page>button,
+.btn {
+  width: 100%;
+  padding: 5px;
+  border-radius: 4px;
+  margin: 5px 0;
+  opacity: 0.85;
+  display: inline-block;
+  font-size: 15px;
+  line-height: 18px;
+  text-decoration: none;
+}
+.btn{
+  border: none;
+}
+input:hover,
+#login_page>button,
+.btn:hover {
+  opacity: 1;
+}
+#login_page>button{
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    border: none;
+
+  }
+  
+#login_page>button:hover {
+    background-color: #45a049;
+}
+#login_page>button:focus {
+    background-color: #45a049;
+}
+.fb {
+  background-color: #3B5998;
+  color: white;
+}
+
+.github {
+  background-color: #000000b1;
+  color: white;
+}
+/**/
+#app{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+img:hover{
+    transform: none;
+}
 .active {
     background-color: blueviolet;
 }
@@ -110,8 +204,10 @@ body *{
     z-index: 1;
     width: 100%;
 }
-#editor_area p{
-    margin: 0px 0px;
+#editor_area p,
+#editor_area li{
+    width: 100%;
+    overflow-wrap: break-word;
 }
 #editor_area *{
     font-size: 16px;
@@ -198,7 +294,7 @@ figure>img{
     text-align: center;
 }
 td, thead{
-    border: 1px solid grey;
+    border: 1px solid rgba(128, 128, 128, 0.713);
     text-align: center;
 }
 #weather_app{
@@ -252,13 +348,17 @@ td, thead{
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 #input_data{
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-
+    margin-bottom: 20px;
+    align-self: center;
+    margin-top: 20px;
 }
 #input_data>div{
     display: flex;
@@ -270,55 +370,123 @@ td, thead{
 #input_data>button{
     width: 50px;
     margin-top: 10px;
-    margin-bottom: 10px;
+}
+#input_data>button:focus{
+    border: solid 2px rgb(178, 223, 224);
+    border-radius: 5px;
+}
+#input_data>button{
+    height: 28px;
+    outline: none;
+}
+#input_data>p{
+    font-size: larger;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+#input_data>div>div>label{
+    margin-right: 10px;
 }
 #display_result{
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    margin-left: 10px;
 }
 #display_result>p{
-    font-size: medium;
     font-weight: bold;
+    margin-bottom: 10px;
+}
+#display_result>p .src-des{
+    font-style: italic;
+    text-decoration: underline;
 }
 #display_result>div{
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
-    margin-top: 15px;
 }
 #display_result>div>table{
     margin-right: 50px;
 }
-#display_result ol .illustrate{
+#display_result>div>ol{
+    margin-left: 10px;
+}
+#display_result>div>ol .illustrate{
     letter-spacing: 2px;
     text-align: center;
 }
-#display_result ol .tail{
+#display_result>div>ol .tail{
     opacity: 0.7;
 }
-#display_result ol .insert{
+#display_result>div>ol .insert{
     background-color:  #42f342c7;
     border-radius: 4px;
 }
-#display_result ol .substitute{
+#display_result>div>ol .substitute{
     background-color:  rgba(255, 255, 0, 0.782);
     border-radius: 4px;
 
 }
-#display_result ol .delete{
-    background-color:  rgba(238, 32, 32, 0.7);
+#display_result>div>ol .delete{
+    background-color:  #ff5c33;
     border-radius: 4px;
 }
-#display_result table td{
+#display_result>div>table td{
     min-width: 20px
 }
-#display_result table .best{
+#display_result>div>table .best{
     background-color:  #00b33c8e;
 }
-@media screen and (max-width:500px){
+#display_result>div>table>tbody>tr:nth-child(2)>td:not(:first-child){
+    background-color:  pink;
+    font-weight: bold;
+}
+#display_result>div>table>tbody>tr:not(:first-child)>td:nth-child(2){
+    background-color: pink;
+    font-weight: bold;
+}
+#display_result>div>table>tbody>tr>td:first-child{
+    border: none;
+    opacity: 0.6;
+}
+#display_result>div>table>tbody>tr:first-child>td{
+    border: none;
+    opacity: 0.6;
+}
+#display_result>div>table>tbody>tr:nth-child(2)>td:nth-child(2){
+    border: none;
+    background: none;
+}
+
+#life_game>table{
+    empty-cells: show;
+}
+#life_game>table>tbody{
+    border: 2px solid grey;
+}
+#life_game>table>tbody>tr>td{
+    border: 1px solid lightgrey;
+    width: 8px;
+    height: 8px;
+}
+@media screen and (max-width:420px){
+    #life_game>table>tbody>tr>td{
+        width: 5px;
+        height: 5px;
+    }
+    
+}
+#life_game>table>tbody>tr>.alive{
+    background-color: #66b3ff;
+}
+#life_game>table>tbody>tr>.dead{
+    background-color: unset;
+}
+
+@media screen and (max-width:480px){
     #input_data>div{
         display: flex;
         flex-direction: column;
@@ -332,4 +500,14 @@ td, thead{
         margin-right: 0px;
         margin-bottom: 10px;
     }
+    #display_result>div{
+        justify-content: start;
+    }
+    #display_result>div>table{
+        margin-right: 25px;
+    }
+    #similar_app{
+        align-items: flex-start;
+    }
+    
 }

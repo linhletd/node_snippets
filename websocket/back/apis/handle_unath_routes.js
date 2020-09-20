@@ -82,10 +82,15 @@ module.exports = function(app){
                     res.cookie('InVzZXIi', userCookie, {httpOnly: false, sameSite: 'strict'});
                     res.writeHead(200,{'Content-Type': 'text/html'});
                     res.end(`<script>
-                    let bc = new BroadcastChannel('bc1');
-                    bc.postMessage('${obj}');
-                    close();
-                    </script>`)
+                                    if(window.BroadcastChannel){
+                                        let bc = new BroadcastChannel('bc1');
+                                        bc.postMessage('${obj}');
+                                        close();
+                                    }
+                                    else{
+                                        window.open('${process.env.HOST}','_self')
+                                    }
+                                </script>`)
                 });
             })(req, res, next)
         }),

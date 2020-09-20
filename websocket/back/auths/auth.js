@@ -29,8 +29,11 @@ module.exports = function(app){
             if(err){
                 return done(err);
             }
-            else if(user && user.Password){
-               return  bcrypt.compare(password, user.Password,(err, ok) =>{
+            else if(user){
+                if(!user.Password){
+                    return done(null, false, 'incorrect password');
+                }
+                return  bcrypt.compare(password, user.Password,(err, ok) =>{
                     if(err){
                         return done(err);
                     }

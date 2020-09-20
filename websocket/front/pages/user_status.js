@@ -1,7 +1,7 @@
 import React from 'react';
 import {connect} from 'react-redux'
 const UserStatus = (props) => {
-    let {style} = props;
+    let {childClass} = props;
     let status;
     if(!('isOnline' in props.status)){
         status = props.usersStatus.get(props.status._id);
@@ -19,7 +19,7 @@ const UserStatus = (props) => {
     }
     else Child = "";
     return (
-        <div className = {status._id + " " + style}>
+        <div className = {status._id + (childClass ? " " + childClass : '')}>
             <div className = "icon">
                 <img src = {status.Avartar} alt = {`${status.Username} avartar`} width = "45" heigh = "45"/>
                 <div className = {status.isOnline ? "signal online" : "signal offline"}/>

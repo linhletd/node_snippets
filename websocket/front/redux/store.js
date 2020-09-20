@@ -155,7 +155,8 @@ editorNode.contentEditable = true;
 editorNode.id = 'editor_area';
 // editorNode.style.color = 'orange';
 // editorNode.style.backgroundColor = 'grey';
-editorNode.style.minHeight = '90vh';
+editorNode.style.minHeight = '100vh';
+editorNode.style.width = '100%';
 editorNode.style.outline = 'none';
 editorNode.style.border = '1px solid grey';
 editorNode.style.borderRadius = '5px';
@@ -163,6 +164,10 @@ editorNode.style.fontSize = '16px';
 editorNode.style.padding = '10px 10px';
 editorNode.style.fontFamily = 'Arial, Helvetica, sans-serif'
 editorNode.style.overflow = 'scroll';
+editorNode.style.display = 'flex';
+editorNode.style.flexDirection = 'column';
+editorNode.style.alignItems = 'flex-start';
+
 
 let initialEditor = {
     editorNode,

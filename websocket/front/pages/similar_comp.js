@@ -54,17 +54,19 @@ class SimilarApp extends React.Component{
                 let valid = src !== '' && des !== '';
                 return(
                     <div id = "input_data" style = {{height: result ? '' : '80vh'}}>
+                        <p>SIMIMLARITY APP</p>
                         <div>
                             <div>
-                                <label style = {{marginRight: '10px'}} htmlFor = "src">From:</label>
+                                <label htmlFor = "src">From:</label>
                                 <input name = "src" type = "text" value = {src} onChange = {this.handleInputChange} required = {true} autoFocus = {true} className = {src !== '' ? 'valid' : 'invalid'}/>
                             </div>
                             <div>
-                                <label style = {{marginRight: '10px'}} htmlFor = "des">To:</label>
+                                <label htmlFor = "des">To:</label>
                                 <input name = "des" type = "text" value = {des} onChange = {this.handleInputChange} required = {true} des = {des !== '' ? 'valid' : 'invalid'}/>
                             </div>
                         </div>
-                        <button onClick = {this.handleSubmitData} disabled = {valid ? false : true}><i className="fa fa-magic"></i></button>
+                        {valid ? <button onClick = {this.handleSubmitData} className = 'btn btn-info' ><i className="fa fa-magic"></i></button> : ''}
+                        {/* <button onClick = {this.handleSubmitData} disabled = {valid ? false : true} className = {valid ? 'btn btn-info' : ''} ><i className="fa fa-magic"></i></button> */}
                     </div>
                 )
 
@@ -141,7 +143,7 @@ class SimilarApp extends React.Component{
                     let illustrate = this.builder(data);
                     return (
                         <div id = 'display_result'>
-                            <p>Result for transform from &nbsp;<span style = {{textDecoration: 'underline'}}>{data.src}</span>&nbsp;to&nbsp;<span style = {{textDecoration: 'underline'}}>{data.des}</span></p>    
+                            <p>Result of edit distance from &nbsp;<span className = 'src-des'>{data.src}</span>&nbsp;to&nbsp;<span className = 'src-des'>{data.des}</span></p>    
                             <div>
                                 <table>
                                     <tbody>
