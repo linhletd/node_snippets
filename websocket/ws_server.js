@@ -82,9 +82,6 @@ module.exports = function applyWebsocket(server, app){
                     }))
                 })
             },
-            // needSendLeaveToPartner(socket){
-            //     utils.needClearCurrentGameRef.bind(socket)()
-            // },
             needReceiveLeave(inviteId){
                 let msg = {
                     type: 'leave',
@@ -128,7 +125,9 @@ module.exports = function applyWebsocket(server, app){
         ws.on('message', function incoming(message){
             // console.log(`client say ${message}`)
             let {type, payload} = JSON.parse(message);
-            console.log(type);
+            if(payload._id && !ownerMap.get(payload._id)){
+                return;
+            }
             (()=>{
                 switch(type){
                     case 'invite':
