@@ -6,7 +6,7 @@ import PoongPopup from '../pages/poong_popup_page'
 
 class PoongGame extends React.Component{
     constructor(props){
-        super(props);
+        super(props); // props for start game
         this.unit = 'vmin';
         this.hwratio = 0.6;
         let vmin = Math.min(innerWidth, innerHeight),
@@ -25,9 +25,7 @@ class PoongGame extends React.Component{
         this.bulletSpeed = 30; //ms
         this.playerSpeed = 150;
         this.bulletsStock = 10;
-        this.x = <div></div>;
         this.startGame();
-        // this.changeChildState
     }
     startGame(nextProps){
         !nextProps ? this.mainPlayer = this.props.gameStatus.mainSide : this.mainPlayer = nextProps.gameStatus.mainSide;
@@ -58,7 +56,7 @@ class PoongGame extends React.Component{
         }
         this.bulletsList = new Map();
     }
-    mainGo(ev){
+    mainGo = (ev) =>{
         this.itv.mainGoing && clearInterval(this.itv.mainGoing) && (this.itv.mainGoing = undefined);
         if(this.freezed){
             return;
@@ -116,7 +114,7 @@ class PoongGame extends React.Component{
         mainPlayerGo();
         this.itv.mainGoing = setInterval(mainPlayerGo, this.playerSpeed);
     }
-    mainStop(ev){
+    mainStop = (ev) =>{
         this.itv.mainGoing && clearInterval(this.itv.mainGoing) && (this.itv.mainGoing = undefined);
     }
 
@@ -130,7 +128,7 @@ class PoongGame extends React.Component{
         let elem = document.getElementById('shooting_game').querySelector(`#${playerId}`);
         elem.style.left = `${player.x}vmin`; elem.style.top = `${player.y}vmin`; elem.style.transform = `rotate(${alpha}rad)`;
     }
-    shoot = (playerId) => {
+    shoot(playerId){
         if(this.freezed){
             return;
         }
@@ -169,7 +167,6 @@ class PoongGame extends React.Component{
         bullet.id = key;
         document.getElementById('bullets').appendChild(bullet);
         this.bulletGo.bind(this, key)();
-        // this.setBulletsState(this.bulletGo.bind(this, key)) //, this.bulletGo.bind(this, key, playerId)
     }
     jump(alpha){
         let step = this.bulletStep;
@@ -320,7 +317,7 @@ class PoongGame extends React.Component{
                 case 'go':
                     return this.subPlayerGo(payload);
                 case 'shoot':
-                    return this.shoot(this.subPlayer);
+                    return this.shoot.bind(this,this.subPlayer)();
                 case 'leave':
                     return this.handleLeaveMsg();
                 case 'continue':
@@ -353,7 +350,7 @@ class PoongGame extends React.Component{
         let self = this;
         class PlayerBoard extends React.Component{
             constructor(props){
-                super(props);
+                super();
                 let state = new Map();
                 self.props.gameStatus.sideList.map((side) =>{
                     side = {...side};
@@ -486,12 +483,12 @@ class PoongGame extends React.Component{
             console.log('run')
             return (
                 <div>
-                    <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.mainGo.bind(this)} onMouseUp = {this.mainStop.bind(this)} onMouseLeave = {this.mainStop.bind(this)} >
+                    <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.mainGo} onMouseUp = {this.mainStop} onMouseLeave = {this.mainStop} >
                         <Players/>
                         <SampleBullet/>
                         <div id = 'bullets'/>
                     </div>
-                    <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button>                    
+                    <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button> {/*do not replace this.shoot... by other method that already binding, because of this.mainplayer*/}                    
                 </div>
 
             )
@@ -505,9 +502,8 @@ class PoongGame extends React.Component{
         )
     }
 }
-function mapStateToProps(state, ownProp){
+function mapStateToProps(state){
     return {
-        user: state.main.user,
         socket: state.main.socket,
         gameStatus: state.poong.gameStatus,
         mutateData: state.poong.mutateData

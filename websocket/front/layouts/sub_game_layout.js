@@ -16,11 +16,11 @@ class SubGameLayout extends React.Component{
                     <NavLink to = {`${path}/life`} activeClassName = 'active'>life</NavLink>
                     <NavLink to = {`${path}/poong`} activeClassName = 'active'>poong</NavLink>
                 </nav>
-                <GameOfLife/>
+                {/* <GameOfLife/> */}
                 <Switch>
                     <Route exact path = {path}>
                         <SelectPoong/>
-                        <SelectLife/>
+                        {/* <SelectLife/> */}
                     </Route>
                     {/* <Route exact path = '/game/life' component = {LifeGame}/> */}
                     <Route path = {`${path}/poong`}>

@@ -17,7 +17,8 @@ class SelectPoong extends React.Component {
         this.setState({showList: true})
     }
     invite = (e) =>{
-        let _id = e.target.parentNode.className.slice(0, 24);
+        let _id = e.target.parentNode.parentNode.className.slice(0, 24);
+        console.log(_id)
         let inviteId = `${_id.slice(18, 24)}${Math.floor(Math.random()*6)}${Date.now()}`;
         this.props.updateStore({
             type: 'WAITPLAYER',
