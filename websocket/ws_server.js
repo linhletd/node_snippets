@@ -126,6 +126,7 @@ module.exports = function applyWebsocket(server, app){
             // console.log(`client say ${message}`)
             let {type, payload} = JSON.parse(message);
             if(payload._id && !ownerMap.get(payload._id)){
+                console.log('xxx')
                 return;
             }
             (()=>{

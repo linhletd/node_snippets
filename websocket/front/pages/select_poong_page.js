@@ -18,7 +18,6 @@ class SelectPoong extends React.Component {
     }
     invite = (e) =>{
         let _id = e.target.parentNode.parentNode.className.slice(0, 24);
-        console.log(_id)
         let inviteId = `${_id.slice(18, 24)}${Math.floor(Math.random()*6)}${Date.now()}`;
         this.props.updateStore({
             type: 'WAITPLAYER',
@@ -28,8 +27,24 @@ class SelectPoong extends React.Component {
             type: 'invite',
             payload: {_id, inviteId}
         }
-        this.props.socket.send(JSON.stringify(msg))
+        this.sendMsgViaSocket(JSON.stringify(msg))
         this.closeInviteBoard.bind(this)();
+    }
+    sendMsgViaSocket = (msg) =>{
+        let {socket} = this.props;
+        console.log(socket.readyState)
+        if(socket.readyState === 2 || socket.readyState === 3){
+            let ws = new window.WebSocket('ws://localhost:8080');
+            this.props.updateStore({type: 'OPENSOCKET', data: ws});
+            ws.onopen = (e) =>{
+                console.log('hahah', msg)
+                ws.send(msg);
+            }
+        }
+        else{
+            socket.send(msg);
+        }
+        
     }
     closeInviteBoard = () =>{
         if(this.state.showList){

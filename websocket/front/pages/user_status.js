@@ -19,7 +19,7 @@ const UserStatus = (props) => {
     }
     else Child = "";
     return (
-        <div className = {status._id + (childClass ? " " + childClass : '')}>
+        <div className = {status._id + ' user' +(childClass ? " " + childClass : '')}>
             <div className = "icon">
                 <img src = {status.Avartar} alt = {`${status.Username} avartar`}/>
                 <div className = {status.isOnline ? "signal online" : "signal offline"}/>

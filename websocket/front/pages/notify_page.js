@@ -5,6 +5,19 @@ import UserStatus from '../pages/user_status';
 const InviteBoard = (props) => {
     let {socket, noticeList, updateStore, user} = props;
     let history = useHistory();
+    let sendMsgViaSocket = (msg) =>{
+        let {socket} = props;
+        if(socket.readyState === 2 || socket.readyState === 3){
+            let ws = new window.WebSocket('ws://localhost:8080');
+            props.updateStore({type: 'OPENSOCKET', data: ws});
+            ws.onopen = (e) =>{
+                ws.send(msg);
+            }
+        }
+        else{
+            socket.send(msg);
+        }
+    }
     const handleAcceptGame = (notice) =>{
         let {inviteId, socketId} = notice;
         noticeList.delete(inviteId);
@@ -18,7 +31,7 @@ const InviteBoard = (props) => {
             }
         };
         console.log(msg)
-        socket.send(JSON.stringify(msg));
+        sendMsgViaSocket(JSON.stringify(msg));
         updateStore({
             type: 'ACTIVEGAME',
             data: {
@@ -38,7 +51,7 @@ const InviteBoard = (props) => {
                 socketId: notice.socketId
             }
         }
-        socket.send(JSON.stringify(msg));
+        sendMsgViaSocket(JSON.stringify(msg));
         updateStore({
             type: 'DECLINEGAME',
             data: {inviteId: notice.inviteId}

@@ -8,10 +8,10 @@ class PoongGame extends React.Component{
     constructor(props){
         super(props); // props for start game
         this.unit = 'vmin';
-        this.hwratio = 0.6;
+        this.hwratio = 0.5;
         let vmin = Math.min(innerWidth, innerHeight),
             vmax = Math.max(innerWidth, innerHeight);
-        this.width = Math.floor((vmax/vmin) * 100 * 0.8);
+        this.width = Math.floor((vmax/vmin) * 100 * 0.6);
         this.height = this.width * this.hwratio;
         this.xmin = 0; //left
         this.xmax = this.width; //left
@@ -55,6 +55,20 @@ class PoongGame extends React.Component{
             mainGoing: undefined
         }
         this.bulletsList = new Map();
+    }
+    sendMsgViaSocket = (msg) =>{
+        let {socket} = this.props;
+        if(socket.readyState === 2 || socket.readyState === 3){
+            let ws = new window.WebSocket('ws://localhost:8080');
+            this.props.updateStore({type: 'OPENSOCKET', data: ws});
+            ws.onopen = (e) =>{
+                ws.send(msg);
+            }
+        }
+        else{
+            socket.send(msg);
+        }
+        
     }
     mainGo = (ev) =>{
         this.itv.mainGoing && clearInterval(this.itv.mainGoing) && (this.itv.mainGoing = undefined);
@@ -106,7 +120,7 @@ class PoongGame extends React.Component{
                 type: 'go',
                 payload: {x: x/this.width, y: y/this.width, alpha, inviteId: this.props.mutateData.inviteId}
             }
-            this.props.socket.send(JSON.stringify(msg));
+            this.sendMsgViaSocket(JSON.stringify(msg));
             player.x = x; player.y = y; player.alpha = alpha;
             let elem = document.getElementById('shooting_game').querySelector(`#${this.mainPlayer}`);
             elem.style.left = `${x}vmin`; elem.style.top = `${y}vmin`; elem.style.transform = `rotate(${alpha}rad)`;
@@ -147,7 +161,7 @@ class PoongGame extends React.Component{
                     inviteId: this.props.mutateData.inviteId
                 }
             }
-            this.props.socket.send(JSON.stringify(msg))
+            this.sendMsgViaSocket(JSON.stringify(msg))
         }
 
         let key = `${playerId}_${bulletsQty}`;
@@ -246,7 +260,6 @@ class PoongGame extends React.Component{
         let itv = setInterval(() =>{
             if(this.freezed) return clearInterval(itv);
             if(ifCollidePlayer.bind(this)()){
-                console.log('collid')
                 clearInterval(itv);
                 this.itv.mainGoing && clearInterval(this.itv.mainGoing) && (this.itv.mainGoing = undefined);
                 return;
@@ -287,7 +300,7 @@ class PoongGame extends React.Component{
             type: 'leave',
             payload: {inviteId}
         }
-        socket.send(JSON.stringify(msg));
+        this.sendMsgViaSocket(JSON.stringify(msg));
         updateStore({
             type: 'ENDGAME',
             data: {}
@@ -333,7 +346,6 @@ class PoongGame extends React.Component{
         })
     }
     shouldComponentUpdate(nextProps){
-        console.log('update')
         this.startGame(nextProps);
         return true
     }
@@ -346,7 +358,6 @@ class PoongGame extends React.Component{
         this.leaveGame();
     }
     render(){
-        console.log('render')
         let self = this;
         class PlayerBoard extends React.Component{
             constructor(props){
@@ -378,10 +389,10 @@ class PoongGame extends React.Component{
             render(){
                 let ScoreStatus = (props) =>{
                     return (
-                        <ul className = 'score_status'>
-                            <li id = {`bullnum_${props.side}`}>Remaining bullets: {props.bulletNum}</li>
-                            <li id = {`status_${props.side}`}>Status: {props.isAlive ? 'Alive' : 'Dead'}</li>
-                        </ul>
+                        <div className = 'score_status'>
+                            <span>bullets:&nbsp;{props.bulletNum}<span className = 'ibullet'/></span>
+                            <span>alive:&nbsp;<i className={props.isAlive ? "fa fa-meh-o alive" : "fa fa-meh-o dead"}/></span>
+                        </div>
                     )
                 }
                 return (
@@ -399,7 +410,7 @@ class PoongGame extends React.Component{
                 height: '0.01px',
                 left: `0vmin`,
                 top: `0vmin`,
-                backgroundColor: 'red',
+                backgroundColor: 'orangered',
                 display: 'none'
 
             }
@@ -480,7 +491,6 @@ class PoongGame extends React.Component{
             height: `${this.height}vmin`,
         }
         const Game = () =>{
-            console.log('run')
             return (
                 <div>
                     <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.mainGo} onMouseUp = {this.mainStop} onMouseLeave = {this.mainStop} >

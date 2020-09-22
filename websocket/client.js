@@ -5,7 +5,12 @@ import {BrowserRouter, Switch, Route, Redirect, NavLink, useHistory, useLocation
 import store from './front/redux/store.js';
 import AuthLayout from './front/layouts/auth_layout.js';
 import UnauthLayout from './front/layouts/unauth_layout.js'
-
+window.addEventListener('offline', ()=>{
+    console.log('offline', Date.now())
+})
+window.addEventListener('online', ()=>{
+    console.log('online', Date.now())
+})
 class App extends React.Component{
     handleLoginEvent = (data) =>{
         let handle = (userData) =>{
@@ -37,7 +42,6 @@ class App extends React.Component{
     render(){
         let style = {minHeight: '85vh'};
         if(this.props.user && /\/auth/.test(this.props.location.pathname)){
-            style = {minHeight: '100vh'}
             this.props.history.replace('/');
         }
         return (

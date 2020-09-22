@@ -116,7 +116,6 @@ input:hover,
     text-decoration: none;
     font-size: small;
     margin-left: 7px;
-    color: rgb(53, 53, 155);
 }
 #invite_list button{
     height: 20px;
@@ -176,6 +175,41 @@ input:hover,
 .user_board{
     border: 1px solid  lightgray;
     width: 240px;
+}
+
+#player_board{
+    display: flex;
+}
+#player_board>div{
+    display: flex;
+}
+#player_board>div{
+    display: flex;
+}
+#player_board .score_status{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 5px;
+}
+#player_board .ibullet{
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: orangered;
+    display: inline-block;
+}
+#player_board .dead{
+    color: red;
+    font-size: 15px;
+    font-weight: bold;
+}
+#player_board .alive{
+    color: green;
+    font-size: 15px;
+    font-weight: bold;
+}
+.user a{
+    color: rgb(53, 53, 155);
 }
 .icon {
     position: relative;

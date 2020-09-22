@@ -4,7 +4,19 @@ import UserStatus from '../pages/user_status';
 import {useHistory} from 'react-router-dom';
 const WaitingPlayer = (props) =>{
     let history = useHistory();
-
+    let sendMsgViaSocket = (msg) =>{
+        let {socket} = props;
+        if(socket.readyState === 2 || socket.readyState === 3){
+            let ws = new window.WebSocket('ws://localhost:8080');
+            props.updateStore({type: 'OPENSOCKET', data: ws});
+            ws.onopen = (e) =>{
+                ws.send(msg);
+            }
+        }
+        else{
+            socket.send(msg);
+        }
+    }
     let {waitingfor, updateStore, socket, user} = props;
     let handleCancel = () =>{
         updateStore({
@@ -15,7 +27,7 @@ const WaitingPlayer = (props) =>{
             type: 'cancel',
             payload: {_id: waitingfor._id}
         }
-        socket.send(JSON.stringify(msg));
+        sendMsgViaSocket(JSON.stringify(msg));
     }
     if(waitingfor){
         socket.waitinfo = {

@@ -12,7 +12,18 @@ import WeatherApp from '../pages/weather_comp';
 import SimilarApp from '../pages/similar_comp';
 import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
+let worker = new Worker('/js/worker.bundle.js');
+
 class AuthLayout extends React.Component{
+    shouldComponentUpdate(nextProps){
+        let newSocket = nextProps.socket;
+        if(newSocket && newSocket !== this.props.socket){
+            this.copyFromOldToNewSocket(newSocket, this.props.socket);
+            this.handleIncomingMsg(newSocket);
+            this.getInitialUsersStatus();
+        }
+        return false;
+    }
     handleInviteMsg = ({type, payload}) =>{
         let notice = {
             inviteId: payload.inviteId,
@@ -26,66 +37,89 @@ class AuthLayout extends React.Component{
             data: notice
         })
     }
-    handleIncomingMsg = () =>{
-        let socket = this.props.socket;
-        socket.onopen = (e) =>{
-            socket.send(JSON.stringify({
-                type: 'hello',
-                payload: {}
-            }));
-            socket.onmessage = (event)=>{
-                let {type, payload} = JSON.parse(event.data);
-                // document.getElementById('message').innerText = type + JSON.stringify(payload);
-                (()=>{
-                    switch(type){
-                        case 'update board': case 'update comment':
-                            return socket.discuss && socket.discuss || (()=>{});
-                        case 'online': case 'offline':
-                            return this.updateUsersStatusBoard;
-                        case 'somewhere':
-                            {
-                                let notify = socket.notify
-                                return notify && notify.handleTouchedSomewhere || (()=>{})
-                            }
-                        default:
-                            console.log(payload, this.props)
-                            if(payload.inviteId !== this.props.mutateData.inviteId){
-                                console.log('different inviteId');
-                                return ()=>{}
-                            }
-                            //all method below is for handle game message
-                        case 'invite':
-                            return this.handleInviteMsg;
-                            //method below come from waiting_player_page
-                        case 'accept':
-                            {
-                                let handleAcceptMsg = socket.waitinfo.handleAcceptMsg
-                                return handleAcceptMsg && handleAcceptMsg || (()=>{});
-                            }
-                        case 'decline':
-                            {
-                                let handleDeclineMsg = socket.waitinfo.handleDeclineMsg
-                                return handleDeclineMsg && handleDeclineMsg || (()=>{});
-                            }
-                            //method below come from notify_page
-                        case 'cancel':
-                            {
-                                let notify = socket.notify
-                                return notify && notify.handleCancelMsg || (()=>{})
-                            }
-                            //method below come from poong_game_page                    
-                        case 'shoot': case 'go': case 'leave': case 'continue':
-                            {
-                                let handleGame = socket.handleGame
-                                return handleGame && handleGame || (()=>{});
-                            }
+    copyFromOldToNewSocket(newSocket, oldSocket){
+        ['discuss', 'waitinfo', 'handleGame', 'notify'].map((prop) =>{
+            newSocket[prop] = oldSocket[prop]
+        })
+    }
+    createAlternativeWs = () =>{
+        let {socket: curSocket} = this.props;
+        if(curSocket.readyState === 2 || curSocket.readyState === 3){
+            let ws = new window.WebSocket('ws://localhost:8080');
+            this.props.updateStore({type: 'OPENSOCKET', data: ws});
+        }
+    }
+    detectMustAlternativeWs = () =>{
+        this.props.socket.onclose = (e) =>{
+            console.log('close');
+            worker.postMessage('');
+        }
+        worker.onmessage = (e) =>{
+            console.log('wake up')
+            setTimeout(()=>{//development only
+                this.createAlternativeWs();
+            }, 15000)
+        }
+        window.ononline = ()=>{
+            setTimeout(()=>{
+                this.createAlternativeWs();
+            }, 15000)
+        }
+    }
+    handleIncomingMsg = (socket) =>{
+        if(!socket){
+            socket = this.props.socket;
+        }
+        socket.onmessage = (event)=>{
+            let {type, payload} = JSON.parse(event.data);
+            (()=>{
+                switch(type){
+                    case 'update board': case 'update comment':
+                        return socket.discuss && socket.discuss || (()=>{});
+                    case 'online': case 'offline':
+                        return this.updateUsersStatusBoard;
+                    case 'somewhere':
+                        {
+                            let notify = socket.notify
+                            return notify && notify.handleTouchedSomewhere || (()=>{})
+                        }
+                    default:
+                        if(payload.inviteId !== this.props.mutateData.inviteId){
+                            console.log('different inviteId');
+                            return ()=>{}
+                        }
+                        //all method below is for handle game message
+                    case 'invite':
+                        return this.handleInviteMsg;
+                        //method below come from waiting_player_page
+                    case 'accept':
+                        {
+                            let handleAcceptMsg = socket.waitinfo.handleAcceptMsg
+                            return handleAcceptMsg && handleAcceptMsg || (()=>{});
+                        }
+                    case 'decline':
+                        {
+                            let handleDeclineMsg = socket.waitinfo.handleDeclineMsg
+                            return handleDeclineMsg && handleDeclineMsg || (()=>{});
+                        }
+                        //method below come from notify_page
+                    case 'cancel':
+                        {
+                            let notify = socket.notify
+                            return notify && notify.handleCancelMsg || (()=>{})
+                        }
+                        //method below come from poong_game_page                    
+                    case 'shoot': case 'go': case 'leave': case 'continue':
+                        {
+                            let handleGame = socket.handleGame
+                            return handleGame && handleGame || (()=>{});
+                        }
 
-                        // default: 
-                        //     return () =>{console.log('default: ', type)};
-                    }
-                })()({type, payload})
+                    // default: 
+                    //     return () =>{console.log('default: ', type)};
+                }
+            })()({type, payload})
 
-            }
         }
     }
     updateUsersStatusBoard = ({type, payload}) =>{
@@ -104,7 +138,6 @@ class AuthLayout extends React.Component{
         fetchReq('/users/status', {
             method: 'get'
         }).then(({data}) => {
-            console.log(data)
             if(data && data.length){
                 let entries = data.map(cur => {
                     return [cur._id, cur];
@@ -124,24 +157,21 @@ class AuthLayout extends React.Component{
     componentDidMount(){
         this.getInitialUsersStatus();
         this.handleIncomingMsg();
+        this.detectMustAlternativeWs();
     }
     render(){
-        // let usersStatus = this.props.usersStatus && [...this.props.usersStatus.values()];
-        // let usersStatusBoard = usersStatus ? usersStatus.map(status => <UserStatus key = {status._id} status = {status}/>) : "";
         return(
             <div>
                 <PrimaryHeader/>
-                {/* {usersStatusBoard} */}
                 <Switch>
                     <Route exact path = '/'>
-                        <HomePage/>
                         <WeatherApp/>
                     </Route>
                     <Route path = '/user'>
                         <SubUserLayout/>
                     </Route>
                     <Route path = '/discuss'>
-                        <SubDiscussLayout {...this.props}/>
+                        <SubDiscussLayout/>
                     </Route>
                     <Route path = '/game'>
                         <SubGameLayout/>

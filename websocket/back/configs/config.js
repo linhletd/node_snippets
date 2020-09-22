@@ -12,7 +12,7 @@ module.exports = function config(app){
     useHelmet(app);
     app.use(morgan('tiny'))
     app.get('/script',(req, res) => {
-        res.sendFile(process.cwd() + '/bundle.js')
+        res.sendFile(process.cwd() + '/statics/js/main.bundle.js')
     })
     /*****************************************/
 

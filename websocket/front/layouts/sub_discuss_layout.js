@@ -1,16 +1,26 @@
 import React from 'react';
+import {connect} from 'react-redux';
+import {withRouter} from 'react-router-dom';
 import DiscussPage from '../pages/discuss_page.js';
 import BrowseQuestionPage from '../pages/browse_question_page.js';
 import fetchReq from '../utils/xhr'
 class SubDiscussLayout extends React.Component{
     constructor(props){
-        super(props);
+        super();
         this.state = {
             displayingPosts: new Map(),
             questionsList: new Map(),
         }
     }
-    static timer = undefined
+    shouldComponentUpdate(nextProps){
+        let newSocket = nextProps.socket;
+        if(newSocket && newSocket !== this.props.socket){
+            this.navigateMessage();
+            this.fetchInitialData();
+            this.refreshDisplayingPost();
+        }
+        return true
+    }
     postTopic(e){
         e.preventDefault();
         let clickedButton = e.target;
@@ -87,30 +97,39 @@ class SubDiscussLayout extends React.Component{
 
     }
     selectTopic(e){
-        e.preventDefault();
-        let target = e.target;
-        let id = (target.id || target.parentNode.id || target.parentNode.parentNode.id).slice(4); //id='side{id}'
+        let id;
+        if(typeof e === 'string'){
+            id = e;
+        }
+        else{
+            e.preventDefault();
+            let target = e.target;
+            id = (target.id || target.parentNode.id || target.parentNode.parentNode.id).slice(4); //id='side{id}'
+        }
         fetchReq('/discuss/data/content/' + id, {method: 'get'})
         .then((data) => {
             this.addToDisplay(data);
         })
     }
-    fetchInitialData(){
+    refreshDisplayingPost = () =>{
+        if(!this.state.displayingPosts.size) return;
+        let id = [...this.state.displayingPosts.keys()][0];
+        this.selectTopic(id);
+        //change state of topic board
+    }
+    fetchInitialData = () =>{
         fetchReq('/discuss/data/titles',{
             method: 'get'
         }).then(({data}) =>{
             if(data && !data.err){
                 this.addToTitleBoard(data);
-                // SubDiscussLayout.timer && clearTimeout(SubDiscussLayout.timer);
             }
             else {
-                // SubDiscussLayout.timer = setTimeout(()=>{
-                //     this.fetchInitialData()
-                // }, 100)
+                //
             }
         })
     }
-    navigateMessage(){
+    navigateMessage = () =>{
         let socket = this.props.socket;
             socket.discuss = ({type, payload}) => {
                 switch(type){
@@ -122,12 +141,11 @@ class SubDiscussLayout extends React.Component{
             }
     }
     componentDidMount(){
-        this.fetchInitialData.bind(this)();
-        this.navigateMessage.bind(this)();
+        this.fetchInitialData();
+        this.navigateMessage();
     }
     componentWillUnmount(){
         delete this.props.socket.discuss;
-        // clearTimeout(SubDiscussLayout.timer);
     }
     render(){
         let user = this.props.user;
@@ -155,5 +173,17 @@ class SubDiscussLayout extends React.Component{
     }
 
 }
-
-export default SubDiscussLayout;
+function mapDispatchToProps(dispatch){
+    return {
+        updateStore: function(action){
+            dispatch(action);
+        }
+    }
+}
+function mapStateToProps(state, ownProp){
+    return {
+        user: state.main.user,
+        socket: state.main.socket,
+    }
+}
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(SubDiscussLayout));
