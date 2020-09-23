@@ -18,6 +18,7 @@ const UserStatus = (props) => {
         }
     }
     else Child = "";
+    console.log(childClass)
     return (
         <div className = {status._id + ' user' +(childClass ? " " + childClass : '')}>
             <div className = "icon">

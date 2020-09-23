@@ -48,14 +48,15 @@ class BrowseUserPage extends React.Component{
     }
     render(){
         let Inner = this.inner;
+        let{closable, close, id, ...rest} = this.props;
         return(
-            <div className = 'user_board'>
+            <div className = 'user_board' id = {id}>
                 <div className = 'find_user'>
                     <i className="fa fa-search"></i>
                     <input type = 'text' ref = {this.textInput} value = {this.state.filterText} onChange = {this.handleInputChange} placeholder ='find someone...'/>
                     {this.props.closable ? <i onClick = {this.props.close} className="fa fa-window-close-o"></i> : ''}
                 </div>
-                <Inner {...this.props}/>
+                <Inner {...rest}/>
             </div>
         )
     }

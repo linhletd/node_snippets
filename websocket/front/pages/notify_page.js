@@ -87,7 +87,7 @@ const InviteBoard = (props) => {
             console.log(notice)
             return (
                 <div key = {notice.inviteId}>
-                    <UserStatus status = {{_id: notice.userId}} children = {<p>{notice.Username} invite you join poong game</p>}/>
+                    <UserStatus status = {{_id: notice.userId}} childClass = 'user_small' children = {<p>{notice.Username} invite you join poong game</p>}/>
                     <button onClick = {handleAcceptGame.bind({},notice)}>join</button>
                     <button onClick = {handleDeclineGame.bind({}, notice)}>decline</button>
                 </div>

@@ -68,9 +68,9 @@ const WaitingPlayer = (props) =>{
         }
         return (
             <div style = {style}>
-                <UserStatus status = {user}/>
+                <UserStatus status = {user} childClass = 'user_small'/>
                 <div>Wait for ...</div>
-                <UserStatus status = {waitingfor}/>
+                <UserStatus status = {waitingfor} childClass = 'user_small'/>
                 <div id = 'w_msg'/>
                 <button id = 'w_btn' onClick = {handleCancel}>cancel</button>
             </div>

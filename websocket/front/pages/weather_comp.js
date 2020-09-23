@@ -1,5 +1,6 @@
 import React from 'react';
 class WeatherApp extends React.PureComponent{
+    ref = React.createRef();
     state = {
         weather: {},
         input: '',
@@ -7,7 +8,7 @@ class WeatherApp extends React.PureComponent{
     }
     handleInputChange = (e) =>{
         let input = e.target;
-        this.setState({input: input.value});
+        this.checkAndSetState({input: input.value});
     }
     handleInputEnter = (e) =>{
         let input = e.target;
@@ -63,33 +64,38 @@ class WeatherApp extends React.PureComponent{
     handleClickFind = (e) =>{
         e && e.preventDefault();
         if(!this.state.showInput){
-            this.setState({
+            this.checkAndSetState({
                 showInput: true,
             },()=>{document.getElementById('search_bar').querySelector('input').focus();})
         }
         else if(this.state.input){
             this.fetchData({q: this.state.input})
             .then((data) => {
-                this.setState({weather: data, input: '', showInput: false})
+                this.checkAndSetState({weather: data, input: '', showInput: false})
             })
         }
     }
     handleClickGetGeo = (e) =>{
         e.preventDefault();
         this.getDataByLatLon().then((data) => {
-            this.setState({weather: data, showInput: false})
+            this.checkAndSetState({weather: data, showInput: false})
         })
+    }
+    checkAndSetState = (state) =>{
+        if(this.ref.current){
+            this.setState(state);
+        }
     }
     componentDidMount(){
         this.fetchData({q: 'hanoi'})
         .then((data) => {
-            this.setState({weather: data, showInput: false})
+            this.checkAndSetState({weather: data, showInput: false})
         });
         this.itv = setInterval(() =>{
             if(this.state.weather.name){
                 this.fetchData({q: this.state.weather.name})        
                 .then((data) => {
-                    this.setState({weather: data, showInput: false})
+                    this.checkAndSetState({weather: data, showInput: false})
                 });;
             }
         }, 3600 * 1000 * 2);
@@ -127,7 +133,7 @@ class WeatherApp extends React.PureComponent{
                         </div>
                     </div>
         return (
-            <div id = 'weather_app'>
+            <div id = 'weather_app' ref = {this.ref}>
                 <div style = {{display: 'flex', flexDirection: this.state.showInput ? 'column' : 'row-reverse', alignItems: 'center', justifyContent: 'center'}}>
                     {searchBar}
                     {location}

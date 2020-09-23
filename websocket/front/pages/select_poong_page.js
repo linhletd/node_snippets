@@ -1,7 +1,6 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import BrowseUserPage from '../pages/browse_user_page';
-import WaitingPlayer from '../pages/waiting_player_page';
 class SelectPoong extends React.Component {
     constructor(){
         super()
@@ -37,7 +36,6 @@ class SelectPoong extends React.Component {
             let ws = new window.WebSocket('ws://localhost:8080');
             this.props.updateStore({type: 'OPENSOCKET', data: ws});
             ws.onopen = (e) =>{
-                console.log('hahah', msg)
                 ws.send(msg);
             }
         }
@@ -58,10 +56,10 @@ class SelectPoong extends React.Component {
                 <SelectPoongBtn/>
                 {
                     this.state.showList ? 
-                    <BrowseUserPage children = {this.InviteButton} filter = {this.props.user._id} 
-                    attr = {{id: 'invite_list', className: 'board'}} childClass = 'small' closable = {true} close = {this.closeInviteBoard}/>
+                    <BrowseUserPage children = {this.InviteButton} filter = {this.props.user._id} id = 'invite_board'
+                    attr = {{id: 'invite_list', className: 'board'}} childClass = 'user_small' closable = {true} close = {this.closeInviteBoard}/>
                     : ""
-                 }
+                }
                  <WaitingPlayer/>
             </div>
         )

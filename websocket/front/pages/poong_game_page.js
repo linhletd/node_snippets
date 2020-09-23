@@ -11,7 +11,15 @@ class PoongGame extends React.Component{
         this.hwratio = 0.5;
         let vmin = Math.min(innerWidth, innerHeight),
             vmax = Math.max(innerWidth, innerHeight);
-        this.width = Math.floor((vmax/vmin) * 100 * 0.6);
+        console.log(innerWidth, innerHeight)
+        if( innerWidth < 400){
+            this.wratio = 1;
+            this.width = Math.floor(100 * this.wratio);
+        }
+        else{
+            this.wratio = 0.6;
+            this.width = Math.floor((vmax/vmin) * 100 * this.wratio);
+        }
         this.height = this.width * this.hwratio;
         this.xmin = 0; //left
         this.xmax = this.width; //left
@@ -23,7 +31,7 @@ class PoongGame extends React.Component{
         this.playerStep = this.playerSize / 4;
         this.bulletStep = this.bulletSize / 4;
         this.bulletSpeed = 30; //ms
-        this.playerSpeed = 150;
+        this.playerSpeed = 100;
         this.bulletsStock = 10;
         this.startGame();
     }
@@ -295,6 +303,8 @@ class PoongGame extends React.Component{
         return sqrt(pow(x - x0, 2) + pow(y - y0, 2));
     }
     leaveGame = () =>{
+        this.setBoardState = () =>{};
+        this.freeze()
         let {socket, updateStore} = this.props, {inviteId} = this.props.mutateData;
         let msg = {
             type: 'leave',
@@ -375,16 +385,8 @@ class PoongGame extends React.Component{
                     sideList: state
                 };
                 self.setBoardState = (obj,cb) =>{
-                    if(self.isBoardMounted){
-                        this.setState(obj, cb);
-                    }
+                    this.setState(obj, cb);
                 };
-            }
-            componentDidMount(){
-                self.isBoardMounted = true;
-            }
-            componentWillUnmount(){
-                self.isBoardMounted = false;
             }
             render(){
                 let ScoreStatus = (props) =>{
@@ -397,7 +399,7 @@ class PoongGame extends React.Component{
                 }
                 return (
                     <div id = 'player_board'>
-                        {[...this.state.sideList.values()].map(side => <UserStatus key = {side.user._id} status = {side.user}
+                        {[...this.state.sideList.values()].map(side => <UserStatus key = {side.user._id} status = {side.user} childClass = 'user_small'
                          children = {ScoreStatus.bind(this,{bulletNum: side.bulletNum, isAlive: side.isAlive, side: side.side})}/>)}
                     </div>
                 )
