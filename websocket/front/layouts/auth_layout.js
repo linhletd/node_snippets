@@ -162,30 +162,34 @@ class AuthLayout extends React.Component{
     }
     render(){
         return(
-            <div>
-                <PrimaryHeader/>
+            <div id = 'main_app'>
                 <WaitingPlayer/>
-                <Switch>
-                    <Route exact path = '/'>
-                        <WeatherApp/>
-                    </Route>
-                    <Route path = '/user'>
-                        <SubUserLayout/>
-                    </Route>
-                    <Route path = '/discuss'>
-                        <SubDiscussLayout/>
-                    </Route>
-                    <Route path = '/game'>
-                        <SubGameLayout/>
-                    </Route>
-                    <Route path = '/editor'>
-                        <EditorApp/>
-                    </Route>
-                    <Route path = '/similarity'>
-                        <SimilarApp/>
-                    </Route>
-                </Switch>
                 <InviteBoard/>
+                {/* <div id = 'main_app'> */}
+                    <PrimaryHeader/>
+                    <div id = 'app_body'>
+                        <Switch>
+                            <Route exact path = '/'>
+                                <WeatherApp/>
+                            </Route>
+                            <Route path = '/user'>
+                                <SubUserLayout/>
+                            </Route>
+                            <Route path = '/discuss'>
+                                <SubDiscussLayout/>
+                            </Route>
+                            <Route path = '/game'>
+                                <SubGameLayout/>
+                            </Route>
+                            <Route path = '/editor'>
+                                <EditorApp/>
+                            </Route>
+                            <Route path = '/similarity'>
+                                <SimilarApp/>
+                            </Route>
+                        </Switch>
+                    </div>
+                {/* </div> */}
             </div>
         )
     }

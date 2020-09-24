@@ -3,7 +3,7 @@ import {NavLink} from 'react-router-dom'
 let PrimaryHeader = (props) =>{
 
     return (
-        <div id = 'primary-header'>
+        <div id = 'app_header'>
             <NavLink exact to = '/' activeClassName = 'active' >Home</NavLink>
             <NavLink to = '/discuss' activeClassName = 'active'>Topic</NavLink>
             <NavLink to = '/game' activeClassName = 'active'>Game</NavLink>

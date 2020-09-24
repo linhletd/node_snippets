@@ -48,9 +48,9 @@ class BrowseUserPage extends React.Component{
     }
     render(){
         let Inner = this.inner;
-        let{closable, close, id, ...rest} = this.props;
+        let{closable, close, id, className, ...rest} = this.props;
         return(
-            <div className = 'user_board' id = {id}>
+            <div className = {`user_board${className ? ' ' + className : ''}`} id = {id}>
                 <div className = 'find_user'>
                     <i className="fa fa-search"></i>
                     <input type = 'text' ref = {this.textInput} value = {this.state.filterText} onChange = {this.handleInputChange} placeholder ='find someone...'/>

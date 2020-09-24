@@ -1,9 +1,19 @@
 import React from 'react';
+import Guide from './guide_comp';
 class GameOfLife extends React.Component{
     state = {
         matrix: [],
         
     };
+    guide = {
+            id: 'life_guide',
+            array:[
+                'aaaaa',
+                'bbbbb',
+                'ccccc',
+            ]
+        }
+
     countNeighbor(arr,i,j){
         let arrLen = arr.length;
         let list = [[i-1, j-1], [i-1,j], [i-1, j+1], [i+1, j+1], [i+1, j], [i+1, j-1],[i, j-1], [i, j+1]];
@@ -74,10 +84,11 @@ class GameOfLife extends React.Component{
         let rows = matrix.map((cur,i) => (<tr key = {`t1${i}`}>{cur.map((val,j) => <td className = {val === 1 ? 'alive' : 'dead'} key = {`t1${i}${j}`}></td>)}</tr>))
         return (
             <div id = 'life_game'>
+                <Guide data = {this.guide}/>
                 <p>GAME OF LIFE</p>
                 <div>
-                    <button onClick = {this.action}><i className={run ? "fa fa-pause" : "fa fa-play"}></i></button>
-                    <button onClick = {this.reset}><i className="fa fa-refresh"></i></button>
+                    <i onClick = {this.action} className={run ? "fa fa-pause" : "fa fa-play"}></i>
+                    <i onClick = {this.reset} className="fa fa-refresh"></i>
                 </div>
                 <table>
                     <tbody>
