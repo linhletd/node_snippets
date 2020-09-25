@@ -52,7 +52,7 @@ class Guide extends React.Component{
             }
             render(){
                 let idx = (data.array).map((cur, i) =>{
-                    return <span key = {i} className = {`guide_index${curIndex === i ? ' current' : ''}`}>x</span>
+                    return <span key = {i} className = {`guide_index${this.state.curIndex === i ? ' current' : ''}`}></span>
                 })
                 return(
                     <div>
@@ -62,12 +62,13 @@ class Guide extends React.Component{
             }
         }
         return(
-            <div className = 'guide' id = {data.id}>
-                <div>
+            <div className = {`guide${data.hide ? ' hide' : ''}`} id = {data.id}>
+                {/* <div>
                     <p>{data.header}</p>
-                    <i className="fa fa-window-close-o" onClick = {this.close}></i>
-                </div>
-                <div>
+                    {data.closable ? <i className="fa fa-window-close-o" onClick = {this.close}></i> : ''}
+                </div> */}
+                {data.closable ? <i className="fa fa-window-close-o" onClick = {this.close}></i> : ''}
+                <div className = 'guide_content'>
                     <i className="fa fa-chevron-left" onClick = {this.goPrev}></i>
                     <p ref = {this.p}>{content}</p>
                     <i className="fa fa-chevron-right" onClick = {this.goNext}></i>

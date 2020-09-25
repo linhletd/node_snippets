@@ -67,7 +67,7 @@ const WaitingPlayer = (props) =>{
             backgroundColor: 'cyan'
         }
         return (
-            <div style = {style}>
+            <div style = {style} className = 'popup'>
                 <UserStatus status = {user} childClass = 'user_small'/>
                 <div>Wait for ...</div>
                 <UserStatus status = {waitingfor} childClass = 'user_small'/>

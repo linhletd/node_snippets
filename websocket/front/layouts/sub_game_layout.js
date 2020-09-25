@@ -14,7 +14,7 @@ class SubGameLayout extends React.Component{
         let {path} = this.props.match;
         return (
             <div id = 'game_layout'>
-                <GameNav history = {this.props.history}/>
+                <GameNav/>
                 <Switch>
                     <Route path = {`${path}/life`}>
                         <GameOfLife/>

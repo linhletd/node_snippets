@@ -167,6 +167,9 @@ class AuthLayout extends React.Component{
                 <InviteBoard/>
                 {/* <div id = 'main_app'> */}
                     <PrimaryHeader/>
+                    <div id = 'app_left'>
+                        hahahahahhaah
+                    </div>
                     <div id = 'app_body'>
                         <Switch>
                             <Route exact path = '/'>

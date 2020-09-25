@@ -6,12 +6,17 @@ class GameOfLife extends React.Component{
         
     };
     guide = {
+            header: 'Game Of Life',
             id: 'life_guide',
             array:[
-                'aaaaa',
-                'bbbbb',
-                'ccccc',
-            ]
+                `"Game Of Life" (trò đời), là game "không người chơi" hay giống như một dạng mô phỏng sự gia tăng dân số`,
+                `Mỗi cell trong bảng là một người (sống - màu xanh, chết - màu trắng), các cell liền kề còn sống gọi là hàng xóm`,
+                `Một cell đang sống có 2 hoặc 3 hàng xóm thì tiếp tục sống`,
+                `Một cell đang sống có quá 3 hàng xóm, nó sẽ chết vì dân số quá đông, nếu có ít hơn 2 hàng xóm nó sẽ chết vì dân số quá thưa`,
+                `Một cell đã chết sẽ sống lại nếu có 3 hàng xóm`,
+                `Để bắt đầu chơi, hãy di chuyển chuột vào bảng và nhấn biểu tượng play!`
+            ],
+            closable: false
         }
 
     countNeighbor(arr,i,j){
@@ -85,16 +90,18 @@ class GameOfLife extends React.Component{
         return (
             <div id = 'life_game'>
                 <Guide data = {this.guide}/>
-                <p>GAME OF LIFE</p>
                 <div>
-                    <i onClick = {this.action} className={run ? "fa fa-pause" : "fa fa-play"}></i>
-                    <i onClick = {this.reset} className="fa fa-refresh"></i>
+                    <table>
+                        <tbody>
+                            {rows}
+                        </tbody>
+                    </table>
+                    <div id = 'run_stop'>
+                        <i onClick = {this.action} className={run ? "fa fa-pause" : "fa fa-play"}></i>
+                        <i onClick = {this.reset} className="fa fa-refresh"></i>
+                    </div>
                 </div>
-                <table>
-                    <tbody>
-                        {rows}
-                    </tbody>
-                </table>
+
             </div>
         )
     }

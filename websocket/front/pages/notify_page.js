@@ -94,7 +94,7 @@ const InviteBoard = (props) => {
             )
         })
         return (
-            <div id = 'notice_board' style = {style}>
+            <div id = 'notice_board' style = {style} className = 'popup'>
                 {notices}
             </div>
         )

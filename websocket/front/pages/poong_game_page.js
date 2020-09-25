@@ -315,7 +315,8 @@ class PoongGame extends React.Component{
             type: 'ENDGAME',
             data: {}
         })
-        this.props.history.replace('/game')
+        // console.log(this.props.location)
+        // this.props.history.replace('/game');
     }
     handleLeaveMsg = () =>{
         this.freezed = true;
@@ -356,8 +357,14 @@ class PoongGame extends React.Component{
         })
     }
     shouldComponentUpdate(nextProps){
+        let newSocket = nextProps.socket;
+        if(newSocket && newSocket !== this.props.socket){
+            this.leaveGame();
+            this.props.history.replace('/game');
+            return false;
+        }
         this.startGame(nextProps);
-        return true
+        return true;
     }
     componentDidMount(){
         this.handleSocket.bind(this)();

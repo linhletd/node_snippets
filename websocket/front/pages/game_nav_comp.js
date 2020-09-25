@@ -1,6 +1,8 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import BrowseUserPage from '../pages/browse_user_page';
+import {withRouter} from 'react-router-dom';
+import Guide from './guide_comp';
 class GameNav extends React.Component{
     constructor(props){
         super();
@@ -23,12 +25,24 @@ class GameNav extends React.Component{
         this.matrix = matrix;
         this.life = React.createRef();
         this.poong = React.createRef();
-        this.userBoard
+        this.guide = {
+            id: 'poong_guide',
+            array: [
+                '"Poong Game" là game online dành cho 2 người chơi. Đươc xây dựng dựa trên các lý thuyết vật lý phổ thông về vector',
+                'Websocket được sử dụng để giao tiếp 2 chiều, cho phép người chơi điều khiển đối tượng của mình',
+                'Để bắt đầu chơi, hãy nhấn vào biểu tượng "add user" để mời một người bạn khác (đang online) tham gia',
+                'Để điều khiển đối tượng di chuyển/ quay đến vị trí mong muốn, hãy nhấp chuột lên vị trí đó trên "sân chơi"',
+                'Để bắn đối phương, nhấn nút phía dưới "sân chơi" hoặc nhấn phím shift',
+            ],
+            header: 'About Poong Game',
+            closable: true,
+            hide: true
+        }
     }
     clickLife = () =>{
         if(this.life.current.className === ''){
             this.life.current.className = 'game_selected';
-            this.props.history.push('/game/life')
+            this.props.history.replace('/game/life');
         }
     }
     shouldComponentUpdate(nextProps, nextState){
@@ -55,10 +69,9 @@ class GameNav extends React.Component{
         return false;
     }
     openInviteBoard = () =>{
-        console.log(this.poong.current)
-        if(this.poong.current.className === ''){
+        // if(this.poong.current.className === ''){
             this.setState({showList: true})
-        }
+        // }
     }
     invite = (e) =>{
         let _id = e.target.parentNode.parentNode.className.slice(0, 24);
@@ -94,18 +107,13 @@ class GameNav extends React.Component{
             this.setState({showList: false})
         }
     }
+    showPoongGuide(){
+        document.getElementById('poong_guide').classList.remove('hide');
+    }
     render(){
         let rows = this.matrix.map((cur,i) => (<tr key = {`t1${i}`}>{cur.map((val,j) => <td className = {val === 1 ? 'alive' : 'dead'} key = {`t1${i}${j}`}></td>)}</tr>))
         return(
             <div id = 'game_nav'>
-                <div id = 'select_life' ref = {this.life}>
-                    <table>
-                        <tbody>
-                            {rows}
-                        </tbody>
-                    </table>
-                    <i className="fa fa-play" onClick = {this.clickLife}></i>
-                </div>
                 <div id = 'select_poong' ref = {this.poong}>
                     <div>
                         <div className = 'yard'>
@@ -115,10 +123,22 @@ class GameNav extends React.Component{
                             </div>
                             <span className = 'ibullet'/>
                         </div>
-                        <i className="fa fa-user-plus" onClick = {this.openInviteBoard}></i>
+                        <div>
+                            <i className="fa fa-user-plus" onClick = {this.openInviteBoard}></i>
+                            <i className="fa fa-info-circle" onClick = {this.showPoongGuide}></i>
+                        </div>
                     </div>
                     <BrowseUserPage children = {this.InviteButton} filter = {this.props.user._id} id = 'invite_board' className = 'hide'
                     attr = {{id: 'invite_list', className: 'board'}} childClass = 'user_small' closable = {true} close = {this.closeInviteBoard}/>
+                    <Guide data = {this.guide}/>
+                </div>
+                <div id = 'select_life' ref = {this.life}>
+                    <table>
+                        <tbody>
+                            {rows}
+                        </tbody>
+                    </table>
+                    <i className="fa fa-play" onClick = {this.clickLife}></i>
                 </div>
             </div>
         )
@@ -140,4 +160,4 @@ function mapDispatchToProps(dispatch){
         }
     }
 }
-export default connect(mapStateToProps, mapDispatchToProps)(GameNav);
+export default withRouter(connect(mapStateToProps, mapDispatchToProps)(GameNav));

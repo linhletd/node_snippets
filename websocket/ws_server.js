@@ -87,7 +87,7 @@ module.exports = function applyWebsocket(server, app){
                     type: 'leave',
                     payload: {inviteId}
                 }
-                this.send(JSON.stringify(msg));
+                ws.send(JSON.stringify(msg));
             },
             needClearCurrentGameRef(socket){
                 let oldRef = socket.ref && socket.ref.game;
@@ -154,7 +154,7 @@ module.exports = function applyWebsocket(server, app){
                             let {owner:_id, id} = this;
                             let partnerSocket = idMap.get(sid);
                             if(!partnerSocket || partnerSocket.inviteId !== inviteId){
-                                return //utils.needReceiveLeave(inviteId)
+                                return utils.needReceiveLeave(inviteId)
                             }
                             utils.needClearCurrentGameRef(this)
                             this.ref.game = partnerSocket;

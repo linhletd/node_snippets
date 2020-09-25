@@ -1,5 +1,17 @@
 import React from 'react';
+import Guide from './guide_comp';
 class SimilarApp extends React.Component{
+    guide = {
+        header: 'Similarity App',
+        id: 'similar_guide',
+        array: [
+            'Đây là "Similarity App", dựa vào việc giải và thực thi thuật toán "similarity - edit distance"',
+            'Edit distance là thuật toán để tìm ra cách mất ít bước nhất (xóa, chèn, thay thế) để chuyển chuỗi A thành chuỗi B',
+            'Edit distance được ứng dụng trong xử lý ngôn ngữ tự nhiên (natural language processing) và sinh học thông tin (bioinformatics)',
+            'Tìm hiểu thêm tại Wikipedia, để bắt đầu hãy thử điền 2 chuỗi bất kỳ vào form phía dưới!',
+            'Đường màu xanh trên bảng kết quả thể hiện đường tối ưu cho việc chuyển đổi '
+        ]
+    }
     shouldComponentUpdate(){
         return false;
     }
@@ -53,8 +65,7 @@ class SimilarApp extends React.Component{
                 let {src, des, result} = this.state;
                 let valid = src !== '' && des !== '';
                 return(
-                    <div id = "input_data" style = {{height: result ? '' : '80vh'}}>
-                        <p>SIMIMLARITY APP</p>
+                    <div id = "input_data">
                         <div>
                             <div>
                                 <label htmlFor = "src">From:</label>
@@ -180,6 +191,7 @@ class SimilarApp extends React.Component{
         }
         return(
             <div id = 'similar_app'>
+                <Guide data = {this.guide}/>
                 <SimilarInput/>
                 <DisplayResult/>
             </div>
