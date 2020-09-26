@@ -12,7 +12,7 @@ class PoongGame extends React.Component{
         let vmin = Math.min(innerWidth, innerHeight),
             vmax = Math.max(innerWidth, innerHeight);
         console.log(innerWidth, innerHeight)
-        if( innerWidth < 400){
+        if( innerWidth < 768){
             this.wratio = 1;
             this.width = Math.floor(100 * this.wratio);
         }
