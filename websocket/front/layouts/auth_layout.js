@@ -166,7 +166,7 @@ class AuthLayout extends React.Component{
                 <GlobalPopup/>
                 <InviteBoard/>
                 {/* <div id = 'main_app'> */}
-                    <PrimaryHeader/>
+                    <PrimaryHeader user = {this.props.user}/>
                     <div id = 'app_left'>
                         hahahahahhaah
                     </div>
@@ -192,7 +192,9 @@ class AuthLayout extends React.Component{
                             </Route>
                         </Switch>
                     </div>
-                {/* </div> */}
+                    <div id = 'app_right'>
+                        hohohohohoh
+                    </div>
             </div>
         )
     }

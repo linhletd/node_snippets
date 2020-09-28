@@ -108,12 +108,19 @@ input:hover,
 #app_header{
     width: 100%;
     height: 40px;
-    justify-self: start;
     background-color: #30be93;
     grid-area: 1/1/2/4;
     position: fixed;
     top: 0px;
     z-index: 5;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+#app_header i{
+    text-decoration: none;
+    color: hsl(224, 90%, 20%);
+    font-size: 20px;
 }
 #app_left{
     grid-area: 2/1/3/2;
@@ -185,11 +192,20 @@ input:hover,
         grid-area: 1/1/2/2;
         height: 30px;
     }
-    #app_left{
+    #app_left,
+    #app_right{
         display: none;
     }
     #app_body{
         grid-area: 2/1/3/2;
+    }
+    .small_hide{
+        display: none;
+    }
+}
+@media screen and (min-width: 769px){
+    .large_hide{
+        display: none;
     }
 }
 .guide{
@@ -479,6 +495,15 @@ input:hover,
     top: 35px;
 
 }
+.user_tiny img{
+    width: 30px;
+    height: 30px;
+}
+.user_tiny .signal {
+    left: 18px;
+    top: 19px;
+
+}
 .signal{
     position: absolute;
     height: 12px;
@@ -582,7 +607,19 @@ input:hover,
 }
 #editor_app{
     width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
+#link_prompt{
+    align-self: flex-start;
+}
+@media screen and (max-width: 768px){
+    #editor_app{
+        width: 95%
+    }
+}
+
 #editor_area{
     min-height: 90vh;
     width: 100%;
@@ -911,6 +948,14 @@ table{
 #poong_game #shooting_yard{
     background-color: peachpuff;
 }
+#poong_game #shoot{
+    margin-left: 90px;
+    width: 60px;
+    height: 30px;
+    border: 1px solid grey;
+    background-color: rgb(255, 174, 0);
+    border-radius: 5px;
+}
 #poong_popup{
     position: absolute;
     top: 0px;
@@ -1006,9 +1051,9 @@ tr>.dead{
 img:hover{
     transform: none;
 }
-.active {
-    background-color: blueviolet;
-}
+/* .active {
+    background-color: rgba(255, 166, 0, 0.74);
+} */
 .hide{
     display: none;
 }

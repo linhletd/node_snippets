@@ -31,7 +31,7 @@ class GameNav extends React.Component{
                 'Websocket được sử dụng để giao tiếp 2 chiều, cho phép người chơi điều khiển đối tượng của mình',
                 'Để bắt đầu chơi, hãy nhấn vào biểu tượng "add user" để mời một người bạn khác (đang online) tham gia',
                 'Để điều khiển đối tượng di chuyển/ quay đến vị trí mong muốn, hãy nhấp chuột lên vị trí đó trên "sân chơi"',
-                'Để bắn đối phương, nhấn nút phía dưới "sân chơi" hoặc nhấn phím shift',
+                'Để bắn đối phương, nhấn nút phía dưới "sân chơi" hoặc nhấn phím z',
             ],
             header: 'About Poong Game',
             closable: true,

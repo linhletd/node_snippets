@@ -386,11 +386,11 @@ class PoongGame extends React.Component{
     componentDidMount(){
         this.handleSocket.bind(this)();
         this.sampleBullet = document.getElementById('shooting_yard').querySelector('#b_sample');
-        window.addEventListener('keyup', this.handleClickZkey)
+        window.addEventListener('keyup', this.handleClickZkey);
     }
     componentWillUnmount(){
         delete this.props.socket.handleGame;
-        window.removeEventListener('keyup', this.handleClickZkey)
+        window.removeEventListener('keyup', this.handleClickZkey);
         this.leaveGame();
     }
     render(){
