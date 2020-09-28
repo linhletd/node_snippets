@@ -362,6 +362,11 @@ class PoongGame extends React.Component{
             }
         }
     }
+    handleClickZkey = (e) =>{
+        if(this.mainPlayer && e.key.toLowerCase() === 'z'){
+            this.shoot.bind(this)(this.mainPlayer);
+        }
+    }
     freeze = () =>{
         this.freezed = true;
         Object.keys(this.itv).map(cur =>{
@@ -381,9 +386,11 @@ class PoongGame extends React.Component{
     componentDidMount(){
         this.handleSocket.bind(this)();
         this.sampleBullet = document.getElementById('shooting_yard').querySelector('#b_sample');
+        window.addEventListener('keyup', this.handleClickZkey)
     }
     componentWillUnmount(){
         delete this.props.socket.handleGame;
+        window.removeEventListener('keyup', this.handleClickZkey)
         this.leaveGame();
     }
     render(){
