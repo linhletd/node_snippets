@@ -13,7 +13,7 @@ class PoongGame extends React.Component{
             vmax = Math.max(innerWidth, innerHeight);
         console.log(innerWidth, innerHeight)
         if( innerWidth < 768){
-            this.wratio = 1;
+            this.wratio = 0.94;
             this.width = Math.floor(100 * this.wratio);
         }
         else{
@@ -74,7 +74,16 @@ class PoongGame extends React.Component{
             }
         }
         else{
-            socket.send(msg);
+            try{
+                socket.send(msg);
+            }
+            catch(e){
+                if(socket.readyState === 0){
+                    socket.addEventListener('open', () =>{
+                    socket.send(msg);
+                    })
+                }
+            }
         }
         
     }
@@ -130,7 +139,7 @@ class PoongGame extends React.Component{
             }
             this.sendMsgViaSocket(JSON.stringify(msg));
             player.x = x; player.y = y; player.alpha = alpha;
-            let elem = document.getElementById('shooting_game').querySelector(`#${this.mainPlayer}`);
+            let elem = document.getElementById('shooting_yard').querySelector(`#${this.mainPlayer}`);
             elem.style.left = `${x}vmin`; elem.style.top = `${y}vmin`; elem.style.transform = `rotate(${alpha}rad)`;
         }
         mainPlayerGo();
@@ -147,7 +156,7 @@ class PoongGame extends React.Component{
         let playerId = this.subPlayer;
         let player = this.playersList.get(playerId);
         player.x = x * this.width; player.y = y * this.width; player.alpha = alpha;
-        let elem = document.getElementById('shooting_game').querySelector(`#${playerId}`);
+        let elem = document.getElementById('shooting_yard').querySelector(`#${playerId}`);
         elem.style.left = `${player.x}vmin`; elem.style.top = `${player.y}vmin`; elem.style.transform = `rotate(${alpha}rad)`;
     }
     shoot(playerId){
@@ -218,15 +227,18 @@ class PoongGame extends React.Component{
                 if(distance < (this.bulletSize + this.playerSize) / 2 ){
                     checked = true;
                     player.isAlive = false;
-                    let elem1 = document.getElementById('shooting_game').querySelector(`#${player.id}`);
+                    let elem1 = document.getElementById('shooting_yard').querySelector(`#${player.id}`);
                     elem1.style.backgroundColor = 'grey';
                     this.freezed = true;
-                    this.props.updateStore({
-                        type: 'FINISHGAME',
-                        data:{
-                            result: player.id === this.mainPlayer ? 'You lose :(' : 'Congratulation! You win :)'
-                        }
-                    })
+                    setTimeout(() =>{
+                        this.props.updateStore({
+                            type: 'FINISHGAME',
+                            data:{
+                                result: player.id === this.mainPlayer ? 'loose' : 'win',
+                                subPlayer: this.mainPlayer === 'a' ? this.props.gameStatus.sideList[1] : this.props.gameStatus.sideList[0]
+                            }
+                        })
+                    }, 800)
                     this.setBoardState((prevState) =>{
                         let newState = new Map(prevState.sideList), newSide = {...newState.get(player.id)};
                         newSide.isAlive = player.isAlive;
@@ -237,7 +249,7 @@ class PoongGame extends React.Component{
             })
             if(checked){
                 bullet.isActive = false;
-                let elem = document.getElementById('shooting_game').querySelector(`#${key}`);
+                let elem = document.getElementById('shooting_yard').querySelector(`#${key}`);
                 elem.style.backgroundColor = 'grey';
                 return true;
             }
@@ -293,7 +305,7 @@ class PoongGame extends React.Component{
                 bullet.x0 += dx;
                 bullet.y0 += dy; 
             }
-            let elem = document.getElementById('shooting_game').querySelector(`#${key}`);
+            let elem = document.getElementById('shooting_yard').querySelector(`#${key}`);
             elem.style.left = `${bullet.x0}vmin`;
             elem.style.top = `${bullet.y0}vmin`
         }, this.bulletSpeed)
@@ -368,7 +380,7 @@ class PoongGame extends React.Component{
     }
     componentDidMount(){
         this.handleSocket.bind(this)();
-        this.sampleBullet = document.getElementById('shooting_game').querySelector('#b_sample');
+        this.sampleBullet = document.getElementById('shooting_yard').querySelector('#b_sample');
     }
     componentWillUnmount(){
         delete this.props.socket.handleGame;
@@ -492,8 +504,7 @@ class PoongGame extends React.Component{
             )
         }
         let mainStyle = {
-            backgroundColor: 'pink',
-            border: '1px solid grey',
+            border: '2px solid grey',
             position: 'relative',
             padding: '0px 0px',
             width: `${this.width}vmin`,
@@ -502,10 +513,13 @@ class PoongGame extends React.Component{
         const Game = () =>{
             return (
                 <div>
-                    <div id = 'shooting_game' style = {mainStyle} onMouseDown = {this.mainGo} onMouseUp = {this.mainStop} onMouseLeave = {this.mainStop} >
+                    <div id = 'shooting_yard' style = {mainStyle} onMouseDown = {this.mainGo} onMouseUp = {this.mainStop} onMouseLeave = {this.mainStop} >
                         <Players/>
                         <SampleBullet/>
                         <div id = 'bullets'/>
+                        <div id = 'poong_popup' className = 'hide'>
+                            <PoongPopup sendMsg = {this.sendMsgViaSocket}/>
+                        </div>
                     </div>
                     <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button> {/*do not replace this.shoot... by other method that already binding, because of this.mainplayer*/}                    
                 </div>
@@ -513,10 +527,9 @@ class PoongGame extends React.Component{
             )
         }
         return(
-            <div>
+            <div id = 'poong_game'>
                 <PlayerBoard/>
                 <Game/>
-                <PoongPopup leaveGame = {this.leaveGame}/>
             </div>
         )
     }

@@ -1,14 +1,13 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import BrowseUserPage from '../pages/browse_user_page';
 import {withRouter} from 'react-router-dom';
+import {render} from 'react-dom';
+import BrowseUserPage from '../pages/browse_user_page';
 import Guide from './guide_comp';
+import WaitPlayerPopupContent from '../pages/wait_player_content_comp'
 class GameNav extends React.Component{
     constructor(props){
         super();
-        this.state = {
-            showList: false,
-        }
         this.InviteButton = (props) =>{
             return <button disabled ={!props.isOnline} onClick = {this.invite}>Invite</button>
         }
@@ -40,45 +39,54 @@ class GameNav extends React.Component{
         }
     }
     clickLife = () =>{
-        if(this.life.current.className === ''){
-            this.life.current.className = 'game_selected';
-            this.props.history.replace('/game/life');
-        }
+        this.props.history.replace('/game/life');
     }
     shouldComponentUpdate(nextProps, nextState){
-        if(nextProps.waitingFor || nextState.showList){
-            this.life.current.className = 'game_disabled';
-            this.poong.current.className = 'game_disabled';
+        if(nextProps.location.pathname === '/game/poong' && nextProps.location.pathname !== this.props.location.pathname){
+            !this.poong.current.classList.contains('game_selected') && this.poong.current.classList.add('game_selected');
+            this.life.current.classList.contains('game_selected') && this.life.current.classList.remove('game_selected');
+            this.closeInviteBoard();
+            this.closePoongGuide()
         }
-        else if(!nextProps.waitingFor && !nextState.showList){
-            if(nextProps.gameStatus){
-                this.poong.current.className = 'game_selected';
-            }
-            else{
-                this.life.current.className = '';
-                this.poong.current.className = '';
-            }
+        if(nextProps.location.pathname === '/game/life' && nextProps.location.pathname !== this.props.location.pathname){
+            !this.life.current.classList.contains('game_selected') && this.life.current.classList.add('game_selected');
+            this.poong.current.classList.contains('game_selected') && this.poong.current.classList.remove('game_selected')
         }
-        if(nextState.showList !== this.state.showList){
-            let node = document.getElementById('invite_board');
-            if(node){
-                nextState.showList && node.classList.remove('hide');
-                !nextState.showList && !node.classList.contains('hide') && node.classList.add('hide');
-            }
+        if(nextProps.location.pathname === '/game' && ['/game/poong', '/game/life'].indexOf(this.props.location.pathname) > -1){
+            this.life.current.classList.contains('game_selected') && this.life.current.classList.remove('game_selected');
+            this.poong.current.classList.contains('game_selected') && this.poong.current.classList.remove('game_selected')
         }
         return false;
     }
+    componentDidMount(){
+        this.props.location.pathname === '/game/life' && !this.life.current.classList.contains('game_selected') && this.life.current.classList.add('game_selected');
+    }
     openInviteBoard = () =>{
-        // if(this.poong.current.className === ''){
-            this.setState({showList: true})
-        // }
+        let node = document.getElementById('invite_board');
+        if(node){
+            node.classList.contains('hide') && node.classList.remove('hide');
+        }
+    }
+    closePopup(){
+        let global = document.querySelector('.global_popup');
+        !global.classList.contains('hide') && global.classList.add('hide');
     }
     invite = (e) =>{
         let _id = e.target.parentNode.parentNode.className.slice(0, 24);
         let inviteId = `${_id.slice(18, 24)}${Math.floor(Math.random()*6)}${Date.now()}`;
+        let global = document.querySelector('.global_popup');
+        let popupData = {
+            waittingFor: {_id, inviteId},
+            close: this.closePopup,
+            history: this.props.history,
+        }
+        global.classList.contains('hide') && global.classList.remove('hide');
         this.props.updateStore({
             type: 'WAITPLAYER',
-            data: {_id, inviteId}
+            data: {
+                className: 'wait_poong',
+                children: <WaitPlayerPopupContent data = {popupData}/>
+            }
         })
         let msg = {
             type: 'invite',
@@ -98,17 +106,42 @@ class GameNav extends React.Component{
             }
         }
         else{
-            socket.send(msg);
+            try{
+                socket.send(msg);
+            }
+            catch(e){
+                if(socket.readyState === 0){
+                    socket.addEventListener('open', () =>{
+                    socket.send(msg);
+                    })
+                }
+            }
         }
         
     }
+    openInviteBoard = () =>{
+        let node = document.getElementById('invite_board');
+        if(node){
+            node.classList.contains('hide') && node.classList.remove('hide');
+        }
+    }
     closeInviteBoard = () =>{
-        if(this.state.showList){
-            this.setState({showList: false})
+        let node = document.getElementById('invite_board');
+        if(node){
+            !node.classList.contains('hide') && node.classList.add('hide');
         }
     }
     showPoongGuide(){
-        document.getElementById('poong_guide').classList.remove('hide');
+        let node = document.getElementById('poong_guide');
+        if(node){
+            node.classList.contains('hide') && node.classList.remove('hide');
+        }
+    }
+    closePoongGuide(){
+        let node = document.getElementById('poong_guide');
+        if(node){
+            !node.classList.contains('hide') && node.classList.add('hide');
+        }
     }
     render(){
         let rows = this.matrix.map((cur,i) => (<tr key = {`t1${i}`}>{cur.map((val,j) => <td className = {val === 1 ? 'alive' : 'dead'} key = {`t1${i}${j}`}></td>)}</tr>))
@@ -149,7 +182,6 @@ function mapStateToProps(state, ownProp){
     return {
         user: state.main.user,
         socket: state.main.socket,
-        waitingFor: state.poong.waitingFor,
         gameStatus: state.poong.gameStatus,
     }
 }

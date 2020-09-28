@@ -14,7 +14,16 @@ const WaitingPlayer = (props) =>{
             }
         }
         else{
-            socket.send(msg);
+            try{
+                socket.send(msg);
+            }
+            catch(e){
+                if(socket.readyState === 0){
+                    socket.addEventListener('open', () =>{
+                    socket.send(msg);
+                    })
+                }
+            }
         }
     }
     let {waitingfor, updateStore, socket, user} = props;

@@ -10,7 +10,7 @@ import SubGameLayout from '../layouts/sub_game_layout';
 import EditorApp from '../pages/editor_page';
 import WeatherApp from '../pages/weather_comp';
 import SimilarApp from '../pages/similar_comp';
-import WaitingPlayer from '../pages/waiting_player_page';
+import {GlobalPopup} from '../pages/popup_comp';
 import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
 let worker = new Worker('/js/worker.bundle.js');
@@ -163,7 +163,7 @@ class AuthLayout extends React.Component{
     render(){
         return(
             <div id = 'main_app'>
-                <WaitingPlayer/>
+                <GlobalPopup/>
                 <InviteBoard/>
                 {/* <div id = 'main_app'> */}
                     <PrimaryHeader/>

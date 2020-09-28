@@ -103,12 +103,13 @@ input:hover,
     row-gap: 10px;
     justify-items: center;
     min-height: 100vh;
+    position: relative;
 }
 #app_header{
     width: 100%;
     height: 40px;
     justify-self: start;
-    background-color: #4CAF50;
+    background-color: #30be93;
     grid-area: 1/1/2/4;
     position: fixed;
     top: 0px;
@@ -127,7 +128,55 @@ input:hover,
     justify-content: center;
     align-items: center;
 }
+.global_popup{
+    position: fixed;
+    width: 400px;
+    height: 300px;
+    left: calc(100vw/2 - 400px/2);
+    top: calc(100vh/2 - 300px/2);
+    background-color: #ffed6656;
+    padding: 15px 15px;
+    border-radius: 5px;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.global_popup >div{
+    width: 100%;
+    height: 100%;
+    background-color: #ffed66db;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.wait_player{
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-evenly;
+    align-items: center;
+    width: 100%;
+}
+.global_popup .fb_msg{
+    color: red;
+}
+.global_popup button{
+    background-color: rgb(255, 174, 0);
+    width: 60px;
+    border: 1px solid grey;
+    border-radius: 5px;
+}
 @media screen and (max-width: 500px){
+    .global_popup{
+        width: 90%;
+        height: 260px;
+        left: calc(100vw/2 - 90%/2);
+        top: calc(100vh/2 - 260px/2);
+    }
+}
+@media screen and (max-width: 768px){
     #main_app{
         grid-template-columns: 100%;
         grid-template-rows: 30px 1fr;
@@ -260,8 +309,8 @@ input:hover,
 #select_life{
     display: flex;
     position: relative;
-    width: 100px;
-    height: 60px;
+    width: 105px;
+    height: 63px;
     padding: 3px 3px;
     justify-content: center;
     align-items: center;
@@ -283,8 +332,8 @@ input:hover,
     position: absolute;
     background-color: hsl(196, 100%, 90%);
     border: 1px solid grey;
-    width: 94px;
-    height: 54px;
+    width: 99px;
+    height: 57px;
     opacity: 0.8;
 }
 #select_poong>div:first-child>div:nth-child(2),
@@ -377,9 +426,10 @@ input:hover,
 
 #player_board{
     display: flex;
-    width: 100%;
-    justify-content: space-between;
+    width: 90%;
+    justify-content: space-evenly;
     flex-wrap: wrap;
+    margin-bottom: 10px;
 }
 #player_board>div{
     display: flex;
@@ -858,6 +908,95 @@ table{
     }
     
 }
+#poong_game #shooting_yard{
+    background-color: peachpuff;
+}
+#poong_popup{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9;
+    width: 100%;
+    height: 100%
+}
+#poong_popup .poong_popup{
+    min-width: 200px;
+    min-height: 40%;
+    padding: 5px 5px;
+    background-color: #ffed6656;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+}
+#poong_popup p{
+    display: inline-block;
+    word-wrap: break-word;
+    text-align: center;
+}
+#poong_popup .fb_msg{
+    margin-bottom: 0px;
+}
+#poong_popup .user{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+#poong_popup .poong_popup>div{
+    width: 100%;
+    display: flex;
+    justify-items: center;
+    align-items: center;
+}
+#poong_popup #btn_ctn{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#poong_popup .wait_player>div:last-child{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 7px;
+}
+#poong_popup .wait_player{
+    margin-bottom: 5px;
+}
+#poong_popup button{
+    width: 70px;
+    background-color: rgb(255, 174, 0);
+    border-radius: 5px;
+    border: 1px solid grey;
+}
+#poong_popup #btn_ctn>button:first-child{
+    background-color: rgb(132, 195, 235);
+    margin-right: 15px;
+}
+#poong_popup i{
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    opacity: 0.5;
+    font-size: 100px;
+    z-index: -1;
+}
+#poong_popup .win_ico{
+    color: green;
+}
+#poong_popup .loose_ico{
+    color: red;
+}
 tr>.alive{
     background-color: #66b3ff;
 }
@@ -878,4 +1017,26 @@ img:hover{
 }
 .game_selected{
     border: rgba(255, 166, 0, 0.74) 1px solid;
+}
+.wait_ctn{
+    display: flex;
+    flex-wrap: nowrap;
+    width: 89px;
+    align-items: center;
+    justify-content: space-between;
+}
+.wait_child{
+    height: 15px;
+    width: 20px;
+    border-radius: 3px;
+    background-color: lightgreen;
+}
+.highlight{
+    background-color: rgb(18, 230, 18);
+}
+.lowlight{
+    background-color: rgba(128, 128, 128, 0.775);
+}
+button:hover{
+    opacity: 0.7;
 }

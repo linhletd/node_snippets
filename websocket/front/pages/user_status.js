@@ -18,7 +18,9 @@ const UserStatus = (props) => {
         }
     }
     else Child = "";
-    console.log(childClass)
+    if(props.handleOffline && !status.isOnline){
+        props.handleOffline()
+    }
     return (
         <div className = {status._id + ' user' +(childClass ? " " + childClass : '')}>
             <div className = "icon">
@@ -26,7 +28,7 @@ const UserStatus = (props) => {
                 <div className = {status.isOnline ? "signal online" : "signal offline"}/>
             </div>
             <div>
-                <a href = {`/user?id=${status._id}`}>{status.Username}</a>
+                {props.noName ? '' :<a href = {`/user?id=${status._id}`}>{status.Username}</a>}
                 {Child}
             </div>
         </div>

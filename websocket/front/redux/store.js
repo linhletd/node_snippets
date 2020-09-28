@@ -113,6 +113,7 @@ function poong(state = initialPoong, {type, data}){
                 let popup = {
                     type: 'finish',
                     title: data.result,
+                    subPlayer: data.subPlayer,
                     continuable: false,
                 }
                 return {...state, popup}
@@ -133,7 +134,7 @@ function poong(state = initialPoong, {type, data}){
                     return {...state, popup: null, gameStatus: newGameStatus }
                 }
                 else if(type === CONTINUEMSG){
-                    let newPopup = {...state.popup, continuable: true, graspedInfo: 'Your friend want you to continue playing game...'};
+                    let newPopup = {...state.popup, continuable: true, graspedInfo: 'Your friend want to continue game...'};
                     return {...state, popup: newPopup}
                 }
                 else {
@@ -211,13 +212,23 @@ function linkPrompt(state = {closed: true}, {type, data}){
             return {closed: true};
     }
     return state;
+}
+function popup(state = {}, action){
+    switch(action.type){
+        case WAITPLAYER: 
+            return {...state, global: action.data}
+        case INVITENOTICE:
+            return {...state, flash: action.data}
+    }
+    return state;
 } 
 let reducer = combineReducers({
     main,
     poong,
     editor,
     toolbar,
-    linkPrompt
+    linkPrompt,
+    popup,
 })
 const store = createStore(reducer);
 export default store;
