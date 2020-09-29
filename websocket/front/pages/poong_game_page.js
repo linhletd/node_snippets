@@ -2,7 +2,8 @@ import React from 'react';
 import UserStatus from '../pages/user_status';
 import {Redirect, withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
-import PoongPopup from '../pages/poong_popup_page'
+import PoongPopup from '../pages/poong_popup_page';
+// import sendMsgViaSocket from '../utils/sendMsgViaSocket'
 
 class PoongGame extends React.Component{
     constructor(props){
@@ -12,7 +13,7 @@ class PoongGame extends React.Component{
         let vmin = Math.min(innerWidth, innerHeight),
             vmax = Math.max(innerWidth, innerHeight);
         console.log(innerWidth, innerHeight)
-        if( innerWidth < 768){
+        if( innerWidth < 600){
             this.wratio = 0.94;
             this.width = Math.floor(100 * this.wratio);
         }

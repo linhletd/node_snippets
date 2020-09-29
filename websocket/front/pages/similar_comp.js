@@ -76,7 +76,7 @@ class SimilarApp extends React.Component{
                                 <input name = "des" type = "text" value = {des} onChange = {this.handleInputChange} required = {true} des = {des !== '' ? 'valid' : 'invalid'}/>
                             </div>
                         </div>
-                        {valid ? <button onClick = {this.handleSubmitData} className = 'btn btn-info' ><i className="fa fa-magic"></i></button> : ''}
+                        {valid ? <button onClick = {this.handleSubmitData} className = 'btn_orange' ><i className="fa fa-magic"></i></button> : ''}
                         {/* <button onClick = {this.handleSubmitData} disabled = {valid ? false : true} className = {valid ? 'btn btn-info' : ''} ><i className="fa fa-magic"></i></button> */}
                     </div>
                 )

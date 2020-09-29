@@ -10,6 +10,7 @@ import SubGameLayout from '../layouts/sub_game_layout';
 import EditorApp from '../pages/editor_page';
 import WeatherApp from '../pages/weather_comp';
 import SimilarApp from '../pages/similar_comp';
+import InviteNoticeBoard from '../pages/notify_game_comp';
 import {GlobalPopup} from '../pages/popup_comp';
 import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
@@ -31,7 +32,7 @@ class AuthLayout extends React.Component{
             userId: payload.originatorId,
             socketId: payload.socketId,
             info: 'invite game',
-            time: new Date(),
+            time: (new Date()).toTimeString().slice(0,5),
         }
         this.props.updateStore({
             type: 'INVITENOTICE',
@@ -164,7 +165,7 @@ class AuthLayout extends React.Component{
         return(
             <div id = 'main_app'>
                 <GlobalPopup/>
-                <InviteBoard/>
+                {/* <InviteBoard/> */}
                 {/* <div id = 'main_app'> */}
                     <PrimaryHeader user = {this.props.user}/>
                     <div id = 'app_left'>
@@ -193,7 +194,7 @@ class AuthLayout extends React.Component{
                         </Switch>
                     </div>
                     <div id = 'app_right'>
-                        hohohohohoh
+                        <InviteNoticeBoard history = {this.props.history}/>
                     </div>
             </div>
         )
