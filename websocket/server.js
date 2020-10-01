@@ -23,7 +23,7 @@ try{
     let db = client.db(process.env.MG_DB_NAME);
     let users = db.collection('users');
     let sessions = db.collection('sessions');
-    users.updateMany({},{$set: {IsOnline: 0}});
+    // users.updateMany({},{$unset: {IsOnline: ''}});
     sessions.find({session: {$regex:/"ws":\[.+?\]/}}).forEach((doc) =>{
         let resetValue = doc.session.replace(/"ws":\[.+?\]/,'"ws":[]');
         sessions.updateOne({_id: doc._id},{$set: {session: resetValue}})

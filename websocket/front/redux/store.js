@@ -49,17 +49,17 @@ function main(state = {user, socket, usersStatus},{type, data}){
                 return state;
             }
             let newState = new Map([...usersStatus]);
-            let newUser = Object.assign({}, user);
             if(user){
-                newUser.isOnline = true;
+                user.isOnline = true;
                 if(user.isOnline && data.isOnline === false){
-                    newUser.isOnline = false; 
+                    user.isOnline = false; 
+                    user.LastActive = Date.now()  - 60 * 1000;
                 }
             }
             else {
-                newUser = {...data};
+                let newUser = data;
+                newState.set(newUser._id, newUser);
             }
-            newState.set(newUser._id, newUser);
             return {...state, usersStatus: newState}
         default:
             return state;

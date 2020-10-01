@@ -11,12 +11,18 @@ import EditorApp from '../pages/editor_page';
 import WeatherApp from '../pages/weather_comp';
 import SimilarApp from '../pages/similar_comp';
 import InviteNoticeBoard from '../pages/notify_game_comp';
+import BrowserUserPage from '../pages/browse_user_page';
 import {GlobalPopup} from '../pages/popup_comp';
 import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
 let worker = new Worker('/js/worker.bundle.js');
 
 class AuthLayout extends React.Component{
+    constructor(props){
+        super();
+        this.left = React.createRef();
+        this.right = React.createRef();
+    }
     shouldComponentUpdate(nextProps){
         let newSocket = nextProps.socket;
         if(newSocket && newSocket !== this.props.socket){
@@ -92,6 +98,7 @@ class AuthLayout extends React.Component{
                         }
                         //all method below is for handle game message
                     case 'invite':
+                        this.createFlashPopup();
                         return this.handleInviteMsg;
                         //method below come from waiting_player_page
                     case 'accept':
@@ -160,18 +167,52 @@ class AuthLayout extends React.Component{
         this.getInitialUsersStatus();
         this.handleIncomingMsg();
         this.detectMustAlternativeWs();
+        this.flashCtn = document.getElementById('flash_popup');
+        
+    }
+    createFlashPopup = () =>{
+        console.log('flash')
+        let div = document.createElement('div');
+        let timer = setTimeout(()=>{
+            div.remove();
+        }, 5000)
+        let p = document.createElement('p');
+        p.onclick = () =>{
+            div.remove();
+            clearTimeout(timer);
+            this.right.current.style.display = 'block';
+        }
+        let i = document.createElement('i');
+        i.className = 'fa fa-window-close-o';
+        i.onclick = ()=>{
+            div.remove();
+            clearTimeout(timer)
+        }
+        p.innerText = 'You have new invitation';
+        div.appendChild(p);
+
+        div.className = 'flash';
+        if(this.flashCtn.hasChildNodes()){
+            this.flashCtn.insertBefore(div, this.flashCtn.firstChild)
+        }
+        else{
+            this.flashCtn.appendChild(div);
+        }
     }
     render(){
         return(
             <div id = 'main_app'>
                 <GlobalPopup/>
-                {/* <InviteBoard/> */}
-                {/* <div id = 'main_app'> */}
                     <PrimaryHeader user = {this.props.user}/>
                     <div id = 'app_left'>
-                        hahahahahhaah
+                        <BrowserUserPage 
+                        mainProps = {{filter: this.props.user._id, id: 'status_board'}}
+                        parProps = {{id: 'status_list', className: 'board'}}
+                        childProps = {{childClass: 'user_tiny', activeTime: true}}
+                        />
                     </div>
                     <div id = 'app_body'>
+                    <div id = 'flash_popup'/>
                         <Switch>
                             <Route exact path = '/'>
                                 <WeatherApp/>
@@ -193,7 +234,7 @@ class AuthLayout extends React.Component{
                             </Route>
                         </Switch>
                     </div>
-                    <div id = 'app_right'>
+                    <div id = 'app_right' ref = {this.right}>
                         <InviteNoticeBoard history = {this.props.history}/>
                     </div>
             </div>
@@ -212,8 +253,7 @@ function mapStateToProps(state, ownProp){
     return {
         user: state.main.user,
         socket: state.main.socket,
-        // usersStatus: state.main.usersStatus,
-        mutateData: state.poong.mutateData //never change but mutable
+        mutateData: state.poong.mutateData
     }
 }
 export default withRouter(connect(mapStateToProps, mapDispatchToProps)(AuthLayout));

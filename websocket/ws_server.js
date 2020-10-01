@@ -1,4 +1,4 @@
-const ObjectID = require('mongodb').ObjectID;
+const ObjectId = require('mongodb').ObjectId;
 const WebSocket = require('ws');
 const dotenv = require('dotenv').config({path: '../.env'});
 const uuid = require('uuid');
@@ -112,6 +112,14 @@ module.exports = function applyWebsocket(server, app){
                 ownerMap.delete(userID);
                 idMap.forEach((socket) => {
                     socket.send(JSON.stringify({type: 'offline', payload: {_id: userID}}));
+                })
+                users.updateOne({_id: ObjectId(userID)}, {
+                    $set: {
+                        LastActive: Date.now() - 60 * 1000
+                    }
+                },
+                {
+                    upsert: false
                 })
             }
             else {

@@ -9,9 +9,9 @@ let InviteContent = (props) =>{
         <div>
             <p>Invite you game - &nbsp;<span>{props.time}</span></p>
             <WaittingNotation autoStop = {true}/>
-            <div>
-                <button onClick = {props.clickJoin}>Join</button>
-                <button onClick = {props.clickDecline}>Decline</button>
+            <div className  = 'wrapper_even'>
+                <button onClick = {props.clickJoin} className = 'btn_blue'>Join</button>
+                <button onClick = {props.clickDecline} className = 'btn_orange'>Decline</button>
             </div>
         </div>
     )
@@ -59,29 +59,36 @@ class InviteNoticeBoard extends React.Component{
     }
     navigateToGame = () =>{
         this.props.history.push('/game');
+        setTimeout(() =>{document.getElementById('play_poong').click()},100);
+    }
+    handleTouchedSomewhere = () => {
+        let {updateStore} = this.props;
+        updateStore({
+            type: 'SOMEWHERE',
+            data: {}
+        })
+    }
+    handleCancelMsg = ({payload}) => {
+        let {updateStore} = this.props;
+        updateStore({
+            type: 'CANCELMSG',
+            data: payload
+        })
     }
     render(){
-        let {socket, noticeList, updateStore} = this.props;
+        let {socket, noticeList} = this.props;
         let list = noticeList ? [...noticeList.values()] : null;
         if(list && list.length){
             socket.notify = {
-                handleTouchedSomewhere: () => {
-                    updateStore({
-                        type: 'SOMEWHERE',
-                        data: {}
-                    })
-                },
-                handleCancelMsg: ({payload}) => {
-                    updateStore({
-                        type: 'CANCELMSG',
-                        data: payload
-                    })
-                }
+                handleTouchedSomewhere: this.handleTouchedSomewhere,
+                handleCancelMsg: this.handleCancelMsg
             }
             let notices = list.map((notice) => {
                 return (
-                    <UserStatus status = {{_id: notice.userId}} childClass = 'user_small'  key = {notice.inviteId}
-                    children = {<InviteContent time = {notice.time} clickJoin = {this.handleAcceptGame.bind({},notice)} clickDecline = {this.handleDeclineGame.bind({}, notice)}/>}/>
+                    <div key = {notice.inviteId}>
+                        <UserStatus status = {{_id: notice.userId}} childClass = 'user_small' handleOffline = {this.handleCancelMsg.bind(this,{payload:{inviteId: notice.inviteId}})}/>
+                        <InviteContent time = {notice.time} clickJoin = {this.handleAcceptGame.bind({},notice)} clickDecline = {this.handleDeclineGame.bind({}, notice)}/>
+                    </div>
                 )
             })
             return (

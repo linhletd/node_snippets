@@ -87,7 +87,7 @@ module.exports = function(app){
             })
         },
         getTopicContentById: function(req, res, next){
-            let _id = new ObjectId(req.params.topic_id);
+            let _id = ObjectId(req.params.topic_id);
             topics.findOne({_id}, (err, topic) =>{
                 if(err) return res.json({err: err.message});
                 addOnOffStatus(topic.Author)
@@ -130,6 +130,7 @@ module.exports = function(app){
             .project({
                 Username: 1,
                 Avartar: 1,
+                LastActive: 1
             })
             cursor.on('error',(err) =>{
                 return res.json({err: err.message})

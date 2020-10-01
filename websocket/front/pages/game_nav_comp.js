@@ -123,6 +123,7 @@ class GameNav extends React.Component{
         let node = document.getElementById('invite_board');
         if(node){
             node.classList.contains('hide') && node.classList.remove('hide');
+            node.querySelector('input').focus();
         }
     }
     closeInviteBoard = () =>{
@@ -145,6 +146,9 @@ class GameNav extends React.Component{
     }
     render(){
         let rows = this.matrix.map((cur,i) => (<tr key = {`t1${i}`}>{cur.map((val,j) => <td className = {val === 1 ? 'alive' : 'dead'} key = {`t1${i}${j}`}></td>)}</tr>))
+        let mainProps = {filter: this.props.user._id, id: 'invite_board', className: 'hide', closable: true, close: this.closeInviteBoard};
+        let parProps = {id: 'invite_list', className: 'board'};
+        let childProps = {childClass: 'user_small', children: this.InviteButton};
         return(
             <div id = 'game_nav'>
                 <div id = 'select_poong' ref = {this.poong}>
@@ -157,12 +161,11 @@ class GameNav extends React.Component{
                             <span className = 'ibullet'/>
                         </div>
                         <div>
-                            <i className="fa fa-user-plus" onClick = {this.openInviteBoard}></i>
+                            <i id = "play_poong" className="fa fa-user-plus" onClick = {this.openInviteBoard}></i>
                             <i className="fa fa-info-circle" onClick = {this.showPoongGuide}></i>
                         </div>
                     </div>
-                    <BrowseUserPage children = {this.InviteButton} filter = {this.props.user._id} id = 'invite_board' className = 'hide'
-                    attr = {{id: 'invite_list', className: 'board'}} childClass = 'user_small' closable = {true} close = {this.closeInviteBoard}/>
+                    <BrowseUserPage mainProps = {mainProps} parProps = {parProps} childProps = {childProps}/>
                     <Guide data = {this.guide}/>
                 </div>
                 <div id = 'select_life' ref = {this.life}>
