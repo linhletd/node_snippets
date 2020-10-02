@@ -145,6 +145,7 @@ input:hover,
     display: grid;
     grid-template-columns: 240px 1fr 240px;
     grid-template-rows: 40px 1fr;
+    row-gap: 10px;
     justify-items: center;
     align-items: center;
     min-height: 100vh;
@@ -162,10 +163,24 @@ input:hover,
     justify-content: space-around;
     align-items: center;
 }
+.hdr_ico{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 #app_header i{
     text-decoration: none;
     color: hsl(224, 90%, 20%);
-    font-size: 20px;
+    font-size: 1.5em;
+}
+#app_header .fa-gamepad,
+#app_header .fa-home,
+#app_header .fa-exchange
+#app_header .fa-user{
+    font-size: 1.85em;
+}
+#app_header i[class~=navi]{
+    opacity: 0.4;
 }
 #app_left, #app_right{
     position: fixed;
@@ -187,7 +202,7 @@ input:hover,
     grid-area: 2/3/3/4;
     right: 0px;
     border-left: 1px solid lightgrey;
-    padding: 10px 10px;
+    padding-left: 5px;
 }
 #app_body{
     grid-area: 2/2/3/3;
@@ -196,7 +211,6 @@ input:hover,
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 10px 10px;
 }
 .global_popup{
     position: fixed;
@@ -246,6 +260,16 @@ input:hover,
         top: calc(100vh/2 - 260px/2);
     }
 }
+#no_notice{
+    margin-top: 10px;
+    margin-left: 10px;
+}
+#notice_board{
+    width: 100%;
+    height: 100%;
+    overflow-y: scroll;
+    padding-top: 10px;
+}
 #notice_board >*{
     display: flex;
     flex-wrap: nowrap;
@@ -274,6 +298,9 @@ input:hover,
     flex-direction: column;
     align-items: center;
     width: 100%;
+}
+#notice_board span{
+    font-size: 0.85em;
 }
 #status_board{
     width: 100%;
@@ -343,8 +370,14 @@ input:hover,
         width: calc(100vw - 240px - 20px);
 
     }
+    .medium_hide{
+        display: none;
+    }
 }
 @media screen and (max-width: 599px){
+    #player_board{
+        justify-content: space-between;
+    }
     #main_app{
         grid-template-columns: 100%;
         grid-template-rows: 30px 1fr;
@@ -352,6 +385,15 @@ input:hover,
     #app_header{
         grid-area: 1/1/2/2;
         height: 30px;
+    }
+    #app_header i{
+        font-size: 1.2em;
+    }
+    #app_header .fa-gamepad,
+    #app_header .fa-home,
+    #app_header .fa-exchange,
+    #app_header .fa-user{
+        font-size: 1.4em;
     }
     #app_left,
     #app_right{
@@ -365,7 +407,7 @@ input:hover,
         display: none;
     }
 }
-@media screen and (min-width: 769px){
+@media screen and (min-width: 1200px){
     .large_hide{
         display: none;
     }
@@ -430,6 +472,15 @@ input:hover,
 @media screen and (max-width:399px){
     #poong_guide{
         width: 240px;
+    }
+    #app_header i{
+        font-size: 1em;
+    }
+    #app_header .fa-gamepad,
+    #app_header .fa-home,
+    #app_header .fa-exchange,
+    #app_header .fa-user{
+        font-size: 1.17em;
     }
 }
 #game_layout{
@@ -505,11 +556,6 @@ input:hover,
     top: 0px;
     left: 0px;
     z-index: 2;
-}
-#notice_board{
-    width: 100%;
-    height: 100%;
-    overflow-y: scroll;
 }
 #select_poong .yard{
     position: absolute;
@@ -773,7 +819,7 @@ input:hover,
     width: 100%;
 }
 #editor_app{
-    width: 95%;
+    width: 100%;
     max-width: 900px;
     display: flex;
     flex-direction: column;
@@ -781,6 +827,7 @@ input:hover,
 }
 #link_prompt{
     align-self: flex-start;
+    display: flex;
 }
 #editor_area{
     min-height: 90vh;
@@ -791,7 +838,8 @@ input:hover,
     font-size: 16px;
     font-family: Arial, Helvetica, sans-serif;
     padding: 10px 10px;
-    overflow: scroll;
+    overflow-y: scroll;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -802,7 +850,7 @@ input:hover,
     margin-top: 0px;
     margin-bottom: 0px;
 }
-#editor_area *:not(span){
+#editor_area> *, p, li{
     width: 100%;
     word-break: break-word;
 }
@@ -861,9 +909,13 @@ figure{
     max-width: 100%;
     display: flex;
     flex-direction: column;
+    align-items: center;
 }
 figure>img{
     z-index: 0;
+}
+.zero_space{
+    width: 3px;
 }
 .zero_space:not(:first-child){
     margin: 1px 1px;
@@ -1243,6 +1295,34 @@ button:hover:not(:disabled){
     border-radius: 5px;
     border: 1px solid grey;
 }
+#flash_popup{
+    position: fixed;
+    width: 180px;
+    left: calc(100vw/2 - 180px/2);
+    top: 50px;
+    display: grid;
+    row-gap: 3px;
+    z-index: 11;
+}
+@keyframes flash{
+    0% {background-color: rgba(255, 174, 0, 1);}
+    100%{background-color:  rgba(255, 174, 0, 0.2);}
+}
+.flash{
+    animation: flash 3s forwards;
+    padding: 4px 4px;
+}
+.flash{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+.flash p{
+    margin-bottom: 0px;
+    background-color: white;
+    padding: 3px 3px;
+    border-radius: 5px;
+}
 .btn_blue{
     background-color: rgb(132, 195, 235);
     border-radius: 5px;
@@ -1255,4 +1335,7 @@ button:hover:not(:disabled){
 }
 input, button{
     outline: none;
+}
+button:disabled{
+    opacity: 0.5;
 }

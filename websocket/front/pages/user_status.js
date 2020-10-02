@@ -30,7 +30,6 @@ class UserStatus extends React.Component{
         this.prevStatus = this.currentStatus;
     }
     render(){
-        console.log('render')
         let {props} = this;
         let {childClass, activeTime} = props, status;
         if(!('isOnline' in props.status)){

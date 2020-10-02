@@ -8,18 +8,24 @@ import PoongPopup from '../pages/poong_popup_page';
 class PoongGame extends React.Component{
     constructor(props){
         super(props); // props for start game
-        this.unit = 'vmin';
+        this.game = React.createRef();
+        this.unit = 'vw';
         this.hwratio = 0.5;
-        let vmin = Math.min(innerWidth, innerHeight),
-            vmax = Math.max(innerWidth, innerHeight);
         console.log(innerWidth, innerHeight)
         if( innerWidth < 600){
+            console.log(1)
             this.wratio = 0.94;
             this.width = Math.floor(100 * this.wratio);
         }
+        else if(innerWidth < 1199){
+            console.log(2)
+            this.wratio = 0.9;
+            this.width = Math.floor((innerWidth - 240)/innerWidth * 100 * this.wratio);
+        }
         else{
-            this.wratio = 0.6;
-            this.width = Math.floor((vmax/vmin) * 100 * this.wratio);
+            this.wratio = 0.9;
+            console.log(3)
+            this.width = Math.floor((innerWidth - 240 * 2)/innerWidth * 100 * this.wratio);
         }
         this.height = this.width * this.hwratio;
         this.xmin = 0; //left
@@ -97,11 +103,11 @@ class PoongGame extends React.Component{
         if(!player.isAlive){
             return;
         }
-        let vmin = Math.min(innerWidth, innerHeight);
+        let vw = innerWidth;
         let rect = ev.currentTarget.getBoundingClientRect(),
         offsetX = ev.clientX - rect.left,
         offsetY = ev.clientY - rect.top;
-        let xc = offsetX/vmin * 100, yc = offsetY/vmin * 100;
+        let xc = offsetX/vw * 100, yc = offsetY/vw * 100;
         let mainPlayerGo = () => {
             let {playersList} = this;
             let playerId = this.mainPlayer;
@@ -141,7 +147,7 @@ class PoongGame extends React.Component{
             this.sendMsgViaSocket(JSON.stringify(msg));
             player.x = x; player.y = y; player.alpha = alpha;
             let elem = document.getElementById('shooting_yard').querySelector(`#${this.mainPlayer}`);
-            elem.style.left = `${x}vmin`; elem.style.top = `${y}vmin`; elem.style.transform = `rotate(${alpha}rad)`;
+            elem.style.left = `${x}vw`; elem.style.top = `${y}vw`; elem.style.transform = `rotate(${alpha}rad)`;
         }
         mainPlayerGo();
         this.itv.mainGoing = setInterval(mainPlayerGo, this.playerSpeed);
@@ -158,7 +164,7 @@ class PoongGame extends React.Component{
         let player = this.playersList.get(playerId);
         player.x = x * this.width; player.y = y * this.width; player.alpha = alpha;
         let elem = document.getElementById('shooting_yard').querySelector(`#${playerId}`);
-        elem.style.left = `${player.x}vmin`; elem.style.top = `${player.y}vmin`; elem.style.transform = `rotate(${alpha}rad)`;
+        elem.style.left = `${player.x}vw`; elem.style.top = `${player.y}vw`; elem.style.transform = `rotate(${alpha}rad)`;
     }
     shoot(playerId){
         if(this.freezed){
@@ -193,8 +199,8 @@ class PoongGame extends React.Component{
             return {sideList: newState};
         });
         let bullet = this.sampleBullet.cloneNode(true);
-        bullet.style.left = `${x}vmin`;
-        bullet.style.top =  `${y}vmin`;
+        bullet.style.left = `${x}vw`;
+        bullet.style.top =  `${y}vw`;
         bullet.style.display = 'block';
         bullet.id = key;
         document.getElementById('bullets').appendChild(bullet);
@@ -307,8 +313,8 @@ class PoongGame extends React.Component{
                 bullet.y0 += dy; 
             }
             let elem = document.getElementById('shooting_yard').querySelector(`#${key}`);
-            elem.style.left = `${bullet.x0}vmin`;
-            elem.style.top = `${bullet.y0}vmin`
+            elem.style.left = `${bullet.x0}vw`;
+            elem.style.top = `${bullet.y0}vw`
         }, this.bulletSpeed)
     }
     distance({x0, y0}, {x, y}){
@@ -388,6 +394,7 @@ class PoongGame extends React.Component{
         this.handleSocket.bind(this)();
         this.sampleBullet = document.getElementById('shooting_yard').querySelector('#b_sample');
         window.addEventListener('keyup', this.handleClickZkey);
+
     }
     componentWillUnmount(){
         delete this.props.socket.handleGame;
@@ -437,19 +444,19 @@ class PoongGame extends React.Component{
                 position: 'absolute',
                 width: '0.01px',
                 height: '0.01px',
-                left: `0vmin`,
-                top: `0vmin`,
+                left: `0vw`,
+                top: `0vw`,
                 backgroundColor: 'orangered',
                 display: 'none'
 
             }
             let bulletBody = {
                 position: 'absolute',
-                width: `${this.bulletSize}vmin`,
-                height: `${this.bulletSize}vmin`,
+                width: `${this.bulletSize}vw`,
+                height: `${this.bulletSize}vw`,
                 borderRadius: '50%',
-                left: `-${this.bulletSize/2}vmin`,
-                top: `-${this.bulletSize/2}vmin`,
+                left: `-${this.bulletSize/2}vw`,
+                top: `-${this.bulletSize/2}vw`,
                 backgroundColor: 'inherit'
             }
             return (
@@ -464,8 +471,8 @@ class PoongGame extends React.Component{
                 let {player} = props;
                 let heart = {
                     position: 'absolute',
-                    left: `${player.x}vmin`,
-                    top: `${player.y}vmin`,
+                    left: `${player.x}vw`,
+                    top: `${player.y}vw`,
                     transform: `rotate(${player.alpha}rad)`,
                     width: '0.01px',
                     height: '0.01px',
@@ -476,23 +483,23 @@ class PoongGame extends React.Component{
                 }
                 let body = {
                     position: 'absolute',
-                    width: `${this.playerSize}vmin`,
-                    height: `${this.playerSize}vmin`,
+                    width: `${this.playerSize}vw`,
+                    height: `${this.playerSize}vw`,
                     borderRadius: '50%',
-                    left: `-${this.playerSize/2}vmin`,
-                    top: `-${this.playerSize/2}vmin`,
+                    left: `-${this.playerSize/2}vw`,
+                    top: `-${this.playerSize/2}vw`,
                     backgroundColor: 'inherit',
                     opacity: 0.7,
                 }
                 let hand = {
                     position: 'absolute',
-                    width: '0vmin',
-                    height: '0vmin',
-                    borderTop: `${this.playerSize/4}vmin solid transparent`,
-                    borderBottom: `${this.playerSize/4}vmin solid transparent`,
-                    borderLeft: `${this.playerSize/2}vmin solid #555`,
-                    top: `-${this.playerSize/4}vmin`,
-                    left: `${this.playerSize/4}vmin`,
+                    width: '0vw',
+                    height: '0vw',
+                    borderTop: `${this.playerSize/4}vw solid transparent`,
+                    borderBottom: `${this.playerSize/4}vw solid transparent`,
+                    borderLeft: `${this.playerSize/2}vw solid #555`,
+                    top: `-${this.playerSize/4}vw`,
+                    left: `${this.playerSize/4}vw`,
                     opacity: 0.7,
     
                 }
@@ -515,8 +522,8 @@ class PoongGame extends React.Component{
             border: '2px solid grey',
             position: 'relative',
             padding: '0px 0px',
-            width: `${this.width}vmin`,
-            height: `${this.height}vmin`,
+            width: `${this.width}vw`,
+            height: `${this.height}vw`,
         }
         const Game = () =>{
             return (
@@ -535,7 +542,7 @@ class PoongGame extends React.Component{
             )
         }
         return(
-            <div id = 'poong_game'>
+            <div id = 'poong_game' ref = {this.game}>
                 <PlayerBoard/>
                 <Game/>
             </div>

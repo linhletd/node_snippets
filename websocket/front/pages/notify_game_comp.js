@@ -7,7 +7,7 @@ let InviteContent = (props) =>{
     
     return (
         <div>
-            <p>Invite you game - &nbsp;<span>{props.time}</span></p>
+            <p>Invites you game - &nbsp;<span>{props.time}</span></p>
             <WaittingNotation autoStop = {true}/>
             <div className  = 'wrapper_even'>
                 <button onClick = {props.clickJoin} className = 'btn_blue'>Join</button>
@@ -59,7 +59,7 @@ class InviteNoticeBoard extends React.Component{
     }
     navigateToGame = () =>{
         this.props.history.push('/game');
-        setTimeout(() =>{document.getElementById('play_poong').click()},100);
+        setTimeout(() =>{document.getElementById('play_poong').click()},200);
     }
     handleTouchedSomewhere = () => {
         let {updateStore} = this.props;
@@ -101,7 +101,7 @@ class InviteNoticeBoard extends React.Component{
             let notify = socket.notify;
             notify && delete socket.notify;
             return (
-                <div>
+                <div id = 'no_notice'>
                     <p>You have no game invitation right now</p>
                     <button onClick = {this.navigateToGame} className = 'btn_blue'>Go to invite</button>
                 </div>

@@ -171,27 +171,49 @@ class AuthLayout extends React.Component{
         
     }
     createFlashPopup = () =>{
-        console.log('flash')
+        if(!this.flashCtn.hasChildNodes()){
+            this.flashCtn.classList.remove('hide')
+        }
         let div = document.createElement('div');
         let timer = setTimeout(()=>{
             div.remove();
+            if(!this.flashCtn.hasChildNodes()){
+                this.flashCtn.classList.add('hide')
+            }
         }, 5000)
         let p = document.createElement('p');
         p.onclick = () =>{
             div.remove();
             clearTimeout(timer);
             this.right.current.style.display = 'block';
+            if(!this.flashCtn.hasChildNodes()){
+                this.flashCtn.classList.add('hide')
+            }
         }
         let i = document.createElement('i');
-        i.className = 'fa fa-window-close-o';
+        i.className = 'fa fa-times';
         i.onclick = ()=>{
             div.remove();
-            clearTimeout(timer)
+            clearTimeout(timer);
+            if(!this.flashCtn.hasChildNodes()){
+                this.flashCtn.classList.add('hide')
+            }
         }
         p.innerText = 'You have new invitation';
         div.appendChild(p);
-
+        div.appendChild(i);
         div.className = 'flash';
+        div.onmouseover = () =>{
+            clearTimeout(timer)
+        }
+        div.onmouseleave = () =>{
+            timer = setTimeout(() =>{
+                div.remove();
+                if(!this.flashCtn.hasChildNodes()){
+                    this.flashCtn.classList.add('hide')
+                }
+            }, 2000)
+        }
         if(this.flashCtn.hasChildNodes()){
             this.flashCtn.insertBefore(div, this.flashCtn.firstChild)
         }
@@ -212,7 +234,7 @@ class AuthLayout extends React.Component{
                         />
                     </div>
                     <div id = 'app_body'>
-                    <div id = 'flash_popup'/>
+                    <div id = 'flash_popup' className = 'hide'/>
                         <Switch>
                             <Route exact path = '/'>
                                 <WeatherApp/>

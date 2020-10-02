@@ -66,8 +66,8 @@ class LinkPromt extends React.PureComponent{
         return (
             <div id = 'link_prompt' style = {style}>
                 <input type = 'url' value = {this.state.url} style = {inputStyle} onChange = {this.handleChange} autoFocus = {true}/>
-                <button onClick = {this.link} disabled = {this.state.urlValidated ? false : true}>link</button>
-                <button onClick = {this.unlink}>unlink</button>
+                <button onClick = {this.link} disabled = {this.state.urlValidated ? false : true} className = 'btn_blue'>link</button>
+                <button onClick = {this.unlink} className = 'btn_orange'>unlink</button>
             </div>
         )
     }
