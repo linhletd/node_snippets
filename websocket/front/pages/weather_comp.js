@@ -108,7 +108,7 @@ class WeatherApp extends React.PureComponent{
         if(weather.err){
             this.state.showInput = true;
         }
-        let searchBar = <div id = "search_bar" style = {{paddingLeft: this.state.showInput ? 'auto' : '30px'}}>
+        let searchBar = <div id = "search_bar">
                             {this.state.showInput ? <input value = {input} placeholder = 'e.g: thai nguyen' onKeyDown = {this.handleInputEnter} onChange = {this.handleInputChange}/> : ''}
                             <button onClick = {this.handleClickFind}><i className="fa fa-search"></i></button>
                             <button onClick = {this.handleClickGetGeo} ><i className="fa fa-map-marker"></i></button>
@@ -125,16 +125,16 @@ class WeatherApp extends React.PureComponent{
                                 </div>
                             </div>
                             <div id = 'weather_sub'>
-                                <div style = {{marginLeft: '0px'}}><i className="fa fa-eye" style = {{color: '#008000'}}/><span>{weather.visibility + 'km'}</span></div>
+                                <div><i className="fa fa-eye" style = {{color: '#008000'}}/><span>{weather.visibility + 'km'}</span></div>
                                 <div><i className="fa fa-tint" style = {{color: '#3366cc'}}/><span>{weather.humidity + '%'}</span></div>
                                 <div><i className="fa fa-sun-o" style = {{color: '#ff6600'}}/><span>{weather.sunrise}</span></div>
-                                <div style = {{marginRight: '0px'}}><i className="fa fa-moon-o" style = {{color: '#669999'}}/><span>{weather.sunset}</span></div>
+                                <div><i className="fa fa-moon-o" style = {{color: '#669999'}}/><span>{weather.sunset}</span></div>
                             </div>
                         </div>
                     </div>
         return (
             <div id = 'weather_app' ref = {this.ref}>
-                <div style = {{display: 'flex', flexDirection: this.state.showInput ? 'column' : 'row-reverse', alignItems: 'center', justifyContent: 'center'}}>
+                <div className = {this.state.showInput ? 'col' : 'r_row'}>
                     {searchBar}
                     {location}
                 </div>

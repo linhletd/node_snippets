@@ -20,12 +20,12 @@ class PoongGame extends React.Component{
         else if(innerWidth < 1199){
             console.log(2)
             this.wratio = 0.9;
-            this.width = Math.floor((innerWidth - 240)/innerWidth * 100 * this.wratio);
+            this.width = Math.floor((innerWidth - 240 -10)/innerWidth * 100 * this.wratio);
         }
         else{
             this.wratio = 0.9;
             console.log(3)
-            this.width = Math.floor((innerWidth - 240 * 2)/innerWidth * 100 * this.wratio);
+            this.width = Math.floor((innerWidth - 240 * 2 -10)/innerWidth * 100 * this.wratio);
         }
         this.height = this.width * this.hwratio;
         this.xmin = 0; //left
