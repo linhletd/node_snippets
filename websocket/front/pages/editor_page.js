@@ -800,8 +800,10 @@ class EditorApp extends React.Component{
         }
         return (
             <div id = 'editor_app'>
-                <ToolBar click = {click}/>
-                <LinkPrompt/>
+                <div id = 'editor_head'>
+                    <ToolBar click = {click}/>
+                    <LinkPrompt/>
+                </div>
             </div>
         )
     }

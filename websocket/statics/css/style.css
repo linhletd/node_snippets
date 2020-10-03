@@ -163,7 +163,7 @@ input:hover,
     grid-area: 1/1/2/4;
     position: fixed;
     top: 0px;
-    z-index: 5;
+    z-index: 20;
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -184,8 +184,10 @@ input:hover,
 #app_header .fa-user{
     font-size: 1.85em;
 }
-#app_header i[class~=navi]{
-    opacity: 0.4;
+#app_header i[class~=active],
+#app_header a[class~=active]>i{
+    opacity: 1;
+    color: hsl(224, 91%, 50%);
 }
 #app_left, #app_right{
     position: fixed;
@@ -210,12 +212,11 @@ input:hover,
     padding-left: 5px;
 }
 #app_body{
-    grid-area: 2/2/3/3;
-    width: calc(100vw - 240px * 2 - 10px);
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    width: 100%
 }
 .global_popup{
     position: fixed;
@@ -372,8 +373,6 @@ input:hover,
     }
     #app_body{
         grid-area: 2/1/3/2;
-        width: calc(100vw - 240px) - 10px;
-
     }
     .medium_hide{
         display: none;
@@ -403,10 +402,10 @@ input:hover,
     #app_left,
     #app_right{
         display: none;
+        top: 30px
     }
     #app_body{
         grid-area: 2/1/3/2;
-        width: 100vw;
     }
     .small_hide{
         display: none;
@@ -415,6 +414,9 @@ input:hover,
 @media screen and (min-width: 1200px){
     .large_hide{
         display: none;
+    }
+    #app_body{
+        grid-area: 2/2/3/3;
     }
 }
 .guide{
@@ -726,7 +728,7 @@ input:hover,
     position: absolute;
     height: 12px;
     width: 12px;
-    border: 2px solid rgb(211, 222, 223);
+    border: 2px solid white;
     border-radius: 50%;
 }
 .online {
@@ -816,15 +818,20 @@ input:hover,
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    position: sticky;
-    position: -webkit-sticky;
-    top: 0;
     background-color: white;
     z-index: 1;
     width: 100%;
 }
-#editor_app{
+#editor_head{
     width: 100%;
+    position: sticky;
+    background-color: white;
+    top: 35px;
+    padding-top: 10px;
+    
+}
+#editor_app{
+    width: 95%;
     max-width: 900px;
     display: flex;
     flex-direction: column;
@@ -1044,7 +1051,7 @@ td, thead{
     flex-wrap: nowrap;
     width: 230px;
     justify-content: space-between;
-    background-color:  rgb(132, 195, 235);
+    background-color:   rgb(255, 174, 0);
     margin-bottom: 10px;
     border-radius: 3px;
     border: 1px solid grey;
@@ -1374,4 +1381,22 @@ input, button{
 }
 button:disabled{
     opacity: 0.5;
+}
+#xxxx{
+    background-color: yellow;
+    position: absolute;
+    width: 150px;
+    top: 45px;
+    right: 15px;
+    border:1px solid red
+}
+#yyyy{
+    position: absolute;
+    width: 0px;
+    height: 0px;
+    top:34px;
+    border-bottom: 15px solid yellow;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+
 }
