@@ -185,7 +185,9 @@ class AuthLayout extends React.Component{
         p.onclick = () =>{
             div.remove();
             clearTimeout(timer);
-            this.right.current.style.display = 'block';
+            if(innerWidth < 600 && this.right.current.style.display === ''){
+                document.getElementById('app_header').querySelector('#h_bell').click();
+            }
             if(!this.flashCtn.hasChildNodes()){
                 this.flashCtn.classList.add('hide')
             }

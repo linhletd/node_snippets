@@ -150,6 +150,10 @@ module.exports = function(app){
             cursor.on('end',()=>{
                 res.end(']}');
             })
+        },
+
+        logout: function(req, res, next){
+            res.json({result: 'ok'})
         }
 
     }

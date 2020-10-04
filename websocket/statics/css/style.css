@@ -174,6 +174,9 @@ input:hover,
     align-items: center;
 }
 #app_header i{
+    cursor: pointer;
+}
+#app_header i{
     text-decoration: none;
     color: hsl(224, 90%, 20%);
     font-size: 1.5em;
@@ -185,9 +188,66 @@ input:hover,
     font-size: 1.85em;
 }
 #app_header i[class~=active],
-#app_header a[class~=active]>i{
+#app_header a[class~=active]>i,
+#app_header div[class~=active]>i{
     opacity: 1;
     color: hsl(224, 91%, 50%);
+}
+#app_header .set i{
+    font-size: 1.1em;
+}
+#app_header .set {
+    background-color: hsl(41, 100%, 70%);
+    position: absolute;
+    width: 150px;
+    top: 47px;
+    right: 7px;
+    border-radius: 5px;
+    padding: 5px 5px;
+}
+#app_header .drop{
+    display: none;
+}
+#app_header .show_drop .drop{
+    display: block;
+}
+#app_header .arrow {
+    position: absolute;
+    width: 0px;
+    height: 0px;
+    top:40px;
+    border-bottom: 15px solid hsl(41, 100%, 70%);
+    border-left: 15px solid transparent;
+    border-right: 10px solid transparent;
+}
+#app_header .set > *{
+    display: grid;
+    grid-template-columns: 20px auto;
+    grid-template-rows: 1fr;
+    column-gap: 5px;
+    justify-items: start;
+    align-items: center;
+    cursor: pointer;
+}
+#app_header #h_bell{
+    position: relative;
+}
+#h_bell{
+    cursor: pointer;
+}
+#h_bell #noti_num{
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    width: 15px;
+    height: 15px;
+    background-color:hsl(1, 100%, 60%);
+    border-radius: 50%;
+    color: white;
+    text-align: center;
+    font-size: 0.65em;
+    border: 2px solid white;
+    font-weight: bold;
 }
 #app_left, #app_right{
     position: fixed;
@@ -198,6 +258,7 @@ input:hover,
     flex-direction: column;
     align-items: center;
     background-color: white;
+    z-index: 13;
 }
 #app_left{
     grid-area: 2/1/3/2;
@@ -227,7 +288,7 @@ input:hover,
     background-color: #ffed6656;
     padding: 15px 15px;
     border-radius: 5px;
-    z-index: 10;
+    z-index: 14;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -398,6 +459,12 @@ input:hover,
     #app_header .fa-exchange,
     #app_header .fa-user{
         font-size: 1.4em;
+    }
+    #app_header .set{
+        top: 37px;
+    }
+    #app_header .arrow{
+        top: 30px;
     }
     #app_left,
     #app_right{
@@ -1365,6 +1432,7 @@ button:hover:not(:disabled){
     background-color: white;
     padding: 3px 3px;
     border-radius: 5px;
+    cursor: pointer;
 }
 .btn_blue{
     background-color: rgb(132, 195, 235);
@@ -1381,22 +1449,4 @@ input, button{
 }
 button:disabled{
     opacity: 0.5;
-}
-#xxxx{
-    background-color: yellow;
-    position: absolute;
-    width: 150px;
-    top: 45px;
-    right: 15px;
-    border:1px solid red
-}
-#yyyy{
-    position: absolute;
-    width: 0px;
-    height: 0px;
-    top:34px;
-    border-bottom: 15px solid yellow;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;
-
 }

@@ -7,6 +7,9 @@ module.exports = function(app){
     const customMidleware = require('../configs/middleware')(app);
     let apis = apisf(app);
     app.use(customMidleware.ensureAuthenticated);
+
+    app.get('/logout', apis.logout)
+
     app.post('/discuss/post_topic',apis.createTopic);
     app.get('/discuss/data/titles', apis.getTopicTitle);
     app.get('/discuss/data/content/:topic_id', apis.getTopicContentById);
