@@ -3,7 +3,7 @@ let path = require('path');
 module.exports = {
     entry: {
         main: './websocket/client.js',
-        worker: './websocket/front/workers/detect_wakeup.js'
+        worker: './websocket/front/workers/detect_wakeup.js',
     },
     output: {
         path: path.resolve(__dirname, 'statics', 'js'),
@@ -26,7 +26,7 @@ module.exports = {
                                 {
                                   "loose": true
                                 }
-                              ]
+                            ]
                         ]
                     }
                 }

@@ -153,6 +153,8 @@ module.exports = function(app){
         },
 
         logout: function(req, res, next){
+            res.clearCookie('InVzZXIi');
+            res.clearCookie('connect.sid');
             res.json({result: 'ok'})
         }
 

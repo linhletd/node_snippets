@@ -3,10 +3,6 @@ const { session } = require("passport");
 module.exports = function(app){
     return {
         ensureAuthenticated(req, res, next){
-            // if(!req.isAuthenticated()){
-            //     return res.redirect('/auth/login');
-            // }
-            console.log(req.isAuthenticated(), req.path, req.url)
             let {sessionMap} = app;
             let sockets = app.sessionMap.get(req.sessionID);
             if(req.user){
@@ -15,9 +11,9 @@ module.exports = function(app){
                 }) : "";
                 return next()
             }
-                sockets ? (sockets.forEach(cur =>{
-                    cur.close(4000, 'session terminated')
-                }), sessionMap.delete(req.sessionID)) : "";
+            sockets ? (sockets.forEach(cur =>{
+                cur.close(4000, 'session terminated')
+            })) : "";
             if(/^\/auth/.test(req.url)){
                 return next();
             }

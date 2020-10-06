@@ -93,7 +93,7 @@
 /*! no static exports found */
 /***/ (function(module, exports) {
 
-eval("onmessage = function onmessage(e) {\n  var lastTime = new Date().getTime();\n  var checkTime = 5000;\n  var delay = 2000;\n  var itv = setInterval(function () {\n    var currentTime = new Date().getTime();\n\n    if (currentTime - lastTime > checkTime + delay) {\n      postMessage('wakup');\n      clearInterval(itv);\n    }\n  }, checkTime);\n};\n\n//# sourceURL=webpack:///./websocket/front/workers/detect_wakeup.js?");
+eval("onmessage = function onmessage(e) {\n  var lastTime = new Date().getTime();\n  var checkTime = 5000;\n  var delay = 2000;\n  var itv = setInterval(function () {\n    var currentTime = new Date().getTime();\n\n    if (currentTime - lastTime > checkTime + delay) {\n      postMessage('wakeup');\n      clearInterval(itv);\n    }\n  }, checkTime);\n};\n\n//# sourceURL=webpack:///./websocket/front/workers/detect_wakeup.js?");
 
 /***/ })
 

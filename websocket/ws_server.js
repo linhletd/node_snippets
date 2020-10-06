@@ -125,6 +125,7 @@ module.exports = function applyWebsocket(server, app){
             else {
                 ownerMap.get(userID).delete(ws);
             }
+            console.log(sessionID)
             sessionMap.get(sessionID).size === 1 ? sessionMap.delete(sessionID) : sessionMap.get(sessionID).delete(ws)
             clearInterval(itval);
 
@@ -224,10 +225,6 @@ module.exports = function applyWebsocket(server, app){
             if(Date.now() >= ws.expires){
                 return ws.close(4000, 'session terminated')
             }
-            // idMap.forEach((socket) =>{
-            //     socket.send(JSON.stringify({type: 'server hello',payload: {}}))
-            // })
-
         })
     
     })

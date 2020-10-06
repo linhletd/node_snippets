@@ -84,9 +84,14 @@ footer>#info{
     text-decoration: underline;
 }
 /**/
-#login_page{
+@keyframes welcome{
+    0% {opacity: 0;}
+    100% {opacity: 1;}
+}
+#login_page, #regist_page{
     padding: 4px;
-    width: 250px;
+    max-width: 260px;
+    animation: welcome 5s forwards;
 }
 #login_page>#signup{
     display: grid;
@@ -94,7 +99,8 @@ footer>#info{
     column-gap: 2px;
 }
 #login_page input,
-#login_page>button,
+.s_btn,
+#regist_page input,
 .btn {
   width: 100%;
   padding: 5px;
@@ -114,7 +120,7 @@ input:hover,
 .btn:hover {
   opacity: 1;
 }
-#login_page>button{
+.s_btn{
     background-color: #4CAF50;
     color: white;
     cursor: pointer;
@@ -122,11 +128,9 @@ input:hover,
 
   }
   
-#login_page>button:hover {
-    background-color: #45a049;
-}
-#login_page>button:focus {
-    background-color: #45a049;
+.s_btn:focus,
+.s_btn:hover{
+    background-color: #17661b;
 }
 .fb {
   background-color: #3B5998;
@@ -312,6 +316,7 @@ input:hover,
 }
 .global_popup .fb_msg{
     color: red;
+    text-align: center;
 }
 .global_popup button{
     background-color: rgb(255, 174, 0);
@@ -1381,9 +1386,6 @@ tr>.alive{
 tr>.dead{
     background-color: unset;
 }
-img:hover{
-    transform: none;
-}
 /* .active {
     background-color: rgba(255, 166, 0, 0.74);
 } */
@@ -1449,4 +1451,14 @@ input, button{
 }
 button:disabled{
     opacity: 0.5;
+}
+.validate{
+    color: #ff3333;
+}
+img:hover{
+    transform: none;
+}
+#sql_editor{
+    height: 300px;
+    width: 500px;
 }

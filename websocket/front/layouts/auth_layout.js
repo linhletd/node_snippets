@@ -10,6 +10,7 @@ import SubGameLayout from '../layouts/sub_game_layout';
 import EditorApp from '../pages/editor_page';
 import WeatherApp from '../pages/weather_comp';
 import SimilarApp from '../pages/similar_comp';
+import NorthWindQuery from '../pages/northwind_query_comp'
 import InviteNoticeBoard from '../pages/notify_game_comp';
 import BrowserUserPage from '../pages/browse_user_page';
 import {GlobalPopup} from '../pages/popup_comp';
@@ -255,6 +256,9 @@ class AuthLayout extends React.Component{
                             </Route>
                             <Route path = '/similarity'>
                                 <SimilarApp/>
+                            </Route>
+                            <Route path = '/sql_query'>
+                                <NorthWindQuery/>
                             </Route>
                         </Switch>
                     </div>

@@ -1,10 +1,9 @@
 import React from 'react';
-import {Switch, Route} from 'react-router-dom';
+import {Switch, Route, Redirect} from 'react-router-dom';
 import LoginPage from '../pages/login_pages.js';
 import RegisterPage from '../pages/register_page.js';
 import ForgotPasswordPage from '../pages/forgot_pwd_page.js';
 import VerifyResetTokenPage from '../pages/verify_reset_token_page.js';
-import ResetPasswordPage from '../pages/reset_pwd_pages.js';
 
 const UnauthLayout = (props)=>{
     
@@ -23,9 +22,10 @@ const UnauthLayout = (props)=>{
                 <Route exact path = '/auth/verify-token'>
                     <VerifyResetTokenPage/>         
                 </Route>
-                <Route exact path = '/auth/reset-password'>
+                <Redirect to = '/auth/login'/>
+                {/* <Route exact path = '/auth/reset-password'>
                     <ResetPasswordPage/>         
-                </Route>
+                </Route> */}
             </Switch>
         </div>
     )

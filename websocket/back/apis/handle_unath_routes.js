@@ -17,9 +17,12 @@ module.exports = function(app){
             let users = db.collection('users');
             users.findOne({Email}, async (err, user) =>{
                 if(err){
-                    return next(err);
+                    return res.json({err: 'error occurs'});
                 }
-                if(!user){
+                else if(user){
+                    return res.json({err: 'Already registered'})
+                }
+                else{
                     let Username = encodeHTML(req.body.regist_name),
                         StartJoining = Date.now(),
                         LastLogin = StartJoining,
@@ -30,7 +33,7 @@ module.exports = function(app){
                         });
                         if(typeof Password == 'object'){
                             let err = Password;
-                            return next(err);
+                            return res.json({err: 'error occurs'});
                         }
                     return users.insertOne({
                         Email,
@@ -41,10 +44,10 @@ module.exports = function(app){
                         LoginCount,
                         Avartar
                     },(err, doc) =>{
-                        if(err) return next(err);
+                        if(err) return res.json({err: 'error occurs'});
                         let user = {_id: doc.insertedId, Username, Email, Avartar};
                         req.logIn(user,(err) =>{
-                            if(err) return next(err);
+                            if(err) return res.json({err: 'error occurs'});
                             let obj = JSON.stringify(user);
                             let userCookie = Buffer.from(obj).toString('base64');
                             res.cookie('InVzZXIi', userCookie, {httpOnly: false, sameSite: 'strict'});
@@ -55,10 +58,10 @@ module.exports = function(app){
                         })
                     })    
                 }
-                sendEmail(Email,'verify').then((info) =>{
-                    console.log(info);
-                    res.redirect(302,'/user/verified');
-                }).catch((err) => next(err))
+                // sendEmail(Email,'verify').then((info) =>{
+                //     console.log(info);
+                //     res.redirect(302,'/user/verified');
+                // }).catch((err) => next(err))
 
             })
         },

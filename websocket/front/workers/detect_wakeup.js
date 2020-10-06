@@ -5,7 +5,7 @@ onmessage = (e) =>{
     let itv = setInterval(()=>{
         let currentTime = (new Date()).getTime();
         if(currentTime - lastTime > checkTime + delay){
-            postMessage('wakup');
+            postMessage('wakeup');
             clearInterval(itv);
         }
     }, checkTime)
