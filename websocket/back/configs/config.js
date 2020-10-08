@@ -27,7 +27,6 @@ module.exports = function config(app){
     useAuthRoute(app);
 
 
-
     /*****************************************/
 
     app.use((req, res) => {
