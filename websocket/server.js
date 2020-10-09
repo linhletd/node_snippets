@@ -21,6 +21,7 @@ let mongoConnect = new Promise((resolve, reject) => {
 })
 let conn = sql.createConnection({
     host: process.env.MYSQL_HOST,
+    database: process.env.MYSQL_DB1,
     user: process.env.MYSQL_USER,
     password: process.env.MYSQL_PASSWORD,
     port: 3306,

@@ -1,4 +1,5 @@
 import React from 'react';
+import  Guide from './guide_comp'
 import {stringify} from 'query-string';
 const Table = (props) =>{
     let {data} = props;
@@ -9,7 +10,7 @@ const Table = (props) =>{
     let remain = num === 1 ? 'And one more row...' : num > 1 ? `And ${num} more rows...` : '';
     let tbrs = preview.map((cur, i) =><tr key = {`btr${i}`}>{title.map((key,j) => <td key = {`btd${i}${j}`}>{cur[key]}</td>)}</tr>)
     return (
-        <div>
+        <div className = 'pre_data'>
             <table>
                 <thead>{thr}</thead>
                 <tbody>{tbrs}</tbody>
@@ -28,6 +29,20 @@ class NorthWinQuery extends React.Component{
         this.available = true; //worker status
         this.state = {
             data: null
+        }
+        this.showDia = false;
+        this.guide = {
+            header: 'sql_query app',
+            id: 'sql_guide',
+            array:[
+                `"MySQL query app" - Đơn thuần cho phép truy vấn (chỉ đọc) data từ cơ sở dữ liệu nổi tiếng "Northwind", từ đó có thể xem, download định dạng .csv và .json`,
+                `Điểm nổi bật của app là phần editor sử dụng thuật toán để chỉ re-render phần code đang thay đổi`,
+                `Dữ liệu download được stream từng package từ  CSDL đến client, không lưu trữ trung gian tại server giúp giảm tiêu tốn bộ nhớ`,
+                `Code trong phần editor được markup bởi việc sử dụng thư viện Prism như một web worker để tránh block main thread`,
+                `Bạn hãy nhấp vào biểu tượng màu hồng góc trái màn hình để xem diagram của CSDL Northwind, và thử nhập một câu lệnh tương thích với mysql để load dữ liệu `,
+                `Rất tiếc, do hạn chế thời gian nên một số tính năng như undo/redo tạm thời bị loại bỏ`
+            ],
+            closable: false
         }
     }
     getNthChild(par, n){
@@ -289,7 +304,16 @@ class NorthWinQuery extends React.Component{
             if(r){
                 this.runWorker(r);
             }
+        }
     }
+    focusIntoEditor(){
+        this.editor.innerHTML = '<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> categories';
+        let r = new Range();
+        r.setStart(this.editor.lastChild, this.editor.lastChild.nodeValue.length);
+        r.collapse(true);
+        let sel = document.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
     }
     componentDidMount(){
         this.code = document.getElementById('sql_editor');
@@ -305,12 +329,18 @@ class NorthWinQuery extends React.Component{
         this.code.oninput = this.handleInput;
         this.worker.onmessage = this.handleWorkerMessage;
         this.editor = document.getElementById('sql_editor');
+        this.guide = document.getElementById('sql_guide');
+        this.diagram = document.getElementById('diagram_ctn');
+        this.toggle = document.getElementById('sql_toggle');
+        this.opt = document.getElementById('sql_opt')
+        this.focusIntoEditor();
     }
     componentWillUnmount(){
         this.worker.terminate();
     }
     getPreviewData = () =>{
-        //change button state
+        this.state.data && this.setState({data: null});
+        this.opt.firstChild.disabled = true;
         let query = `?${stringify({query: this.editor.innerText})}`
         if(this.editor.innerText.length){
             fetch('/sql_query/preview' + query,{
@@ -323,13 +353,23 @@ class NorthWinQuery extends React.Component{
                 else return res.json();
                 
             })
+            .catch(e =>{
+                return {err: e.message};
+            })
             .then((data) =>{
                 console.log(data)
-                this.setState({data: data})
+                this.setState({data: data}, () =>{
+                    this.opt.firstChild.disabled = false;
+                })
             })
         }
     }
     jsonDownload = () =>{
+        this.opt.firstChild.nextSibling.disabled = true;
+        setTimeout(() => {
+            this.opt.firstChild.nextSibling.disabled = false;
+        }, 2000);
+        this.state.data && this.setState({data: null});
         let query = `?${stringify({query: this.editor.innerText, format: 'json'})}`
         let link = document.createElement('a');
         link.href = '/sql_query/download' + query;
@@ -337,11 +377,29 @@ class NorthWinQuery extends React.Component{
         link.click();
     } 
     csvDownload = () =>{
+        this.opt.lastChild.disabled = true;
+        setTimeout(() => {
+            this.opt.lastChild.disabled = false;
+        }, 2000);
+        this.state.data && this.setState({data: null});
         let query = `?${stringify({query: this.editor.innerText, format: 'csv'})}`
         let link = document.createElement('a');
         link.href = '/sql_query/download' + query;
         link.download = 'data.csv';
         link.click();
+    }
+    clickToggle = () =>{
+        if(this.showDia){
+            !this.diagram.classList.contains('hide') && this.diagram.classList.add('hide');
+            this.toggle.innerText = 'show';
+            this.showDia = false;
+        }
+        else{
+            this.diagram.classList.contains('hide') && this.diagram.classList.remove('hide');
+            this.diagram.parentNode.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
+            this.toggle.innerText = 'hide';
+            this.showDia = true
+        }
     }  
     render(){
         console.log('render')
@@ -349,12 +407,16 @@ class NorthWinQuery extends React.Component{
         let content = data ? data.err ? <p className = 'fb_msg'>{data.err}</p> : <Table data = {data.data}/> : '';
         return(
             <div id = 'sql_query'>
-                <pre id = 'sql_editor' contentEditable = {true}>
-                </pre>
-                <div>
-                <button onClick = {this.getPreviewData}><i className="fa fa-eye"></i><span>Preview</span></button>
-                <button onClick = {this.jsonDownload}><i className="fa fa-download"></i>.json</button>
-                <button onClick = {this.csvDownload}><i className="fa fa-download"></i>.csv</button>
+                <div id = 'sql_toggle' onClick = {this.clickToggle}>show</div>
+                <div id = 'diagram_ctn' className = 'hide'>
+                    <img src = '/image/northwind_diagram.png' alt = 'northwind database diagram'/>
+                </div>
+                <Guide data = {this.guide}/>
+                <pre id = 'sql_editor' contentEditable = {true}></pre>
+                <div id = 'sql_opt'>
+                    <button onClick = {this.getPreviewData}><i className="fa fa-table"></i><span>Preview</span></button>
+                    <button onClick = {this.jsonDownload}><i className="fa fa-download"></i>.json</button>
+                    <button onClick = {this.csvDownload}><i className="fa fa-download"></i>.csv</button>
                 </div>
                 {content}
             </div>

@@ -81,9 +81,9 @@ class WeatherApp extends React.PureComponent{
             this.checkAndSetState({weather: data, showInput: false})
         })
     }
-    checkAndSetState = (state) =>{
+    checkAndSetState = (state, cb) =>{
         if(this.ref.current){
-            this.setState(state);
+            this.setState(state, cb);
         }
     }
     componentDidMount(){

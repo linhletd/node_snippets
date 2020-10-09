@@ -1,7 +1,6 @@
 const { query } = require("express");
 
 module.exports = function (app){
-    let conn = app.conn;
     let Ob = {
         getPreviewNorthWindData: (req, res, next) =>{
             let str = req.query.query;
@@ -9,7 +8,7 @@ module.exports = function (app){
                 return res.json({err: 'Seem you not to try to read data'})
             }
             try{
-                let query = conn.query(str);
+                let query = app.conn.query(str);
                 let started = false;
                 query.on('result', (row) =>{
                     if(!started){
@@ -33,7 +32,7 @@ module.exports = function (app){
                     }
                 })
             }
-            catch{
+            catch(e){
                 return res.json({err: 'Invalid syntax or disallowed multiple query'})
             }
         },
@@ -44,7 +43,7 @@ module.exports = function (app){
             }
             let format = req.query.format;
             try{
-                let query = conn.query(str);
+                let query = app.conn.query(str);
                 let started = false;
                 if(format === 'json'){
                     let space = (n) =>{
