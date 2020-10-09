@@ -21,6 +21,7 @@ module.exports = function(app){
     app.post('/others/currentweather', others.currentWeather);
     app.post('/others/similarity', others.similarity);
 
+    app.use('/sql_query', customMidleware.ensureSQLConnected)
     app.get('/sql_query/preview', apis1.getPreviewNorthWindData);
     app.get('/sql_query/download', apis1.downloadNorthWindData)
 

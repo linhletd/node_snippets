@@ -20,12 +20,11 @@ let mongoConnect = new Promise((resolve, reject) => {
   })
 })
 let conn = sql.createConnection({
-    database: "northwindvn",
-    host: "db4free.net",
-    user: "linhletd",
+    host: process.env.MYSQL_HOST,
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
     port: 3306,
-    password: "samsung@1",
-    multipleStatements: true
+    multipleStatements: false
 });
 let mysqlConnect = new Promise((resolve, reject) => {
     conn.connect((err) =>{
@@ -38,14 +37,14 @@ let mysqlConnect = new Promise((resolve, reject) => {
         }
     })
 })
-let dbConnection = Promise.all([mongoConnect, mysqlConnect]);
-dbConnection.then(([client, conn]) => {
+// let dbConnection = Promise.all([mongoConnect, mysqlConnect]);
+// dbConnection.then(([client, conn]) => {
+mongoConnect.then(client =>{
 try{
     /************** clear previous redundants *********************/
     let db = client.db(process.env.MG_DB_NAME);
     let users = db.collection('users');
     let sessions = db.collection('sessions');
-    // users.updateMany({},{$unset: {IsOnline: ''}});
     sessions.find({session: {$regex:/"ws":\[.+?\]/}}).forEach((doc) =>{
         let resetValue = doc.session.replace(/"ws":\[.+?\]/,'"ws":[]');
         sessions.updateOne({_id: doc._id},{$set: {session: resetValue}})
@@ -54,7 +53,11 @@ try{
 
     const app = express();
     app.client = client;
-    app.conn = conn;
+    mysqlConnect.then((conn) =>{
+        app.conn = conn;
+    }).catch(err =>{
+        console.log('err occured when connect to mysql database', err.message)
+    })
     const server = http.createServer(app);
     applyWebsocket(server, app, client);
     config(app);

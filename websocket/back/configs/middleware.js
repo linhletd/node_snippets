@@ -20,6 +20,14 @@ module.exports = function(app){
             res.clearCookie('InVzZXIi');
             res.clearCookie('connect.sid');
             return res.redirect('/auth/login');
+        },
+        ensureSQLConnected(req, res, next){
+            if(app.conn){
+                return next();
+            }
+            else{
+                return res.json({err: 'Cannot connect to sql database'});
+            }
         }
     }
 }
