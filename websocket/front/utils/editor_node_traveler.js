@@ -262,6 +262,7 @@ class EditorNodeTraveler{
     reassignRange(range, constraint, bool){
         if(constraint === true) constraint = this.root;
         let {startContainer: start, endContainer: end, commonAncestorContainer: common, startOffset, endOffset} = range;
+        if(common === this.root) return range;
         if(!constraint) constraint = common;
         if(bool !== false && startOffset === 0 && (start !== constraint)){
             range.setStartBefore(start);
@@ -913,6 +914,7 @@ class EditorNodeTraveler{
     }
     isBelongTag = (nodeName, node, constraint) =>{
         if(!node) throw new Error('invalid second arg');
+        if(node === this.root) return false;
         if(node.nodeName === nodeName) return node;
         try{
             while((constraint ? node !== constraint : node !== this.root && node.nodeName !== '#document-fragment') && node.nodeName !== nodeName){
@@ -2156,8 +2158,9 @@ class EditorNodeTraveler{
         return {r};
     }
     pastePlainText = (r, text)=>{
+        text = text.replace(/\r?\n/g, '<br/>')
         let div = document.createElement('div'), pre;
-        div.innerText = text;
+        div.innerHTML = text;
         let r1 = new Range();
         if((pre = this.isBelongTag('PRE', r.commonAncestorContainer))){
             r1.selectNodeContents(div);
@@ -2182,7 +2185,7 @@ class EditorNodeTraveler{
         }
         let {remain} = this.properDeleteContent(r);
         let {startContainer: start, commonAncestorContainer: common} = r;
-        if((pre = this.isBelongTag('PRE', common, true))){
+        if((pre = this.isBelongTag('PRE', common))){
             r1.selectNodeContents(div);
             let ct = r1.extractContents();
             let l = ct.lastChild;
@@ -2225,33 +2228,80 @@ class EditorNodeTraveler{
             return;
         }
         let pli = this.isBelongTag('P', start) || this.isBelongTag('LI', start);
+        let type;
         if(pli){
-            let copy = pli.cloneNode(false);
-            let text0 = textNodes.shift();
+            let proto = pli.cloneNode(false);
             if(pli.lastChild && pli.lastChild.nodeName === 'SPAN'){
-                copy.appendChild(pli.lastChild.cloneNode(false));
-                pli.lastChild.appendChild(text0);
+                proto.appendChild(pli.lastChild.cloneNode(false));
+                type = 2
             }
-            else{
-                pli.appendChild(text0);
-            }
-            if(len === 1){
-                remain && pli.appendChild(remain);
-                let off = this.connectAdjacentText(text0, text0);
-                r.setStart(text0, off)
-                r.collapse(true);
-                return;    
-            }
-            this.connectAdjacentText(null, text0);
+            let lastNode;
             textNodes.map((text, idx) =>{
-                let c = idx == len -2 ? copy : copy.cloneNode(true);
-                c.hasChildNodes() ? c.firstChild.appendChild(text) : c.appendChild(text);
-                if(idx === len - 2 && remain){
-                    c.appendChild(remain);
-                    r.setStart(text, this.connectAdjacentText(text));
+                text = text.nodeValue;
+                if(idx === 0){
+                    if(start.nodeName === '#text'){
+                        start.nodeValue += text;
+                    }
+                    else{
+                        start.innerText = text;
+                    }
+                    r.setStartAfter(pli);
                     r.collapse(true);
+                    lastNode = pli;
+                }
+                else{
+                    let cloned = proto.cloneNode(true);
+                    if(type === 2){
+                        cloned.lastChild.innerText = text;
+                    }
+                    else{
+                        cloned.innerText = text;
+                    }
+                    r.insertNode(cloned);
+                    r.collapse(false);
+                    if(idx = textNodes.length -1){
+                        lastNode = cloned;
+                    }
                 }
             });
+            r.setStartAfter(lastNode.lastChild);
+            r.collapse(true);
+            let f;
+            if(remain){
+                remain.childNodes.forEach((node) =>{
+                    if(this.isSpanEmpty(node)){
+                        node.remove();
+                    }
+                });
+                if(remain.hasChildNodes()){
+                    f = remain.firstChild;
+                    remain.firstChild.remove();
+                    if(f.nodeName === '#text'){
+                        f = f;
+                    }
+                    else{
+                        f = document.createTextNode(f.innerText);
+                    }
+                }
+            }
+            let l;
+            if(lastNode.lastChild.nodeName === '#text'){
+                l = lastNode.lastChild;
+            }
+            else if(lastNode.lastChild.lastChild.nodeName === '#text'){
+                l = lastNode.lastChild.lastChild;
+            }
+            if(l){
+                let offset = l.nodeValue.length;
+                if(f){
+                    l.nodeValue += f.nodeValue;
+                }
+                r.setStart(l, offset);
+                r.collapse(true);
+            }
+            if(remain.hasChildNodes()){
+                lastNode.appendChild(remain);
+            }
         }
     }
 }
