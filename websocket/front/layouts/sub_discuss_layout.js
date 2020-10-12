@@ -2,6 +2,7 @@ import React from 'react';
 import {connect} from 'react-redux';
 import {withRouter} from 'react-router-dom';
 import DiscussPage from '../pages/discuss_page.js';
+import PostNewTopic from '../pages/post_topic_comp'
 import BrowseQuestionPage from '../pages/browse_question_page.js';
 import fetchReq from '../utils/xhr'
 class SubDiscussLayout extends React.Component{
@@ -165,9 +166,10 @@ class SubDiscussLayout extends React.Component{
         let displayedQuestionList = list.size ? <BrowseQuestionPage list = {list} select = {this.selectTopic.bind(this)}/> : "";
         return (
             <div id = "discuss_layout">
-                {postBox}
+                <PostNewTopic/>
+                {/* {postBox}
                 {displayedPost}
-                {displayedQuestionList}
+                {displayedQuestionList} */}
             </div>
         )
     }

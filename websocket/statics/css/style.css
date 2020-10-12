@@ -1,4 +1,4 @@
-body *:not(#editor_area *){
+body *:not(.editor_area *){
     margin: 0px 0px;
     padding: 0px 0px;
     outline: none;
@@ -596,6 +596,8 @@ input:hover,
     }
     #footer{
         grid-area: 1/2/2/3;
+        width: 100vw;
+        transform: translate(-240px);
     }
 }
 .guide{
@@ -925,7 +927,7 @@ input:hover,
 ::selection {
     background: rgba(144, 165, 226, 0.671);
 }
-#tool_bar > *{
+.tool_bar > *{
     display: inline-flex;
     border: 1px solid grey;
     background-color: #f0f0f5;
@@ -935,19 +937,20 @@ input:hover,
     height: 24px;
     align-items: center;
     justify-content: center;
+    margin-bottom: 3px;
 
 }
-#tool_bar .space{
+.tool_bar .space{
     margin-right: 5px;
 }
-#tool_bar >.ctn{
+.tool_bar >.ctn{
     width: fit-content;
 }
 
-#tool_bar > .select{
+.tool_bar > .select{
     border: none
 }
-#tool_bar > .select select{
+.tool_bar > .select select{
     font-size: 13px;
     display: inline-block;
     height: 24px;
@@ -955,29 +958,29 @@ input:hover,
     border: 1px solid grey;
     border-radius: 2px;
 }
-#tool_bar > .select select:focus{
+.tool_bar > .select select:focus{
     border: 2px solid grey;
     border-radius: 3px;
     outline: none;
 
 }
-#tool_bar > .select select{
+.tool_bar > .select select{
     border: 1px solid grey;
     border-radius: 3px;
 }
-#tool_bar .colr .prev-i > i{
+.tool_bar .colr .prev-i > i{
     font-size: 15px;
 }
-#tool_bar .colr .prev-i{
+.tool_bar .colr .prev-i{
     display: inline-flex;
     flex-direction: column;
     margin-right: 2px;
 }
-#tool_bar .colr .prev-i >div{
+.tool_bar .colr .prev-i >div{
     height: 3px;
     margin-top: 0px;
 }
-#tool_bar .color-select{
+.tool_bar .color-select{
     position: absolute;
     left: 0px;
     top: 0px;
@@ -985,44 +988,44 @@ input:hover,
     width: 100%;
     border: 1px solid green
 }
-#tool_bar .i-wrapper{
+.tool_bar .i-wrapper{
     position: relative;
 }
-#tool_bar .activated{
+.tool_bar .activated{
     background-color: #ccefff;
 }
-#tool_bar .disabled{
-    opacity: 0.55;
+.tool_bar .disabled{
+    opacity: 0.4;
 }
-#tool_bar{
+.tool_bar{
     margin-bottom: 3px;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     background-color: white;
-    z-index: 1;
     width: 100%;
 }
-#editor_head{
+.editor_head{
     width: 100%;
     position: sticky;
     background-color: white;
-    top: 35px;
-    padding-top: 10px;
+    top: 30px;
+    padding-top: 15px;
+    z-index: 10;
     
 }
-#editor_app{
+.editor_app{
     width: 95%;
     max-width: 900px;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
-#link_prompt{
+.link_prompt{
     align-self: flex-start;
     display: flex;
 }
-#editor_area{
+.editor_area{
     min-height: 90vh;
     width: 100%;
     outline: none;
@@ -1031,31 +1034,39 @@ input:hover,
     font-size: 16px;
     font-family: Arial, Helvetica, sans-serif;
     padding: 10px 10px;
-    overflow-y: scroll;
-    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    margin-bottom: 10px;
 }
-#editor_area *{
+.editor_area *{
     min-height: 1,1em;
     font-size: 16px;
     margin-top: 0px;
     margin-bottom: 0px;
 }
-#editor_area> *, p, li{
+.editor_area pre,
+.editor_area blockquote,
+.editor_area ul,
+.editor_area figure{
+    margin-bottom: 7px;
+}
+.editor_area figcaption{
+    font-size: 13px;
+}
+.editor_area> *, p, li{
     width: 100%;
     word-break: break-word;
 }
-#editor_area figcaption{
+.editor_area figcaption{
     display: flex;
     justify-content: center;
     text-align: center;
 }
-#editor_area *:not(pre){
+.editor_area *:not(pre){
     font-family: Arial, Helvetica, sans-serif;
 }
-#img{
+.img_px{
     width: 0.1px;
     height: 0.1px;
     position: absolute;
@@ -1071,6 +1082,11 @@ input:hover,
     width: 100%;
     flex-wrap: nowrap;
 }
+.img_ctn * {
+    display: flex;
+    max-width: 100%;
+    /* important */
+}
 .close_img{
     opacity: 0;
     position: absolute;
@@ -1085,7 +1101,7 @@ input:hover,
     z-index: -1;
 }
 .img_focus{
-    outline: 3px solid rgb(179, 206, 255);
+    outline: 3px solid orange;
     opacity: 1;
     z-index: 1;
 
@@ -1131,6 +1147,114 @@ figure>img{
 td, thead{
     border: 1px solid rgba(128, 128, 128, 0.713);
     text-align: center;
+}
+
+#discuss_layout{
+   width: 100%;
+   min-height: 100%;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+}
+#post_topic{
+    width: 95%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#post_head{
+    width: 100%;
+}
+#post_title{
+    width: 100%;
+    border: 1px solid pink;
+    min-height: 30px;
+    padding: 5px 5px;
+    outline: none;
+    border-radius: 5px;
+}
+#post_head>p{
+    margin-bottom: 0px;
+}
+#topic_editor{
+    width: 100%;
+}
+#topic_editor .editor_area{
+    min-height: 150px;
+    width: 100%;
+}
+#topic_editor .tool_bar > *{
+    font-weight: normal;
+    font-size: 1em;
+    background-color: rgb(250, 225, 229);
+}
+#topic_editor *{
+    border-color: pink;
+}
+#topic_editor .tool_bar .activated{
+    background-color: #ccefff;
+    border: 1px solid grey;
+}
+#post_foot{
+    width: 100%;
+    display: grid;
+    grid-template-columns: 270px 150px;
+    grid-template-rows: 1fr;
+    column-gap: 20px;
+    justify-items: center;
+    align-items: center;
+    align-self: flex-start;
+}
+@media screen and (max-width:440px){
+    #post_foot{
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+}
+#post_foot button{
+    width: 150px;
+    height: 30px;
+    background-color: rgb(250, 225, 229);
+    border-radius: 5px;
+    border: 1px solid hotpink;
+    margin-top: 5px;
+}
+#post_category{
+    display: flex;
+}
+#post_category>div{
+    display: flex;
+    width: 200px;
+    justify-content: space-around;
+}
+#post_category>div>div{
+    padding: 2px 2px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.selected{
+    border: 1px solid orange;
+}
+#post_category>p{
+    margin-bottom: 0px;
+    width: 70px;
+}
+.tag{
+    min-width: 50px;
+    padding-right: 3px;
+    padding-left: 3px;
+    border-radius: 3px;
+    font-size: 0.9em;
+}
+.code_tag{
+    background-image: linear-gradient(to right, rgba(20, 167, 116, 0.775), rgba(20, 167, 115, 0.1));
+}
+.life_tag{
+    background-image: linear-gradient(to right, rgba(245, 91, 194, 0.775), rgba(245, 91, 194, 0.1));
+}
+.other_tag{
+    background-image: linear-gradient(to right, rgb(200, 119, 247, 0.775), rgba(200, 119, 247, 0.1));
 }
 #weather_app{
     display: flex;

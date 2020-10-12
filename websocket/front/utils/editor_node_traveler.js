@@ -3,9 +3,9 @@ target: span node has only textnode inside;
 p or li tag contains only 1 line;
 */
 class EditorNodeTraveler{
-    constructor(root, updateState, observer, toolbarState){
+    constructor(root, changer, observer, toolbarState){
         this.root = root;
-        this.updateStore = updateState;
+        this.changer = changer;
         this.observer = observer;
         this.toolbarState = toolbarState;
         this.state = {
@@ -751,10 +751,11 @@ class EditorNodeTraveler{
             }
         }
         if(!same){
-            this.updateStore({
-                type: 'TOOLBARCHANGE',
-                data: state
-            });
+            // this.updateStore({
+            //     type: 'TOOLBARCHANGE',
+            //     data: state
+            // });
+            this.changer.setToolbarState(state);
         }
     }
     OULWrapper(li, limit){
@@ -1052,8 +1053,9 @@ class EditorNodeTraveler{
         }
     }
     increaseListLevel = (range, type) =>{
-        let li1 = this.isBelongTag('LI', range.startContainer);
-        let li2 = this.isBelongTag('LI', range.endContainer);
+        let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = range;
+        let li1 = this.isBelongTag('LI', start);
+        let li2 = this.isBelongTag('LI', end);
         let r = new Range();
         li1 && r.setStartBefore(li1);
         li2 && r.setEndAfter(li2);
@@ -1063,11 +1065,14 @@ class EditorNodeTraveler{
         r.collapse(true);
         elem.appendChild(ct);
         this.reunion(elem, true);
-        return r;
+        range.setStart(start, startOff);
+        range.setEnd(end, endOff)
+        return range;
     }
     decreaseListLevel =(range) =>{
-        let li1 = this.isBelongTag('LI', range.startContainer);
-        let li2 = this.isBelongTag('LI', range.endContainer);
+        let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = range;
+        let li1 = this.isBelongTag('LI', start);
+        let li2 = this.isBelongTag('LI', end);
         let r = new Range();
         li1 && r.setStartBefore(li1);
         li2 && r.setEndAfter(li2);
@@ -1095,7 +1100,10 @@ class EditorNodeTraveler{
             let nodes = [...childNodes];
             r = this.unListOne(nodes, r, grand);
         }
-        return r;
+        r
+        range.setStart(start, startOff);
+        range.setEnd(end, endOff)
+        return range;
     }
     unListOne(nodes, r, grand){
         !r.collapsed && r.deleteContents();
@@ -1562,6 +1570,7 @@ class EditorNodeTraveler{
         }
     }
     convertToListX = (tagName, r) =>{
+        let {startContainer: start, endContainer: end, startOffset: startOff, endOffset: endOff} = r;
         this.findPreBreakPoint(r);
         this.roundUpRange(r);
         let blq;
@@ -1621,13 +1630,22 @@ class EditorNodeTraveler{
                 _handle(cur.nextSibling);
             }
         })(frag.firstChild);
-        this.resideRange(list, r);
+        if(this.isBelongTag('LI', start) && this.isBelongTag('LI', end)){
+            try {
+                r.setStart(start, startOff);
+                r.setEnd(end, endOff)
+            }
+            catch{
+                r.setStart(list.firstChild, 0);
+                r.collapse(true);
+            }
+        }
+        else{
+            r.setStart(list.firstChild, 0);
+            r.collapse(true);
+        }
         this.reunion(list, true);
         return r;
-    }
-    resideRange(list, r){
-        r.setStart(list.firstChild, 0);
-        list.lastChild.lastChild ? r.setEndAfter(list.lastChild.lastChild) : r.setEnd(list.lastChild, 0)
     }
     modifyStyleX = (r, {prop, val}) =>{
         let a, b;
@@ -1938,10 +1956,11 @@ class EditorNodeTraveler{
             }
             let it = gen();
             it.next();
-            this.updateStore({
-                type: 'OPENPROMPT',
-                data: {it}
-            });
+            // this.updateStore({
+            //     type: 'OPENPROMPT',
+            //     data: {it}
+            // });
+            this.changer.setPromptState({it, showPrompt: true});
         })
     }
     changeOrUnlink = (r) =>{
@@ -1974,10 +1993,11 @@ class EditorNodeTraveler{
             }
             let it = gen();
             it.next();
-            this.updateStore({
-                type: 'OPENPROMPT',
-                data: {as, it}
-            })
+            // this.updateStore({
+            //     type: 'OPENPROMPT',
+            //     data: {as, it}
+            // })
+            this.changer.setPromptState({as, it, showPrompt: true});
         })
     }
     createSpanX(){
@@ -2000,11 +2020,13 @@ class EditorNodeTraveler{
         div.style.fontSize = '14px';
         let cap = this.createCap();
         fig.onclick = (e) =>{
+            console.log('click')
             fig.querySelectorAll('img, div, table').forEach(node =>{
                 !node.classList.contains('img_focus') && node.classList.add('img_focus')
             })
         }
         fig.onmouseleave = ()=>{
+            console.log('leave')
             fig.querySelectorAll('img, div, table').forEach(node =>{
                 node.classList.contains('img_focus') && node.classList.remove('img_focus')
             })
@@ -2103,18 +2125,25 @@ class EditorNodeTraveler{
             }
         }
     }
-    insertImage = (r, blob, filename) =>{
-        let reader = new FileReader();
-        reader.readAsDataURL(blob);
-        reader.onload = () => {
-            let img = this.createIMG(reader.result, filename);
+    insertImage = (r, source, filename) =>{
+        if(source instanceof Blob){
+            let reader = new FileReader();
+            reader.readAsDataURL(source);
+            reader.onload = () => {
+                let img = this.createIMG(reader.result, filename);
+                let fig = this.createFig(img);
+                this._insertImg(r, fig)
+              };
+            
+            reader.onerror = function() {
+                console.log(reader.error);
+            };
+        }
+        else{
+            let img = this.createIMG(source, filename);
             let fig = this.createFig(img);
             this._insertImg(r, fig)
-          };
-        
-        reader.onerror = function() {
-            console.log(reader.error);
-          };
+        }
     }
     connectAdjacentText(start, end){
         let off = start && start.nodeName === '#text' ? start.nodeValue.length : 0;

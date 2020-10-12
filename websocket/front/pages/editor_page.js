@@ -1,26 +1,52 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import EditorNodeTraveler from '../utils/editor_node_traveler';
-import ToolBar from './editor_toolbar';
-import LinkPrompt from './popup_link';
+import HistoryStackManager from '../utils/editor_history_manager'
 class EditorApp extends React.Component{
     constructor(props){
         super(props);
         this.currentRange = new Range();
-        this.currentRange.setStart(props.editorNode, 0);
+        if(props.self){
+            this.editorArea = props.editorNode.cloneNode(false);
+        }
+        else{
+            this.editorArea = props.editorNode;
+        }
+        this.currentRange.setStart(this.editorArea, 0);
         this.currentRange.collapse(true);
         this.data = {
             waitElem: null,
         }
-        this.toolbar = props.toolbarState;
-        this.traveler = new EditorNodeTraveler(props.editorNode, props.updateState, props.historyManager, this.toolbar);
-        props.historyManager.props = {
-            updateState: props.updateState,
-            toolbarState: this.toolbar
+        this.editor_app = React.createRef();
+        this.toolbarState = {
+            undo: 0,//0 disabled, 1 normal, 2 activated
+            redo: 0,
+            bold: 1, 
+            italic: 1,
+            underline: 1,
+            order: 1,
+            unorder: 1,
+            inclevel: 0,
+            declevel: 0,
+            link: 1,
+            quote: 1,
+            code: 1,
+            img: 1,
+            fill: 'yellow',
+            color: 'red',
+            fontsize: '16px',
+            fontfamily: 'Arial,Helvetica,sans-serif'
         };
-        this.undo = props.historyManager.undo.bind(props.historyManager, this);
-        this.redo = props.historyManager.redo.bind(props.historyManager, this);
-
+        this.promptState = {};
+        this.changer = {};
+        this.historyManager = new HistoryStackManager(this.editorArea)
+        this.traveler = new EditorNodeTraveler(this.editorArea, this.changer, this.historyManager, this.toolbarState);
+        this.historyManager.props = {
+            changer: this.changer,
+            toolbarState: this.toolbarState
+        };
+        this.undo = this.historyManager.undo.bind(this.historyManager, this);
+        this.redo = this.historyManager.redo.bind(this.historyManager, this);
     }
 
     handlePasteData = (e) => {
@@ -56,7 +82,7 @@ class EditorApp extends React.Component{
     }
     isBelongTag = (nodeName, node) =>{
         if(node.nodeNome == nodeName) return true;
-        while(node != this.props.editorNode && node.nodeName !== nodeName){
+        while(node != this.editorArea && node.nodeName !== nodeName){
             node = node.parentNode;
         }
         return node.nodeName == nodeName ? true : false;
@@ -116,7 +142,7 @@ class EditorApp extends React.Component{
     }
     handleKeyDown = (e) =>{
         if(e.keyCode === 65 && e.ctrlKey){
-            if(this.currentRange.selectNodeContents(this.props.editorNode));
+            if(this.currentRange.selectNodeContents(this.editorArea));
             return;
         }
         if(e.keyCode === 90){
@@ -221,7 +247,7 @@ class EditorApp extends React.Component{
                         this.currentRange.collapse(true);
                     }
                 }
-                else if(span === span.parentNode.firstChild && span.parentNode.parentNode === this.props.editorNode.firstChild){
+                else if(span === span.parentNode.firstChild && span.parentNode.parentNode === this.editorArea.firstChild){
                     e.preventDefault();
                 }
 
@@ -349,7 +375,7 @@ class EditorApp extends React.Component{
         let r = range ? range : (sel = document.getSelection()) && sel.rangeCount ? sel.getRangeAt(0) : false;
         if(r){
             let {startContainer, startOffset, endContainer, endOffset} = r;
-            this.props.historyManager.updateRange({startContainer, startOffset, endContainer, endOffset});                
+            this.historyManager.updateRange({startContainer, startOffset, endContainer, endOffset});                
             return r;
         }
         return this.currentRange;
@@ -399,7 +425,7 @@ class EditorApp extends React.Component{
         if(!sel.rangeCount) return;
         let r = sel.getRangeAt(0);
         let {startContainer, startOffset, commonAncestorContainer: cm, collapsed} = r;
-        if(e.keyCode !== 13 && (startContainer === this.props.editorNode || startContainer.nodeName === 'BLOCKQUOTE')){
+        if(e.keyCode !== 13 && (startContainer === this.editorArea || startContainer.nodeName === 'BLOCKQUOTE')){
             //wrap p around text content
             !r.collapsed && this.traveler.reassignRange(r) && r.deleteContents();
             let p = document.createElement('p');
@@ -419,7 +445,7 @@ class EditorApp extends React.Component{
             if(par.childNodes.length === 2 && par.lastChild.nodeName === 'BR'){
                 par.lastChild.remove();
             }
-            if(par === this.props.editorNode || par.nodeName === 'BLOCKQUOTE'){
+            if(par === this.editorArea || par.nodeName === 'BLOCKQUOTE'){
                 let p = document.createElement('p');
                 par.replaceChild(p, waitElem);
                 p.appendChild(waitElem)
@@ -561,7 +587,7 @@ class EditorApp extends React.Component{
         }
     }
     repopulateSelection = (bool) =>{
-        this.props.editorNode.focus();
+        this.editorArea.focus();
         if(!bool){
             let s = document.getSelection()
             s.removeAllRanges();
@@ -573,8 +599,8 @@ class EditorApp extends React.Component{
         },0)
     }
     changeStyle = ({prop, val}) =>{
-        if(!this.currentRange || this.props.toolbarState.bold === 0) return;
-        let state = this.props.toolbarState;
+        if(!this.currentRange || this.toolbarState.bold === 0) return;
+        let state = this.toolbarState;
         (prop === 'fontWeight' && state.bold === 2 ||
         prop === 'fontStyle' && state.italic === 2 ||
         prop === 'textDecoration' && state.underline === 2) && (val = '');
@@ -614,24 +640,26 @@ class EditorApp extends React.Component{
     handleSelectFontColor = (e) =>{
         let target = e.target;
         this.changeStyle({prop: 'color', val: target.value});
-        this.props.updateState({
-            type: 'TOOLBARCHANGE',  
-            data: {
-                color: target.value
-            }
-        })
+        // this.props.updateState({
+        //     type: 'TOOLBARCHANGE',  
+        //     data: {
+        //         color: target.value
+        //     }
+        // })
+        this.changer.setToolbarState({color: target.value});
     }
     handleBgroundColor = (e) =>{
         let target = e.target;
         let val = target.value ? target.value : target.firstChild ? target.firstChild.style.backgroundColor : target.style.backgroundColor;
         this.changeStyle({prop: 'backgroundColor', val});
         if(target.value){
-            this.props.updateState({
-                type: 'TOOLBARCHANGE',
-                data: {
-                    fill: target.value
-                }
-            })
+            // this.props.updateState({
+            //     type: 'TOOLBARCHANGE',
+            //     data: {
+            //         fill: target.value
+            //     }
+            // })
+            this.changer.setToolbarState({fill: target.value});
         }
     }
     handleFont = (e) =>{
@@ -644,7 +672,7 @@ class EditorApp extends React.Component{
     }
     handleClickUList = () =>{
         if(!this.currentRange) return;
-        if(this.props.toolbarState.unorder === 2){
+        if(this.toolbarState.unorder === 2){
             return this.handleUnList()
         }
         if(this.data.waitElem){
@@ -655,7 +683,7 @@ class EditorApp extends React.Component{
     }
     handleClickOList = () =>{
         if(!this.currentRange) return;
-        if(this.props.toolbarState.order === 2){
+        if(this.toolbarState.order === 2){
             return this.handleUnList()
         }
         if(this.data.waitElem){
@@ -666,7 +694,7 @@ class EditorApp extends React.Component{
     }
     handleIncreaseListLevel = ()=>{
         if(!this.currentRange) return;
-        let state = this.props.toolbarState;
+        let state = this.toolbarState;
         if(state.inclevel === 1){
             let type = state.unorder === 2 ? 'UL' : 'OL';
             this.currentRange = this.traveler.increaseListLevel(this.currentRange, type);
@@ -675,14 +703,14 @@ class EditorApp extends React.Component{
     }
     handleDecreaseListLevel = () =>{
         if(!this.currentRange) return;
-        let state = this.props.toolbarState;
+        let state = this.toolbarState;
         if(state.declevel === 1){
             this.currentRange = this.traveler.decreaseListLevel(this.currentRange);
             this.repopulateSelection();
         }
     }
     handleUnList = () =>{
-        if(this.props.toolbarState.declevel === 1){
+        if(this.toolbarState.declevel === 1){
             return this.handleDecreaseListLevel();
         }
         else{
@@ -692,7 +720,7 @@ class EditorApp extends React.Component{
     }
     handleBlockquote = () =>{
         if(!this.currentRange) return;
-        if(this.props.toolbarState.quote === 2){
+        if(this.toolbarState.quote === 2){
             this.currentRange = this.traveler.unQuote(this.currentRange);
         }
         else{
@@ -702,7 +730,7 @@ class EditorApp extends React.Component{
     }
     handleBlockCode = () =>{
         if(!this.currentRange) return;
-        if(this.props.toolbarState.code === 2){
+        if(this.toolbarState.code === 2){
             this.currentRange = this.traveler.unCode(this.currentRange);
         }
         else{
@@ -711,15 +739,19 @@ class EditorApp extends React.Component{
         this.repopulateSelection()
     }
     handleLink = () =>{
-        let {link} = this.props.toolbarState;
+        console.log('link')
+        let {link} = this.toolbarState;
         if(link === 0){
+            console.log(0)
             return;
         }
         let p;
         if(link === 2){
+            console.log(2)
             p = this.traveler.changeOrUnlink(this.currentRange);
         }
         else if(link === 1){
+            console.log(1)
             p = this.traveler.convertToLink(this.currentRange);
         }
         p.then((r) =>{
@@ -727,38 +759,82 @@ class EditorApp extends React.Component{
             this.repopulateSelection();
         })
     }
+    upImgToCDN(blob){
+        let url = 'https://api.cloudinary.com/v1_1/dzhxc8wal/image/upload';
+        let formData = new FormData();
+        formData.append('file', blob);
+        formData.append('upload_preset', 'a9wxjomb')
+        fetch(url,{
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data =>{
+
+        })
+        .catch((e) =>{
+
+        })
+//         {"asset_id":"a74f9d09d983ce6acb8d775bbbf3c609","public_id":"docs_uploading_example/953dedfa7f762360_vssqg0","version":1602432327,
+// "version_id":"69bd31adaa78dd504fde6fef773f813a","signature":"85b8641d5b75ee98699ea7637e7fdb3b417fd79b","width":512,"height":512,
+// "format":"png","resource_type":"image","created_at":"2020-10-11T16:05:27Z","tags":[],"pages":1,"bytes":344637,"type":"upload","etag":"fbc4e9d60ac7f189ad57b5fd5cefee44","placeholder":false,
+// "url":"http://res.cloudinary.com/demo/image/upload/v1602432327/docs_uploading_example/953dedfa7f762360_vssqg0.png",
+// "secure_url":"https://res.cloudinary.com/demo/image/upload/v1602432327/docs_uploading_example/953dedfa7f762360_vssqg0.png","access_mode":"public","context":{},"
+// metadata":{"color_id":["color1","color2"]},"existing":false,"original_filename":"953dedfa7f762360","original_extension":"PNG"}
+    }
     handleImage = (blob) =>{
-        let {img} = this.props.toolbarState;
+        let {img} = this.toolbarState;
         if(img === 0){
             return;
         }
         let name;
         if(!(blob instanceof Blob)){
-            img = document.getElementById('img');
+            img = this.editor_app.current.querySelector('.img_px');
             name = img.value.match(/.+[\\\/](.+)$/)[1];
             blob = img.files[0];
         }
-        !name && (name = 'default')
-        this.traveler.insertImage(this.currentRange, blob, name);
+        !name && (name = 'default');
+        let url = 'https://api.cloudinary.com/v1_1/demo/image/upload';
+        let formData = new FormData();
+        formData.append('file', blob);
+        formData.append('upload_preset', 'docs_upload_example_us_preset')
+        fetch(url,{
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data =>{
+            if(data.url){
+                this.traveler.insertImage(this.currentRange, data.url, name);
+            }
+            else{
+                throw new Error('failed')
+            }
+        })
+        .catch(() =>{
+            this.traveler.insertImage(this.currentRange, blob, name);
+        })
 
     }
     handleMouseDown = (e) =>{
-        if(!this.props.prompt.closed){
-            let {it, as} = this.props.prompt;
+        console.log(e.target)
+        if(this.promptState.showPrompt){
+            let {it, as} = this.promptState;
             !as && it.next(false);
-            this.props.updateState({
-                type: 'CLOSEPROMPT',
-            })
+            // this.props.updateState({
+            //     type: 'CLOSEPROMPT',
+            // })
+            this.changer.setPromptState({showPrompt: false})
         }
     }
     shouldComponentUpdate(nextProps){
-        this.toolbar = Object.assign(this.toolbar, nextProps.toolbarState);
+        this.toolbarState = Object.assign(this.toolbar, nextProps.toolbarState);
         return false;
     }
     componentDidMount(){
-        let {editorNode: editor} = this.props;
-        let app = document.getElementById('editor_app');
-        let toolbar = document.getElementById('tool_bar');
+        let {editorArea: editor} = this
+        let app = this.editor_app.current;
+        let toolbar = app.querySelector('.tool_bar');
         toolbar.onselectstart = (e) =>{
             e.preventDefault();
         }
@@ -772,8 +848,10 @@ class EditorApp extends React.Component{
         editor.oninput = this.handleInput;
         editor.onmousedown = this.handleMouseDown;
         editor.onpaste = this.handlePasteData;
-        this.props.historyManager.startObserving();
-        editor.focus();
+        this.historyManager.startObserving();
+        if(!this.props.focus){
+            editor.focus();
+        }
     }
     componentWillUnmount(){
     }
@@ -798,9 +876,206 @@ class EditorApp extends React.Component{
             handleLink: this.handleLink,
             handleImage: this.handleImage,
         }
+        let self = this;
+        class ToolBar extends React.Component{
+            constructor(props){
+                super();
+                this.toolbar = React.createRef();
+                this.state = self.toolbarState;
+            }
+            selectFile = (e) =>{
+                if(this.state.img !== 0){
+                    let img =  this.toolbar.current.querySelector('.img_px')
+                    img.click();
+                }
+            }
+            componentDidMount(){
+                self.changer.setToolbarState = (state, cb) =>{
+                    this.setState(state, cb)
+                }
+                Object.assign(self.toolbarState, this.state)
+            }
+            shouldComponentUpdate(nextProps, nextState){
+                Object.assign(self.toolbarState, nextState);
+                return true;
+            }
+            render(){
+                let {click} = this.props, state = this.state;
+                let emptyFontStyle = state.fontfamily === 'false' ? {display: 'none'} : {display: 'block'};
+                let emptySizeStyle = state.fontsize === 'false' ? {display: 'none'} : {display: 'block'}
+                return (
+                    <div className = 'tool_bar' ref = {this.toolbar}>
+                        <div onClick = {click.undo} className = {state.undo ? '' : 'disabled'}><i className="fa fa-reply"></i></div>
+                        <div onClick = {click.redo} className = {state.redo ? 'space' : 'space disabled'}><i className="fa fa-share"></i></div>
+                        <div onClick = {click.handleClickBold} className = {state.bold === 0 ? 'disabled' : state.bold === 2 ? 'activated' : ''}><i className="fa fa-bold"></i></div>
+                        <div onClick = {click.handleClickItalic} className = {state.italic === 0 ? 'disabled' : state.italic === 2 ? 'activated' : ''}><i className="fa fa-italic"></i></div>
+                        <div onClick = {click.handleClickUnderline} className = {state.underline === 0 ? 'space disabled' : state.underline === 2 ? 'space activated' : 'space'}><i className="fa fa-underline"></i></div>
+                        <div onClick = {click.handleClickUList} className = {state.unorder === 2 ? 'activated' : ''}><i className="fa fa-list-ul"></i></div>
+                        <div onClick = {click.handleClickOList} className = {state.order === 2 ? 'activated' : ''}><i className="fa fa-list-ol"></i></div>
+                        <div onClick = {click.handleIncreaseListLevel} className = {state.inclevel === 0 ? 'disabled' : ''}><i className="fa fa-indent"></i></div>
+                        <div onClick = {click.handleDecreaseListLevel} className = {state.declevel === 0 ? 'space disabled' : 'space'}><i className="fa fa-outdent"></i></div>
+                        <div onClick = {click.handleBlockquote} className = {state.quote === 2 ? 'activated' : ''}><i className="fa fa-quote-left"></i></div>
+                        <div onClick = {click.handleBlockCode} className = {state.code === 0 ? 'disabled' : state.code === 2 ? 'activated' : ''}><i className="fa fa-code"></i></div>
+                        <div className = {state.img === 0 ? 'disabled' : ''}>
+                            <i className= "fa fa-file-image-o i-wrapper" onClick = {this.selectFile}>
+                                <input type = 'file' name = 'img' className = 'img_px' accept = 'image/*' onInput = {click.handleImage}/>
+                            </i>
+                        </div>                
+                        <div onClick = {click.handleLink}  className = {state.link === 0 ? 'disabled space' : state.link === 2 ? 'activated space' : 'space'}><i className="fa fa-link"></i></div>
+                        <div className = {state.bold === 0 ? 'disabled ctn colr' : 'ctn colr'}>
+                            <div className = 'prev-i' onClick = {click.handleBgroundColor}>
+                                <i className="fa fa-font" style = {{backgroundColor: state.fill}}></i>
+                                <div style = {{backgroundColor: state.fill}}></div>
+                            </div>
+                            <i className="fa fa-caret-down i-wrapper">
+                                <input type = 'color' className = 'color-select' onInput = {click.handleBgroundColor}/>
+                            </i>
+                        </div>
+                        <div className = {state.bold === 0 ? 'disabled ctn colr space' : 'ctn colr space'}>
+                            <div className = 'prev-i' onClick = {click.handleClickFontColor}>
+                                <i className="fa fa-font" style = {{color: state.color}}></i>
+                                <div style = {{backgroundColor: state.color}}></div>
+                            </div>
+                            <i className="fa fa-caret-down i-wrapper">
+                                <input type = 'color' className = 'color-select' onInput = {click.handleSelectFontColor}/>
+                            </i>
+                        </div>
+                        <div className = 'ctn select'>
+                          <select onChange = {click.handleFont} value = {state.fontfamily} >
+                                <option value = 'Georgia,serif' style = {{fontFamily: 'Georgia,serif'}}>Georgia</option>
+                                <option value = '"Palatino Linotype","Book Antiqua",Palatino,serif' style = {{fontFamily: 'Palatino Linotype,Book Antiqua,Palatino,serif'}}>Palatino Linotype</option>
+                                <option value = '"Times New Roman",Times,serif' style = {{fontFamily: '"Times New Roman",Times,serif'}}>Times New Roman</option>
+                                <option value = 'Arial,Helvetica,sans-serif' style = {{fontFamily: 'Arial,Helvetica,sans-serif'}}>Arial</option>
+                                <option value = '"Arial Black",Gadget,sans-serif' style = {{fontFamily: '"Arial Black", Gadget, sans-serif'}}>Arial Black</option>
+                                <option value = '"Comic Sans MS",cursive,sans-serif' style = {{fontFamily: '"Comic Sans MS",cursive,sans-serif'}}>Comic Sans MS</option>
+                                <option value = 'Impact,Charcoal,sans-serif' style = {{fontFamily: 'Impact,Charcoal,sans-serif'}}>Impact</option>
+                                <option value = '"Lucida Sans Unicode","Lucida Grande",sans-serif' style = {{fontFamily: '"Lucida Sans Unicode","Lucida Grande",sans-serif'}}>Lucida Sans Unicode</option>
+                                <option value = 'Tahoma,Geneva,sans-serif' style = {{fontFamily: 'Tahoma,Geneva,sans-serif'}}>Tahoma</option>
+                                <option value = '"Trebuchet MS",Helvetica,sans-serif' style = {{fontFamily: '"Trebuchet MS",Helvetica,sans-serif'}}>Trebuchet MS</option>
+                                <option value = 'Verdana,Geneva,sans-serif' style = {{fontFamily: 'Verdana,Geneva,sans-serif'}}>Verdana</option>
+                                <option value = '"Courier New",Courier,monospace' style = {{fontFamily: '"Courier New",Courier,monospace'}}>Courier New</option>
+                                <option value = '"Lucida Console",Monaco,monospace' style = {{fontFamily: '"Lucida Console",Monaco,monospace'}}>Lucida Console</option>
+                                {state.fontfamily === 'false' ? <option value = 'false' style = {emptyFontStyle}></option> : ''}
+        
+                            </select>
+                            <select onChange = {click.handleFontSize} value = {state.fontsize}>
+                                <option value = '8px'>8</option>
+                                <option value = '9px'>9</option>
+                                <option value = '10px'>10</option>
+                                <option value = '11px'>11</option>
+                                <option value = '12px'>12</option>
+                                <option value = '14px'>14</option>
+                                <option value = '16px'>16</option>
+                                <option value = '18px'>18</option>
+                                <option value = '20px'>20</option>
+                                <option value = '24px'>24</option>
+                                <option value = '28px'>28</option>
+                                <option value = '32px'>32</option>
+                                <option value = '38px'>38</option>
+                                <option value = '46px'>46</option>
+                                <option value = '54px'>54</option>
+                                <option value = '62px'>62</option>
+                                <option value = '72px'>72</option>
+                                {state.fontsize === 'false' ? <option value = 'false' style = {emptySizeStyle}></option> : ''}
+                            </select>
+                        </div>
+                    </div>
+                )
+            }
+        }
+        class LinkPrompt extends React.Component{
+            constructor(props){
+                super(props);
+                this.state = {
+                    showPrompt: false,
+                    urlValidated: false,
+                    url: '',
+                    as: null,
+                    it: null,
+                }
+                this.prompt = React.createRef();
+            }
+            validatedUrl = (text) => {
+                if(text[text.length - 1]) text = text + '/';
+                return /[(http(s)?):\/\/(www\.)?a-zA-Z0-9@:%._\+~#=]{2,256}((:[0-9]{1,5}\b)?(\.[a-z]{2,6}\b)|(?!(\.[a-z]{2,6}\b))(:[0-9]{1,5}\b)[^\.])([-na-zA-Z0-9@:%_\+.~#?&//=]*)?/ig.test(text);
+            }
+            link = () =>{
+                let {it} = this.state;
+                it && it.next(this.state.url)
+                // this.props.updateState({
+                //     type: 'CLOSEPROMPT',
+                // })
+                this.setState({showPrompt: false});
+            }
+            unlink = () =>{
+                let {it} = this.state;
+                it && it.next(false);
+                // this.props.updateState({
+                //     type: 'CLOSEPROMPT',
+                // })
+                this.setState({showPrompt: false});
+            }
+            handleChange = (e) =>{
+                let text = e.target.value;
+                if(this.validatedUrl(text)){
+                    this.setState({
+                        url: text,
+                        urlValidated: true
+                    })
+                }
+                else this.setState({
+                    url: text,
+                    urlValidated: false
+                })
+            }
+            componentDidMount(){
+                self.changer.setPromptState = (state, cb) =>{
+                    this.setState(state, cb)
+                }
+                Object.assign(self.promptState, this.state);
+            }
+            shouldComponentUpdate(nextProps, nextState){
+                Object.assign(self.promptState, nextState);
+                return true;
+            }
+            render(){
+                console.log('render')
+                let {showPrompt} = this.state;
+                console.log(showPrompt)
+                let style = {
+                    position: 'sticky',
+                    top: '29px',
+                    display: showPrompt ? 'flex' : 'none',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    zIndex: 1,
+                    marginBottom: '3px',
+                    backgroundColor: 'white'
+                }
+                console.log(style.display)
+                let inputStyle = {
+                    backgroundColor: this.state.urlValidated ? '#9fdf9f' : '#ffbb99',
+                    opacity: this.state.urlValidated ? 1 : 0.5,
+                    outline: 'none',
+                    border: 'solid 1px grey',
+                    borderRadius: '3px',
+                    widthMin: '100px',
+                }
+                setTimeout(()=>{
+                    this.prompt.current.querySelector('input').focus();
+                },100);
+                return (
+                    <div className = 'link_prompt' style = {style} ref = {this.prompt}>
+                        <input type = 'url' value = {this.state.url} style = {inputStyle} onChange = {this.handleChange} autoFocus = {true}/>
+                        <button onClick = {this.link} disabled = {this.state.urlValidated ? false : true} className = 'btn_blue'>link</button>
+                        <button onClick = {this.unlink} className = 'btn_orange'>unlink</button>
+                    </div>
+                )
+            }
+        }
         return (
-            <div id = 'editor_app'>
-                <div id = 'editor_head'>
+            <div className = 'editor_app' ref = {this.editor_app} id = {this.props.id ? this.props.id : ''}>
+                <div className = 'editor_head'>
                     <ToolBar click = {click}/>
                     <LinkPrompt/>
                 </div>
@@ -811,10 +1086,7 @@ class EditorApp extends React.Component{
 }
 function mapstateToProps(state){
     return {
-        historyManager: state.editor.historyManager,
         editorNode: state.editor.editorNode,
-        toolbarState: state.toolbar,
-        prompt: state.linkPrompt
     }
 }
 function mapDispatchToProps(dispatch){

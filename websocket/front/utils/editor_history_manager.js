@@ -177,10 +177,11 @@ class HistoryStackManager {
         this.current = node;
         this.length++;
         if(this.props.toolbarState.undo === 0){
-            this.props.updateState({
-                type: 'TOOLBARCHANGE',
-                data: {undo: 1}
-            })
+            // this.props.updateState({
+            //     type: 'TOOLBARCHANGE',
+            //     data: {undo: 1}
+            // })
+            this.props.changer.setToolbarState({undo: 1});
         }
     }
     distanceFromCurrentToTail = () => {
@@ -271,16 +272,18 @@ class HistoryStackManager {
         this.reApplyRange(this.current.next.change.range, subject);
         this.current = this.current.next;
         if(this.props.toolbarState.undo === 0){
-            this.props.updateState({
-                type: 'TOOLBARCHANGE',
-                data: {undo: 1}
-            })
+            // this.props.updateState({
+            //     type: 'TOOLBARCHANGE',
+            //     data: {undo: 1}
+            // })
+            this.props.changer.setToolbarState({undo: 1});
         }
         if(!this.current.next){
-            this.props.updateState({
-                type: 'TOOLBARCHANGE',
-                data: {redo: 0}
-            })
+            // this.props.updateState({
+            //     type: 'TOOLBARCHANGE',
+            //     data: {redo: 0}
+            // })
+            this.props.changer.setToolbarState({redo: 0});
         }    
 
     }
@@ -321,16 +324,19 @@ class HistoryStackManager {
         this.current = this.current.prev;
         this.reApplyRange(this.current.change.range, subject);
         if(this.props.toolbarState.redo === 0){
-            this.props.updateState({
-                type: 'TOOLBARCHANGE',
-                data: {redo: 1}
-            })
+            // this.props.updateState({
+            //     type: 'TOOLBARCHANGE',
+            //     data: {redo: 1}
+            // })
+            this.props.changer.setToolbarState({redo: 1});
         }
         if(this.current === this.head){
-            this.props.updateState({
-                type: 'TOOLBARCHANGE',
-                data: {undo: 0}
-            })
+            // this.props.updateState({
+            //     type: 'TOOLBARCHANGE',
+            //     data: {undo: 0}
+            // })
+            this.props.changer.setToolbarState({undo: 0});
+
         }
 
     }

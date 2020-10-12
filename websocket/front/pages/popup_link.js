@@ -7,7 +7,8 @@ class LinkPromt extends React.PureComponent{
         this.state = {
             urlValidated: as ? true : false,
             url: as ? as[0].href : ''
-        } 
+        }
+        this.prompt = React.createRef();
     }
     validatedUrl = (text) => {
         if(text[text.length - 1]) text = text + '/';
@@ -61,10 +62,10 @@ class LinkPromt extends React.PureComponent{
             widthMin: '100px',
         }
         setTimeout(()=>{
-            document.querySelector('#link_prompt>input').focus();
+            this.prompt.current.querySelector('input').focus();
         },100);
         return (
-            <div id = 'link_prompt' style = {style}>
+            <div className = 'link_prompt' style = {style} ref = {this.prompt}>
                 <input type = 'url' value = {this.state.url} style = {inputStyle} onChange = {this.handleChange} autoFocus = {true}/>
                 <button onClick = {this.link} disabled = {this.state.urlValidated ? false : true} className = 'btn_blue'>link</button>
                 <button onClick = {this.unlink} className = 'btn_orange'>unlink</button>

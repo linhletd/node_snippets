@@ -2,11 +2,12 @@ import React from 'react';
 import {connect} from 'react-redux';
 class ToolBar extends React.PureComponent{
     constructor(props){
-        super(props);  
+        super(props);
+        this.toobar = React.createRef()  
     }
     selectFile = (e) =>{
         if(this.props.state.img !== 0){
-            let img =  document.getElementById('img');
+            let img =  this.toobar.current.querySelector('.img_px')
             img.click();
         }
     }
@@ -15,7 +16,7 @@ class ToolBar extends React.PureComponent{
         let emptyFontStyle = state.fontfamily === 'false' ? {display: 'none'} : {display: 'block'};
         let emptySizeStyle = state.fontsize === 'false' ? {display: 'none'} : {display: 'block'}
         return (
-            <div id = 'tool_bar'>
+            <div className = 'tool_bar'>
                 <div onClick = {click.undo} className = {state.undo ? '' : 'disabled'}><i className="fa fa-reply"></i></div>
                 <div onClick = {click.redo} className = {state.redo ? 'space' : 'space disabled'}><i className="fa fa-share"></i></div>
                 <div onClick = {click.handleClickBold} className = {state.bold === 0 ? 'disabled' : state.bold === 2 ? 'activated' : ''}><i className="fa fa-bold"></i></div>
@@ -29,7 +30,7 @@ class ToolBar extends React.PureComponent{
                 <div onClick = {click.handleBlockCode} className = {state.code === 0 ? 'disabled' : state.code === 2 ? 'activated' : ''}><i className="fa fa-code"></i></div>
                 <div className = {state.img === 0 ? 'disabled' : ''}>
                     <i className= "fa fa-file-image-o i-wrapper" onClick = {this.selectFile}>
-                        <input type = 'file' name = 'img' id = 'img' accept = 'image/*' onInput = {click.handleImage}/>
+                        <input type = 'file' name = 'img' className = 'img_px' accept = 'image/*' onInput = {click.handleImage}/>
                     </i>
                 </div>                
                 <div onClick = {click.handleLink}  className = {state.link === 0 ? 'disabled space' : state.link === 2 ? 'activated space' : 'space'}><i className="fa fa-link"></i></div>
