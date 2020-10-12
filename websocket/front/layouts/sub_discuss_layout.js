@@ -3,7 +3,7 @@ import {connect} from 'react-redux';
 import {withRouter} from 'react-router-dom';
 import DiscussPage from '../pages/discuss_page.js';
 import PostNewTopic from '../pages/post_topic_comp'
-import BrowseQuestionPage from '../pages/browse_question_page.js';
+import TopicList from '../pages/browse_topic_comp.js';
 import fetchReq from '../utils/xhr'
 class SubDiscussLayout extends React.Component{
     constructor(props){
@@ -97,19 +97,26 @@ class SubDiscussLayout extends React.Component{
         }
 
     }
-    selectTopic(e){
+    selectTopic = (e) =>{
         let id;
         if(typeof e === 'string'){
             id = e;
         }
+        else if(e.target.nodeName === 'a'){
+            return;
+        }
         else{
             e.preventDefault();
             let target = e.target;
-            id = (target.id || target.parentNode.id || target.parentNode.parentNode.id).slice(4); //id='side{id}'
+            while(!target.id){
+                target = target.parentNode;
+            }
+            id = target.id.slice(4); //id='list{id}'
         }
         fetchReq('/discuss/data/content/' + id, {method: 'get'})
         .then((data) => {
-            this.addToDisplay(data);
+            console.log(data)
+            // this.addToDisplay(data);
         })
     }
     refreshDisplayingPost = () =>{
@@ -149,24 +156,25 @@ class SubDiscussLayout extends React.Component{
         delete this.props.socket.discuss;
     }
     render(){
-        let user = this.props.user;
-        let postBox = (
-            <div id = "post_topic">
-                <img src = {user.Avartar} alt = {`${user.Username} avartar`} width = "45" heigh = "45"/>
-                <input type = 'text' name = 'question' placeholder = "Ask an question" />
-                {/* file: <input id = 'file_upload' type = 'file' name = 'file' /> */}
-                <button id = 'submit_topic' onClick = {this.postTopic.bind(this)}>Ask</button>
-            </div>
-        )
+        // let user = this.props.user;
+        // let postBox = (
+        //     <div id = "post_topic">
+        //         <img src = {user.Avartar} alt = {`${user.Username} avartar`} width = "45" heigh = "45"/>
+        //         <input type = 'text' name = 'question' placeholder = "Ask an question" />
+        //         {/* file: <input id = 'file_upload' type = 'file' name = 'file' /> */}
+        //         <button id = 'submit_topic' onClick = {this.postTopic.bind(this)}>Ask</button>
+        //     </div>
+        // )
 
-        let post = this.state.displayingPosts;
-        let displayedPost = post.size ? <DiscussPage post = {post} user = {user}/> : "";
+        // let post = this.state.displayingPosts;
+        // let displayedPost = post.size ? <DiscussPage post = {post} user = {user}/> : "";
 
-        let list = this.state.questionsList;
-        let displayedQuestionList = list.size ? <BrowseQuestionPage list = {list} select = {this.selectTopic.bind(this)}/> : "";
+        // let list = this.state.questionsList;
+        // let displayedQuestionList = list.size ? <BrowseQuestionPage list = {list} select = {this.selectTopic.bind(this)}/> : "";
         return (
             <div id = "discuss_layout">
                 <PostNewTopic/>
+                <TopicList handleSelectTopic = {this.selectTopic} list = {this.state.questionsList}/>
                 {/* {postBox}
                 {displayedPost}
                 {displayedQuestionList} */}

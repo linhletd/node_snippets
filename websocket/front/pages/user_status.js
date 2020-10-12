@@ -31,8 +31,8 @@ class UserStatus extends React.Component{
     }
     render(){
         let {props} = this;
-        let {childClass, activeTime} = props, status;
-        if(!('isOnline' in props.status)){
+        let {childClass, activeTime} = props, status = props.status;
+        if(!('isOnline' in props.status) && props.usersStatus){
             status = props.usersStatus.get(props.status._id);
         }
         else{

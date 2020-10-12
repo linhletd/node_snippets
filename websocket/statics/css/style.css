@@ -319,7 +319,7 @@ input:hover,
     align-items: center;
     width: 100%;
 }
-.global_popup .fb_msg{
+.fb_msg{
     color: red;
     text-align: center;
 }
@@ -1241,9 +1241,8 @@ td, thead{
     width: 70px;
 }
 .tag{
-    min-width: 50px;
-    padding-right: 3px;
-    padding-left: 3px;
+    width: 50px;
+    padding: 0px 3px 0px 3px;
     border-radius: 3px;
     font-size: 0.9em;
 }
@@ -1256,6 +1255,70 @@ td, thead{
 .other_tag{
     background-image: linear-gradient(to right, rgb(200, 119, 247, 0.775), rgba(200, 119, 247, 0.1));
 }
+.concise_tpc{
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-row: 1fr 1fr;
+    column-gap: 5px;
+    padding: 3px 5px;
+    border-bottom: rgba(83, 113, 168, 0.5) solid 1px;
+    width: 100%;
+    margin-bottom: 5px;
+}
+.concise_tpc:hover{
+    background-color: rgba(255, 166, 0, 0.3);
+    border-radius: 5px;
+}
+.topic_title{
+    font-size: 1.1em;
+    max-width: 500px;
+    width: 90%;
+}
+.topic_info{
+    max-width: 370px;
+    font-size: 0.9em;
+}
+.topic_info *:not(i){
+    opacity: 0.9;
+}
+.topic_info, .topic_meta{
+    display: grid;
+    grid-template-columns: auto auto;
+    grid-template-rows: 1fr;
+    column-gap: 10px;
+}
+@media screen and (max-width: 380px){
+    .topic_info{
+        display: flex;
+        flex-direction: column;
+    }
+}
+.topic_meta>div{
+    display: flex;
+    align-items: center;
+}
+.topic_meta .fa-tag{
+    color: orange;
+}
+.topic_meta .fa-clock-o{
+    color: rgb(0, 166, 255);
+    transform: translate(0px, -1px);
+}
+.topic_idx{
+    display: grid;
+    grid-template-columns: auto auto auto;
+    grid-template-rows: 1fr;
+    column-gap: 10px;
+}
+.topic_idx i{
+    color: hsl(224, 90%, 30%)
+}
+
+/* .topic_idx:before{
+    content: "";
+    width: 5px;
+    background-color: hotpink;
+} */
 #weather_app{
     display: flex;
     flex-direction: column;

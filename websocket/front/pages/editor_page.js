@@ -739,19 +739,15 @@ class EditorApp extends React.Component{
         this.repopulateSelection()
     }
     handleLink = () =>{
-        console.log('link')
         let {link} = this.toolbarState;
         if(link === 0){
-            console.log(0)
             return;
         }
         let p;
         if(link === 2){
-            console.log(2)
             p = this.traveler.changeOrUnlink(this.currentRange);
         }
         else if(link === 1){
-            console.log(1)
             p = this.traveler.convertToLink(this.currentRange);
         }
         p.then((r) =>{
@@ -817,7 +813,6 @@ class EditorApp extends React.Component{
 
     }
     handleMouseDown = (e) =>{
-        console.log(e.target)
         if(this.promptState.showPrompt){
             let {it, as} = this.promptState;
             !as && it.next(false);
@@ -1039,9 +1034,7 @@ class EditorApp extends React.Component{
                 return true;
             }
             render(){
-                console.log('render')
                 let {showPrompt} = this.state;
-                console.log(showPrompt)
                 let style = {
                     position: 'sticky',
                     top: '29px',
@@ -1052,7 +1045,6 @@ class EditorApp extends React.Component{
                     marginBottom: '3px',
                     backgroundColor: 'white'
                 }
-                console.log(style.display)
                 let inputStyle = {
                     backgroundColor: this.state.urlValidated ? '#9fdf9f' : '#ffbb99',
                     opacity: this.state.urlValidated ? 1 : 0.5,

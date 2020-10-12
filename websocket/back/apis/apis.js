@@ -11,23 +11,25 @@ module.exports = function(app){
     let db = process.env.MG_DB_NAME
     let topics = client.db(db).collection('topics');
     let users = client.db(db).collection('users');
-    let addOnOffStatus = (user) =>{
-        app.ownerMap.get(user._id.toString()) ? user.isOnline = true : user.isOnline = false;
-    }
+    // let addOnOffStatus = (user) =>{
+    //     app.ownerMap.get(user._id.toString()) ? user.isOnline = true : user.isOnline = false;
+    // }
     let apiObject = {
         createTopic: function(req, res, next){
-            let Author = req.user;
-            let Question = encodeHTML(req.body.question);
-            let PostTime = Date.now();
-            Author._id = ObjectId(Author._id);
+            let Title = req.body.title,
+                Category = req.body.category,
+                Content = req.body.content,
+                Author = ObjectId(req.user._id),
+                PostTime = Date.now();
             let newTopic = {
-                Question,
-                AttachImage: null,
+                Title,
+                Category,
+                Content,
                 Author,
                 PostTime,
-                Comments: [],
-                UpVote: 0,
-                DownVote: 0
+                UpVotes: [],
+                DownVotes: [],
+                Comments: []
             }
             topics.insertOne(newTopic,(err, doc) =>{
                 if(err) return res.json({err: err.message});
@@ -35,10 +37,10 @@ module.exports = function(app){
                     type: 'update board',
                     payload:{
                         _id: doc.insertedId,
-                        Question,
+                        Title,
                         PostTime,
                         Author,
-                        Upvote: 0,
+                        UpVote: 0,
                         DownVote: 0,
                         Comment: 0
                     }
@@ -53,13 +55,16 @@ module.exports = function(app){
             let cursor = topics.aggregate([
                 {
                     $addFields: {
+                        UpVote: {$size: "$UpVotes"},
+                        DownVote: {$size: "$DownVotes"},
                         Comment: {$size: "$Comments"}
                     }
                 },
                 {
                     $project: {
-                        Comments: 0,
-                        AttachImage: 0
+                        UpVotes: 0,
+                        DownVotes: 0,
+                        Comments: 0
                     },
                 },
                 {
@@ -68,10 +73,13 @@ module.exports = function(app){
                     }
                 }
             ]);
-            cursor.on('error',(err) =>{
-                return res.json({err: err.message})
-            })
             let checked = false;
+            cursor.on('error',(err) =>{
+                if(checked){
+                    return res.end(`],"err": ${err.message}}`)
+                }
+                res.json({err: err.message})
+            })
             cursor.on('data',(doc) =>{
                 if(!checked){
                     res.write('{"data": [');
@@ -90,7 +98,6 @@ module.exports = function(app){
             let _id = ObjectId(req.params.topic_id);
             topics.findOne({_id}, (err, topic) =>{
                 if(err) return res.json({err: err.message});
-                addOnOffStatus(topic.Author)
                 res.json(topic)
             })
 
@@ -98,12 +105,12 @@ module.exports = function(app){
         postComment: function(req, res, next){
             let newComment = {
                 _id: ObjectId(),
-                Content: encodeHTML(req.body.comment),
-                PostTime: Date.now(),
-                PostBy: req.user,
-                UpVote: 0,
-                DownVote: 0,
-                replies: []
+                Comment: req.body.comment,
+                CommentTime: Date.now(),
+                CommentedBy: req.user._id,
+                UpVotes: [],
+                DownVotes: [],
+                Replies: []
             }
             let topicId = new ObjectId(req.body.id);
             topics.updateOne(
@@ -113,7 +120,7 @@ module.exports = function(app){
             ,(err, doc) =>{
                 if(err) return res.json({err: err.message});
                 else if(doc.modifiedCount !== 0){
-                    newComment.tid = req.body.id;
+                    newComment.tid = req.body.id;//tid topicid
                     let message = {
                         type: 'update comment',
                         payload: newComment
@@ -132,10 +139,13 @@ module.exports = function(app){
                 Avartar: 1,
                 LastActive: 1
             })
-            cursor.on('error',(err) =>{
-                return res.json({err: err.message})
-            })
             let checked = false;
+            cursor.on('error',(err) =>{
+                if(checked){
+                    return res.end(`],"err": ${err.message}}`)
+                }
+                res.json({err: err.message})
+            })
             cursor.on('data',(doc) =>{
                 app.ownerMap.get(doc._id.toString()) ? doc.isOnline = true : doc.isOnline = false;
                 if(!checked){

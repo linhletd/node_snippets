@@ -45,7 +45,7 @@ try{
     /************** clear previous redundants *********************/
     let db = client.db(process.env.MG_DB_NAME);
     let users = db.collection('users');
-    // let topics = db.collection('topics');
+    let topics = db.collection('topics');
     // topics.drop()
     let sessions = db.collection('sessions');
     sessions.find({session: {$regex:/"ws":\[.+?\]/}}).forEach((doc) =>{

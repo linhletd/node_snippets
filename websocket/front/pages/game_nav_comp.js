@@ -1,7 +1,6 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import {withRouter} from 'react-router-dom';
-import {render} from 'react-dom';
 import BrowseUserPage from '../pages/browse_user_page';
 import Guide from './guide_comp';
 import WaitPlayerPopupContent from '../pages/wait_player_content_comp'
