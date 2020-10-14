@@ -880,12 +880,14 @@ input:hover,
 .user img{
     border-radius: 50%;
 }
-.user>div:last-child{
+/* .user>div:last-child{
     margin-left: 7px;
-}
+} */
 .icon {
     position: relative;
     display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .user_small img{
     width: 45px;
@@ -1205,7 +1207,7 @@ td, thead{
     align-items: center;
     align-self: flex-start;
 }
-@media screen and (max-width:440px){
+@media screen and (max-width:800px){
     #post_foot{
         display: flex;
         flex-direction: column;
@@ -1222,6 +1224,7 @@ td, thead{
 }
 #post_category{
     display: flex;
+    flex-wrap: wrap;
 }
 #post_category>div{
     display: flex;
@@ -1255,28 +1258,36 @@ td, thead{
 .other_tag{
     background-image: linear-gradient(to right, rgb(200, 119, 247, 0.775), rgba(200, 119, 247, 0.1));
 }
+#browse_topic{
+    width: 95%;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    border-left: orchid 5px solid;
+}
 .concise_tpc{
     display: grid;
     grid-template-columns: auto auto;
-    grid-row: 1fr 1fr;
+    justify-content: left;
     column-gap: 5px;
-    padding: 3px 5px;
-    border-bottom: rgba(83, 113, 168, 0.5) solid 1px;
+    padding: 3px 3px 5px 5px;
+    border-bottom: rgba(83, 113, 168, 0.2) solid 1px;
     width: 100%;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
+    cursor: pointer;
 }
-.concise_tpc:hover{
-    background-color: rgba(255, 166, 0, 0.3);
+.concise_tpc:hover, .selected_title{
+    background-color: rgba(255, 166, 0, 0.1);
     border-radius: 5px;
 }
 .topic_title{
     font-size: 1.1em;
-    max-width: 500px;
-    width: 90%;
+    width: 100%;
 }
 .topic_info{
     max-width: 370px;
     font-size: 0.9em;
+    display: flex;
 }
 .topic_info *:not(i){
     opacity: 0.9;
@@ -1287,15 +1298,20 @@ td, thead{
     grid-template-rows: 1fr;
     column-gap: 10px;
 }
-@media screen and (max-width: 380px){
+@media screen and (max-width: 800px){
     .topic_info{
         display: flex;
         flex-direction: column;
+    }
+    .topic_meta{
+        justify-content: left;
+        margin-bottom: 2px;
     }
 }
 .topic_meta>div{
     display: flex;
     align-items: center;
+    justify-items: start;
 }
 .topic_meta .fa-tag{
     color: orange;
@@ -1313,12 +1329,17 @@ td, thead{
 .topic_idx i{
     color: hsl(224, 90%, 30%)
 }
-
-/* .topic_idx:before{
-    content: "";
-    width: 5px;
-    background-color: hotpink;
-} */
+#topic_ctn .user{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+#topic_ctn .user>div:last-child{
+    width: 50px;
+}
+#topic_ctn .user a{
+    width: 100%;
+}
 #weather_app{
     display: flex;
     flex-direction: column;

@@ -154,22 +154,6 @@ function poong(state = initialPoong, {type, data}){
 let editorNode = document.createElement('div');
 editorNode.contentEditable = true;
 editorNode.className = 'editor_area';
-// editorNode.style.color = 'orange';
-// editorNode.style.backgroundColor = 'grey';
-// editorNode.style.minHeight = '100vh';
-// editorNode.style.width = '500px';
-// editorNode.style.outline = 'none';
-// editorNode.style.border = '1px solid grey';
-// editorNode.style.borderRadius = '5px';
-// editorNode.style.fontSize = '16px';
-// editorNode.style.padding = '10px 10px';
-// editorNode.style.fontFamily = 'Arial, Helvetica, sans-serif'
-// editorNode.style.overflow = 'scroll';
-// editorNode.style.display = 'flex';
-// editorNode.style.flexDirection = 'column';
-// editorNode.style.alignItems = 'flex-start';
-
-
 let initialEditor = {
     editorNode,
     historyManager: new HistoryStackManager(editorNode)
@@ -177,42 +161,42 @@ let initialEditor = {
 function editor(state = initialEditor){
     return state;
 }
-let initialEditorToolbar = {
-    undo: 0,//0 disabled, 1 normal, 2 activated
-    redo: 0,
-    bold: 1, 
-    italic: 1,
-    underline: 1,
-    order: 1,
-    unorder: 1,
-    inclevel: 0,
-    declevel: 0,
-    link: 1,
-    quote: 1,
-    code: 1,
-    img: 1,
-    fill: 'yellow',
-    color: 'red',
-    fontsize: '16px',
-    fontfamily: 'Arial,Helvetica,sans-serif'
+// let initialEditorToolbar = {
+//     undo: 0,//0 disabled, 1 normal, 2 activated
+//     redo: 0,
+//     bold: 1, 
+//     italic: 1,
+//     underline: 1,
+//     order: 1,
+//     unorder: 1,
+//     inclevel: 0,
+//     declevel: 0,
+//     link: 1,
+//     quote: 1,
+//     code: 1,
+//     img: 1,
+//     fill: 'yellow',
+//     color: 'red',
+//     fontsize: '16px',
+//     fontfamily: 'Arial,Helvetica,sans-serif'
 
-}
-function toolbar(state = initialEditorToolbar, {type, data}){
-    if(type === TOOLBARCHANGE){
-        return {...state, ...data}
-    }
-    return state;
-}
+// }
+// function toolbar(state = initialEditorToolbar, {type, data}){
+//     if(type === TOOLBARCHANGE){
+//         return {...state, ...data}
+//     }
+//     return state;
+// }
 
-function linkPrompt(state = {closed: true}, {type, data}){
-    switch(type){
-        case OPENPROMPT:
-            return data; //{it, as}
-        case CLOSEPROMPT:
-            return {closed: true};
-    }
-    return state;
-}
+// function linkPrompt(state = {closed: true}, {type, data}){
+//     switch(type){
+//         case OPENPROMPT:
+//             return data; //{it, as}
+//         case CLOSEPROMPT:
+//             return {closed: true};
+//     }
+//     return state;
+// }
 function popup(state = {}, action){
     switch(action.type){
         case WAITPLAYER: 
@@ -221,14 +205,21 @@ function popup(state = {}, action){
             return {...state, flash: action.data}
     }
     return state;
+}
+function viewPost(state = {}, action){
+    if(action.type === 'GETTOPIC'){
+        return action.data;//_id
+    }
+    return state;
 } 
 let reducer = combineReducers({
     main,
     poong,
     editor,
-    toolbar,
-    linkPrompt,
+    // toolbar,
+    // linkPrompt,
     popup,
+    viewPost
 })
 const store = createStore(reducer);
 export default store;

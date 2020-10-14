@@ -1,51 +1,56 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import {withRouter} from 'react-router-dom';
-import DiscussPage from '../pages/discuss_page.js';
+import {withRouter, Switch, Route, Redirect} from 'react-router-dom';
+import TopicDetail from '../pages/topic_detail_comp.js';
+import fetchReq from '../utils/xhr';
 import PostNewTopic from '../pages/post_topic_comp'
-import TopicList from '../pages/browse_topic_comp.js';
-import fetchReq from '../utils/xhr'
+import DiscussContext from '../contexts/discusses';
+import TopicTitle from '../pages/topic_title_comp';
+import WaittingNotation from '../ui/waitting_notation';
+class TopicList extends React.Component{
+    shouldComponentUpdate(nextProps){
+        if(nextProps.list.size === this.props.list.size){
+            return false
+        }
+        return true;
+    }
+    render(){
+        if(this.props.list.size){
+            let list = [...this.props.list.values()];
+            let topics = list.map(topic =>{
+                return <TopicTitle topic = {topic} key = {topic._id.slice(18)} handleSelectTopic = {this.props.handleSelectTopic}/>
+            });
+            return (
+                <div id = 'browse_topic'>
+                    {topics}
+                </div>
+            )
+        }
+        else{
+            return <WaittingNotation autoStop = {true}/>
+        }
+    }
+}
 class SubDiscussLayout extends React.Component{
     constructor(props){
         super();
         this.state = {
-            displayingPosts: new Map(),
-            questionsList: new Map(),
+            topicList: new Map(),
         }
+        this.selectedTitle = null;
     }
-    shouldComponentUpdate(nextProps){
+    shouldComponentUpdate(nextProps, nextState){
         let newSocket = nextProps.socket;
         if(newSocket && newSocket !== this.props.socket){
             this.navigateMessage();
             this.fetchInitialData();
             this.refreshDisplayingPost();
+            return true;
         }
-        return true
-    }
-    postTopic(e){
-        e.preventDefault();
-        let clickedButton = e.target;
-        let inputField = clickedButton.previousElementSibling;
-        let bodyData = {question: inputField.value};
-        fetch('/discuss/post_topic',{
-            body: JSON.stringify(bodyData),
-            method: 'post',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then((res) => {
-            if(res.redirected){
-                return {err: 'session ended'}
-            }
-            return res.json();
-        })
-        .then((question) =>{
-            if(question.err === 'session ended'){
-               return this.props.history.replace('/auth/login');
-            }
-            this.addToDisplay(question, true);
-        })
+        if(nextState.topicList.size !== this.state.topicList.size){
+            return true
+        }
+        return false;
     }
     addToDisplay = (question, isNew) => {
         this.setState((prevState) => {
@@ -68,13 +73,13 @@ class SubDiscussLayout extends React.Component{
             newState.set(id, modified)
             return {displayingPosts: newState}
         }) : "";
-        let val1 = this.state.questionsList.get(id);
+        let val1 = this.state.topicList.get(id);
         val1 ? this.setState((prevState) =>{
             let modified = Object.assign({},val1);
             modified.Comment++;
             let newState = new Map([...prevState.displayingPosts]);
             newState.set(id, modified)
-            return {questionsList: newState}
+            return {topicList: newState}
         }) : ""
     }
     addToTitleBoard = (data) =>{
@@ -85,14 +90,14 @@ class SubDiscussLayout extends React.Component{
                     entries.push([cur._id, cur])
                 })
                 let newState = new Map(entries)
-                return {questionsList: newState}
+                return {topicList: newState}
             }));
         }
         else {
             this.setState((prevState) => {
-                let newEntries = [...prevState.questionsList];
+                let newEntries = [...prevState.topicList];
                 newEntries.unshift([data._id, data]);
-                return {questionsList: new Map(newEntries)};
+                return {topicList: new Map(newEntries)};
             })
         }
 
@@ -111,13 +116,22 @@ class SubDiscussLayout extends React.Component{
             while(!target.id){
                 target = target.parentNode;
             }
+            if(target === this.selectedTitle){
+                return;
+            }
             id = target.id.slice(4); //id='list{id}'
+            if(this.selectedTitle){
+                this.selectedTitle.classList.remove('selected_title');
+            }
+            target.classList.add('selected_title');
+            this.selectedTitle = target;
         }
-        fetchReq('/discuss/data/content/' + id, {method: 'get'})
-        .then((data) => {
-            console.log(data)
-            // this.addToDisplay(data);
-        })
+        if(this.props.location.pathname !== '/discuss/detail'){
+            this.props.history.push(`/discuss/detail?id=${id}`);
+        }
+        else{
+            this.props.history.replace(`/discuss/detail?id=${id}`);
+        }
     }
     refreshDisplayingPost = () =>{
         if(!this.state.displayingPosts.size) return;
@@ -140,6 +154,7 @@ class SubDiscussLayout extends React.Component{
     navigateMessage = () =>{
         let socket = this.props.socket;
             socket.discuss = ({type, payload}) => {
+
                 switch(type){
                     case 'update board':
                         return this.addToTitleBoard(payload);
@@ -156,29 +171,21 @@ class SubDiscussLayout extends React.Component{
         delete this.props.socket.discuss;
     }
     render(){
-        // let user = this.props.user;
-        // let postBox = (
-        //     <div id = "post_topic">
-        //         <img src = {user.Avartar} alt = {`${user.Username} avartar`} width = "45" heigh = "45"/>
-        //         <input type = 'text' name = 'question' placeholder = "Ask an question" />
-        //         {/* file: <input id = 'file_upload' type = 'file' name = 'file' /> */}
-        //         <button id = 'submit_topic' onClick = {this.postTopic.bind(this)}>Ask</button>
-        //     </div>
-        // )
-
-        // let post = this.state.displayingPosts;
-        // let displayedPost = post.size ? <DiscussPage post = {post} user = {user}/> : "";
-
-        // let list = this.state.questionsList;
-        // let displayedQuestionList = list.size ? <BrowseQuestionPage list = {list} select = {this.selectTopic.bind(this)}/> : "";
         return (
-            <div id = "discuss_layout">
-                <PostNewTopic/>
-                <TopicList handleSelectTopic = {this.selectTopic} list = {this.state.questionsList}/>
-                {/* {postBox}
-                {displayedPost}
-                {displayedQuestionList} */}
-            </div>
+            <DiscussContext.Provider value = {{topicList:this.state.topicList}}>
+                <div id = "discuss_layout">
+                    <Switch>
+                        <Route exact path = '/discuss'>
+                            <PostNewTopic/>
+                        </Route>
+                        <Route path = '/discuss/detail'>
+                            <TopicDetail/>
+                        </Route>
+                        <Redirect to = '/discuss'/>
+                    </Switch>
+                    <TopicList handleSelectTopic = {this.selectTopic} list = {this.state.topicList}/>
+                </div>
+            </DiscussContext.Provider>
         )
     }
 

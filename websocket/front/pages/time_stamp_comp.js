@@ -39,7 +39,6 @@ class TimeStamp extends React.Component{
         this.setRefreshTime();
     }
     render(){
-        console.log(this.props.time)
         if(!this.props.time){
             return <span className = 'now'>now</span>
         }

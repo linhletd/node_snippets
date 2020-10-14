@@ -38,6 +38,7 @@ module.exports = function(app){
                     payload:{
                         _id: doc.insertedId,
                         Title,
+                        Category,
                         PostTime,
                         Author,
                         UpVote: 0,
