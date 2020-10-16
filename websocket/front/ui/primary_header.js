@@ -54,7 +54,7 @@ class PrimaryHeader extends React.Component{
         super();
         this.header = React.createRef();
         this.alist = null;
-        this.active = null;
+        this.active = document.createElement('span');
         this.pseudo = null;
         this.transiUp = false;
         this.transiDown = false;

@@ -8,15 +8,16 @@ const SubUserLayout = () =>{
     return(
         <div>
             {/* <UserNav/> */}
-            <h1>Sub user layout</h1>
-            <Switch>
+            {/* <h1>Sub user layout</h1> */}
+            <p>This content is not available right now, it will come soon...</p>
+            {/* <Switch>
                 <Route exact path = {`${match.path}/change-password`}>
                     <ChangePasswordPage/>
                 </Route>
                 <Route exact path = {`${match.path}/note`}>
                     <UserNotePage/>
                 </Route>
-            </Switch>
+            </Switch> */}
         </div>
     )
 }

@@ -880,9 +880,11 @@ input:hover,
 .user img{
     border-radius: 50%;
 }
-/* .user>div:last-child{
-    margin-left: 7px;
-} */
+.user>div:first-child{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
 .icon {
     position: relative;
     display: flex;
@@ -896,6 +898,17 @@ input:hover,
 .user_small .signal {
     left: 30px;
     top: 35px;
+
+}
+.user_xsmall img{
+    width: 35px;
+    height: 35px;
+}
+.user_xsmall .signal {
+    left: 25px;
+    top: 25px;
+    height: 11px;
+    width: 11px;
 
 }
 .user_tiny img{
@@ -1329,15 +1342,15 @@ td, thead{
 .topic_idx i{
     color: hsl(224, 90%, 30%)
 }
-#topic_ctn .user{
+#topic_ctn .concise_tpc .user{
     display: flex;
     flex-direction: column;
     align-items: center;
 }
-#topic_ctn .user>div:last-child{
+#topic_ctn .concise_tpc .user>div:last-child{
     width: 50px;
 }
-#topic_ctn .user a{
+#topic_ctn .concise_tpc .user a{
     width: 100%;
 }
 #weather_app{
@@ -1773,4 +1786,42 @@ button:disabled{
 }
 img:hover{
     transform: none;
+}
+.topic_thumb{
+    display: flex;
+    flex-direction: row;
+    width: 240px;
+    justify-content: space-between;
+}
+.comment_section{
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+}
+.comment_edit{
+    outline: none;
+    min-width: 500px;
+    min-height: 100%;
+    border: 1px solid seagreen;
+}
+.tag_board{
+    position: relative;
+}
+.tag_list{
+    background-color: rgba(0, 166, 255,1);
+    opacity: 1;
+    position: absolute;
+    display: grid;
+    row-gap: 5px;
+    padding: 5px 5px;
+    z-index: 10;
+}
+.tag_list .user{
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    width: 180px;
+    justify-items: center;
+}
+.tag_select{
+    background-color: red;
 }

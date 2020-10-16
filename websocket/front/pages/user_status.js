@@ -31,7 +31,7 @@ class UserStatus extends React.Component{
     }
     render(){
         let {props} = this;
-        let {childClass, activeTime} = props, status = props.status;
+        let {childClass, activeTime, click} = props, status = props.status;
         if(!('isOnline' in props.status) && props.usersStatus){
             status = props.usersStatus.get(props.status._id);
         }
@@ -50,7 +50,7 @@ class UserStatus extends React.Component{
         }
         else Child = "";
         return (
-            <div className = {status._id + ' user' +(childClass ? " " + childClass : '')}>
+            <div onClick = {click} className = {status._id + ' user' +(childClass ? " " + childClass : '')}>
                 <div className = "icon">
                     <img src = {status.Avartar} alt = {`${status.Username} avartar`}/>
                     <div className = {status.isOnline ? "signal online" : "signal offline"}/>

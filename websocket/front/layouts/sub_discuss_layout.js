@@ -44,7 +44,7 @@ class SubDiscussLayout extends React.Component{
         if(newSocket && newSocket !== this.props.socket){
             this.navigateMessage();
             this.fetchInitialData();
-            this.refreshDisplayingPost();
+            // this.refreshDisplayingPost();
             return true;
         }
         if(nextState.topicList.size !== this.state.topicList.size){

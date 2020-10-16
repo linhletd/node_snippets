@@ -2,6 +2,7 @@ import React from 'react';
 import TopicTitle from './topic_title_comp';
 import fetchReq from '../utils/xhr';
 import WaittingNotation from '../ui/waitting_notation';
+import CommentSection from './comment_section_comp';
 import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
 class Topic extends React.Component{
@@ -74,13 +75,19 @@ class Topic extends React.Component{
     }
     handleClickUpvote = (e) =>{
         let upvote = e.target;
-        let downvote = target.parentNode.nextSibling.firstChild;
+        let downvote = upvote.parentNode.nextSibling.firstChild;
         let state = 'set';
-        if(downvote.classList.contain('voted')){
+        if(downvote.classList.contains('voted')){
             downvote.classList.remove('voted');
             state = 'change'
         }
-        upvote.classList.add('voted')
+        else if(upvote.classList.contains('voted')){
+            state = 'cancel';
+            upvote.classList.remove('voted');
+        }
+        else{
+            upvote.classList.add('voted');
+        }
         fetchReq('/discuss/vote',{
             method: 'POST',
             headers: {
@@ -94,18 +101,46 @@ class Topic extends React.Component{
             })
         })
     }
+    handleClickDownvote = (e)=>{
+        let downvote = e.target;
+        let upvote = downvote.parentNode.nextSibling.firstChild;
+        let state = 'set';
+        if(upvote.classList.contains('voted')){
+            upvote.classList.remove('voted');
+            state = 'change'
+        }
+        else if(downvote.classList.contains('voted')){
+            state = 'cancel';
+            downvote.classList.remove('voted');
+        }
+        else{
+            downvote.classList.add('voted');
+        }
+        fetchReq('/discuss/vote',{
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                level: 'topic',
+                type: 'downvote',
+                state,
+                topic_id: this.state.data
+            })
+        })
+    }
     render(){
         if(this.state.data){
-            let bar = <div>
-                <div><i className="fa fa-thumbs-o-up"></i>&nbsp;Upvote</div>
-                <div><i className="fa fa-thumbs-o-down"></i>&nbsp;Downvote</div>
-                <div><i className="fa fa-comments-o"></i>&nbsp;Comment</div>
-            </div>
             return (
                 <div id = 'topic_ctn' key = {1}>
                     <TopicTitle authorName = {true} topic = {{_id:this.state.data}}/>
                     <div id = 'content_ctn'/>
-                    {bar}
+                    <div className = 'topic_thumb'>
+                        <div><i onClick = {this.handleClickUpvote} className="fa fa-thumbs-up"></i>&nbsp;Upvote</div>
+                        <div><i onClick = {this.handleClickDownvote} className="fa fa-thumbs-down"></i>&nbsp;Downvote</div>
+                        <div><i className="fa fa-comment"></i>&nbsp;Comment</div>
+                    </div>
+                    <CommentSection topicId = {this.state.data}/>
                 </div>
             );
         }
