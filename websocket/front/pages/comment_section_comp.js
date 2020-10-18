@@ -2,8 +2,8 @@ import React from 'react';
 import {connect} from 'react-redux';
 import UserStatus from './user_status';
 import BrowseUserPage from './browse_user_page';
-import { render } from 'timeago.js';
-class PostOrReplyComment extends React.Component{
+import TimeStamp from './time_stamp_comp';
+class CommentOrReply extends React.Component{
     constructor(props){
         super()
     }
@@ -277,48 +277,10 @@ class PostOrReplyComment extends React.Component{
         let parProps = {className: 'tag_list'};
         let childProps = {childClass: 'user_tiny', click: this.clickTagList};
         return(
-            <div className = {'porc' + ' ' + this.props.type}>
+            <div className = {'cor'}>
                 <UserStatus status = {this.props.user} noName = {true} childClass = 'user_xsmall'/>
                 <BrowseUserPage mainProps = {mainProps} parProps = {parProps} childProps = {childProps}/>
-                <button>post</button>
-            </div>
-        )
-    }
-}
-class PostedCommentIndex extends React.Component{
-    render(){
-        return (
-            <div>
-                <button>up</button>
-                <button>down</button>
-                <button>reply</button>
-            </div>
-        )
-    }
-}
-class PostedCommentContent extends React.Component{
-    constructor(props){
-        super();
-        this.comment = React.createRef();
-    }
-    componentDidMount(){
-        this.comment.current.innerHTML = this.props.comment.Content;
-    }
-    shouldComponentUpdate(){
-        return false;
-    }
-    render(){
-        return(
-            <div ref = {this.comment} className = 'comment_cnt'/>
-        )
-    }
-}
-class PostedComment extends React.Component{
-    render(){
-        return (
-            <div>
-                <UserStatus children = {PostedCommentContent} status = {{_id: this.props.comment.PostedBy}}/>
-                <PostedCommentIndex comment = {this.props.comment}/>
+                <button onClick = {this.props.handlePost}>post</button>
             </div>
         )
     }
@@ -328,4 +290,93 @@ function mapStateToProps(state){
         user: state.main.user
     }
 }
-export default connect(mapStateToProps, null)(CommentSection)
+CommentOrReply = connect(mapStateToProps, null)(CommentOrReply);
+class CommentedOrReplied extends React.Component{
+    constructor(props){
+        super();
+        this.node = React.createRef();
+    }
+    componentDidMount(){
+        this.node.current.innerHTML = this.props.data.Content;
+    }
+    shouldComponentUpdate(){
+        return false;
+    }
+    render(){
+        let content = <div ref = {this.node} className = 'comment_cnt'/>;
+        return (
+            <div className = {'cored'}>
+                <UserStatus children = {content} status = {{_id: this.props.data.PostedBy}} childClass = 'user_xsmall'/>
+            </div>
+        )
+    }
+}
+class Comment extends React.Component{
+    constructor(props){
+        super();
+        this.state = {
+            showReply: false
+        }
+    }
+    render(){   
+        let Replies = (props) =>{
+            let replies = props.replies.map((reply) =>{
+                return (
+                    <div key = {reply._id.slice(18)} id = {reply._id}>
+                        <CommentedOrReplied data = {reply}/>
+                        <div>
+                            <button>up</button>
+                            <button>down</button>
+                            <TimeStamp time = {reply.PostTime}/>
+                        </div>
+                    </div>
+                )
+            });
+            return(
+                <div>
+                    {replies}
+                    <CommentOrReply/>
+                </div>
+            )
+        }  
+        return(
+            <div id = {this.props.comment._id}>
+                <CommentedOrReplied data = {this.props.comment}/>
+                <div className = 'cmt_idx'>
+                    <div><i className="fa fa-thumbs-up"></i></div>
+                    <div><i className="fa fa-thumbs-down"></i></div>
+                    <div><i className="fa fa-reply"></i></div>
+                    <TimeStamp time = {this.props.comment.PostTime}/>
+                </div>
+                {this.state.showReply ? <Replies replies = {this.props.comment.replies}/> : ''}
+            </div>
+        )
+    }
+}
+class CommentSection extends React.Component{
+    handlePostComment = (e) =>{
+        let button = e.target;
+        fetch('/discuss/comment',{
+            method: 'post',
+            headers:{
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                topicId: this.props.topic._id,
+                content: button.previousSibling.firstChild.innerHTML
+            })
+        })
+    } 
+    render(){
+        let comments = this.props.topic.Comments.map(comment =>{
+            return <Comment comment = {comment} topic = {this.props.topic} key = {comment._id.slice(18)}/>
+        })
+        return(
+            <div className = 'comment_section'>
+                {comments}
+                <CommentOrReply handlePost = {this.handlePostComment}/>
+            </div>
+        )
+    }
+}
+export default CommentSection;

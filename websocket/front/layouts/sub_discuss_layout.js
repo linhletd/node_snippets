@@ -16,7 +16,9 @@ class TopicList extends React.Component{
     }
     render(){
         if(this.props.list.size){
+            console.log(this.props.list)
             let list = [...this.props.list.values()];
+            console.log(list)
             let topics = list.map(topic =>{
                 return <TopicTitle topic = {topic} key = {topic._id.slice(18)} handleSelectTopic = {this.props.handleSelectTopic}/>
             });
@@ -159,7 +161,7 @@ class SubDiscussLayout extends React.Component{
                     case 'update board':
                         return this.addToTitleBoard(payload);
                     case 'update comment':
-                        return this.addComment(payload);
+                        // return this.addComment(payload);
                 }
             }
     }

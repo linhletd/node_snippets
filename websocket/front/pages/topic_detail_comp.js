@@ -9,7 +9,7 @@ class Topic extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            data: null
+            topic: null
         }
     }
     handleComment(e){
@@ -41,11 +41,11 @@ class Topic extends React.Component{
         try{
             let {search} = nextProps ? nextProps.location : this.props.location;
             let id = search.match(/\?id=(\w{24})\b/)[1];
-            if(id){
+            if(id && (!this.state.topic || id !== this.state.topic._id)){
                 fetchReq('/discuss/data/content/' + id, {method: 'get'})
-                .then((data) => {
-                    this.setState({data: id}, () =>{
-                        document.getElementById('content_ctn').innerHTML = data.Content;
+                .then((topic) => {
+                    this.setState({topic}, () =>{
+                        document.getElementById('content_ctn').innerHTML = topic.Content;
                     })
                 })
                 document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
@@ -60,12 +60,12 @@ class Topic extends React.Component{
         }
     }
     componentDidMount(){
-        if(!this.state.data){
+        if(!this.state.topic){
             this.getTopicContent()
         }
     }
     shouldComponentUpdate(nextProps, nextState){
-        if(nextState.data !== this.state.data){
+        if(nextState.topic && (!this.state.topic || nextState.topic._id !== this.state.topic._id)){
             return true;
         }
         if(nextProps.location.search !== this.props.location.search){
@@ -97,7 +97,7 @@ class Topic extends React.Component{
                 level: 'topic',
                 type: 'upvote',
                 state,
-                topic_id: this.state.data
+                topic_id: this.state.topic_id
             })
         })
     }
@@ -125,22 +125,22 @@ class Topic extends React.Component{
                 level: 'topic',
                 type: 'downvote',
                 state,
-                topic_id: this.state.data
+                topic_id: this.state.topic._id
             })
         })
     }
     render(){
-        if(this.state.data){
+        if(this.state.topic){
             return (
                 <div id = 'topic_ctn' key = {1}>
-                    <TopicTitle authorName = {true} topic = {{_id:this.state.data}}/>
+                    <TopicTitle authorName = {true} topic = {{_id:this.state.topic._id}}/>
                     <div id = 'content_ctn'/>
                     <div className = 'topic_thumb'>
                         <div><i onClick = {this.handleClickUpvote} className="fa fa-thumbs-up"></i>&nbsp;Upvote</div>
                         <div><i onClick = {this.handleClickDownvote} className="fa fa-thumbs-down"></i>&nbsp;Downvote</div>
                         <div><i className="fa fa-comment"></i>&nbsp;Comment</div>
                     </div>
-                    <CommentSection topicId = {this.state.data}/>
+                    <CommentSection topic = {this.state.topic}/>
                 </div>
             );
         }

@@ -104,16 +104,17 @@ module.exports = function(app){
 
         },
         postComment: function(req, res, next){
+            let {topicId, content} = req.body;
             let newComment = {
                 _id: ObjectId(),
-                Comment: req.body.comment,
-                CommentTime: Date.now(),
-                CommentedBy: req.user._id,
+                Content: content,
+                PostTime: Date.now(),
+                PostedBy: req.user._id,
                 UpVotes: [],
                 DownVotes: [],
                 Replies: []
             }
-            let topicId = new ObjectId(req.body.id);
+            topicId = new ObjectId(topicId);
             topics.updateOne(
                 {_id: topicId},
                 {$push: {Comments: newComment}},
@@ -121,7 +122,7 @@ module.exports = function(app){
             ,(err, doc) =>{
                 if(err) return res.json({err: err.message});
                 else if(doc.modifiedCount !== 0){
-                    newComment.tid = req.body.id;//tid topicid
+                    newComment.tid = req.body.topicId;//tid topicid
                     let message = {
                         type: 'update comment',
                         payload: newComment

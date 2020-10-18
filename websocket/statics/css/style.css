@@ -890,6 +890,8 @@ input:hover,
     display: flex;
     justify-content: center;
     align-items: center;
+    width: max-content;
+    height: max-content;
 }
 .user_small img{
     width: 45px;
@@ -1352,6 +1354,7 @@ td, thead{
 }
 #topic_ctn .concise_tpc .user a{
     width: 100%;
+    text-align: center;
 }
 #weather_app{
     display: flex;
@@ -1793,16 +1796,35 @@ img:hover{
     width: 240px;
     justify-content: space-between;
 }
-.comment_section{
+.cor, .cored{
     width: 100%;
     display: flex;
     flex-direction: row;
 }
+.cored .user{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+.cored .user>div:last-child *{
+    display: inline-block;
+}
+.cmt_idx{
+    display: flex;
+    flex-direction: row;
+    width: 180px;
+    justify-content: space-between;
+}
+.comment_section{
+    display: flex;
+    flex-direction: column;
+}
 .comment_edit{
     outline: none;
-    min-width: 500px;
-    min-height: 100%;
     border: 1px solid seagreen;
+    min-width: 300px;
+    min-height: 100%;
 }
 .tag_board{
     position: relative;

@@ -3,6 +3,7 @@ import {NavLink} from 'react-router-dom';
 import UserStatus from '../pages/user_status';
 import fetchReq from '../utils/xhr';
 import {connect} from 'react-redux';
+import {withRouter} from 'react-router-dom'
 let Logout = () =>{
     let handleLogout = () =>{
         fetchReq('/logout')
@@ -63,6 +64,12 @@ class PrimaryHeader extends React.Component{
         this.person = undefined;
         this.bell = undefined;
     }
+    shouldComponentUpdate(nextProps){
+        if(this.pseudo && nextProps.location.pathname !== this.props.location.pathname){
+            this.pseudo.click();
+        }
+        return false;
+    }
     handleWindowResize = () =>{
         if((innerWidth >= 1200 || innerWidth < 600 && !this.transiUp) && this.left.style.display === 'flex' ||
         innerWidth >= 600 && this.right.style.display === 'flex'){
@@ -115,7 +122,9 @@ class PrimaryHeader extends React.Component{
         if(this.pseudo){
             this.pseudo.click();
         }
-        !this.active.classList.contains('active') && this.active.classList.add('active');
+        if(this.props.location.pathname !== '/user' && !this.active.classList.contains('active')){
+            this.active.classList.add('active');
+        }
     }
     addActiveToPseudo = (target) =>{
         this.ignoreActiveRoute();
@@ -247,4 +256,4 @@ class PrimaryHeader extends React.Component{
         )
     }
 }
-export default PrimaryHeader;
+export default withRouter(PrimaryHeader);

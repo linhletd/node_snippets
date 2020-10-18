@@ -83,6 +83,9 @@ class AuthLayout extends React.Component{
             let {type, payload} = JSON.parse(event.data);
             (()=>{
                 switch(type){
+                    case 'ws id':
+                        socket.id = payload;
+                        return () =>{}
                     case 'update board': case 'update comment':
                         return socket.discuss && socket.discuss || (()=>{});
                     case 'online': case 'offline':

@@ -5,11 +5,14 @@ const uuid = require('uuid');
 let idMap = new Map();
 let ownerMap = new Map();
 let sessionMap = new Map();
-
+let topicMap = new Map();
+let discussSet = new Set();
 module.exports = function applyWebsocket(server, app){
     app.idMap = idMap;
     app.ownerMap = ownerMap;
     app.sessionMap = sessionMap;
+    app.topicMap = topicMap;
+    app.discussSet = discussSet;
     let client = app.client;
     let db = client.db(process.env.MG_DB_NAME);
     let users = db.collection('users');
@@ -40,6 +43,10 @@ module.exports = function applyWebsocket(server, app){
         let userID = user._id;
         ws.owner = userID;
         ws.id = socketID;
+        ws.send(JSON.stringify({
+            type: 'ws id',
+            payload: socketID
+        }))
         ws.ref = {};
         idMap.set(socketID, ws);
         let uid = ownerMap.get(userID);
@@ -125,19 +132,30 @@ module.exports = function applyWebsocket(server, app){
             else {
                 ownerMap.get(userID).delete(ws);
             }
-            console.log(sessionID)
             sessionMap.get(sessionID).size === 1 ? sessionMap.delete(sessionID) : sessionMap.get(sessionID).delete(ws)
             clearInterval(itval);
+            if(ws.topic){
+                let list = topicMap.get(ws.topic);
+                if(list.size === 1){
+                    topicMap.delete(ws.topic)
+                }
+                else{
+                    list.delete(ws)
+                }
+            }
+            if(discussSet.has(ws)){
+                discussSet.delete(ws);
+            }
 
         });
 
         ws.on('message', function incoming(message){
             // console.log(`client say ${message}`)
             let {type, payload} = JSON.parse(message);
-            if(payload._id && !ownerMap.get(payload._id)){
-                console.log('xxx')
-                return;
-            }
+            // if(payload._id && !ownerMap.get(payload._id)){
+            //     console.log('xxx')
+            //     return;
+            // }
             (()=>{
                 switch(type){
                     case 'invite':
@@ -214,6 +232,15 @@ module.exports = function applyWebsocket(server, app){
                     case 'go': case 'shoot': case 'continue':
                         return () =>{
                             this.ref.game && this.ref.game.send(message);
+                        }
+                    case 'xdiscuss':
+                        return ()=>{
+                            discussSet.delete(ws)
+                        }
+                    case 'xtopic':
+                        return () =>{
+                            topicMap.delete(payload.topicId);
+                            delete ws.topic;
                         }
                     default:
                         return ()=>{
