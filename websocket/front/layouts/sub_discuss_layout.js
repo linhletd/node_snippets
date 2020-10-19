@@ -4,21 +4,27 @@ import {withRouter, Switch, Route, Redirect} from 'react-router-dom';
 import TopicDetail from '../pages/topic_detail_comp.js';
 import fetchReq from '../utils/xhr';
 import PostNewTopic from '../pages/post_topic_comp'
-import DiscussContext from '../contexts/discusses';
+import {TitleContext, BarContext, CommentContext, CIndexContext, ReplyContext, RIndexContext} from '../contexts/discusses';
 import TopicTitle from '../pages/topic_title_comp';
 import WaittingNotation from '../ui/waitting_notation';
+import sendMsgViaSocket from '../utils/sendMsgViaSocket';
 class TopicList extends React.Component{
-    shouldComponentUpdate(nextProps){
-        if(nextProps.list.size === this.props.list.size){
-            return false
-        }
-        return true;
-    }
+    // constructor(props){
+    //     super();
+    //     this.currentSize = props.state.topicList.size;
+    // }
+    // shouldComponentUpdate(nextProps){
+    //     if(nextProps.state.topicList.size === this.currentSize){
+    //         return false
+    //     }
+    //     else{
+    //         this.currentSize = nextProps.state.topicList.size;
+    //     }
+    //     return true;
+    // }
     render(){
-        if(this.props.list.size){
-            console.log(this.props.list)
-            let list = [...this.props.list.values()];
-            console.log(list)
+        if(this.props.state.topicList.size){
+            let list = [...this.props.state.topicList.values()];
             let topics = list.map(topic =>{
                 return <TopicTitle topic = {topic} key = {topic._id.slice(18)} handleSelectTopic = {this.props.handleSelectTopic}/>
             });
@@ -33,6 +39,12 @@ class TopicList extends React.Component{
         }
     }
 }
+function mapTopicProps(state){
+    return {
+        title: state.discuss.titleList
+    }
+}
+TopicList = connect(mapTopicProps, null)(TopicList);
 class SubDiscussLayout extends React.Component{
     constructor(props){
         super();
@@ -45,14 +57,9 @@ class SubDiscussLayout extends React.Component{
         let newSocket = nextProps.socket;
         if(newSocket && newSocket !== this.props.socket){
             this.navigateMessage();
-            this.fetchInitialData();
-            // this.refreshDisplayingPost();
-            return true;
+            this.fetchInitialData(nextProps);
         }
-        if(nextState.topicList.size !== this.state.topicList.size){
-            return true
-        }
-        return false;
+        return true;
     }
     addToDisplay = (question, isNew) => {
         this.setState((prevState) => {
@@ -86,23 +93,26 @@ class SubDiscussLayout extends React.Component{
     }
     addToTitleBoard = (data) =>{
         if(Array.isArray(data)){
-            this.setState((prevState => {
+            // this.setState((prevState => {
                 let entries = [];
                 data.map((cur) =>{
                     entries.push([cur._id, cur])
                 })
-                let newState = new Map(entries)
-                return {topicList: newState}
-            }));
+                this.state.topicList = new Map(entries)
+            //     return {topicList: newState}
+            // }));
         }
         else {
-            this.setState((prevState) => {
-                let newEntries = [...prevState.topicList];
+            // this.setState((prevState) => {
+                let newEntries = [...this.state.topicList];
                 newEntries.unshift([data._id, data]);
-                return {topicList: new Map(newEntries)};
-            })
+                this.state.topicList = new Map(newEntries)
+            //     return {topicList: new Map(newEntries)};
+            // })
         }
-
+        this.props.updateStore({
+            type: 'TITLEBOARD'
+        })
     }
     selectTopic = (e) =>{
         let id;
@@ -135,14 +145,20 @@ class SubDiscussLayout extends React.Component{
             this.props.history.replace(`/discuss/detail?id=${id}`);
         }
     }
-    refreshDisplayingPost = () =>{
-        if(!this.state.displayingPosts.size) return;
-        let id = [...this.state.displayingPosts.keys()][0];
-        this.selectTopic(id);
-        //change state of topic board
-    }
-    fetchInitialData = () =>{
-        fetchReq('/discuss/data/titles',{
+    fetchInitialData = (nextProps) =>{
+        let path = '/discuss/data/titles';
+        let {socket} = this.props;
+        let url = path;
+        if(socket && socket.id){
+            url = path + `?s=${socket.id}`;
+        }
+        else{
+            let msg =JSON.stringify({
+                type: 'odiscuss',
+            });
+            sendMsgViaSocket(nextProps || this.props, msg)
+        }
+        fetchReq(url,{
             method: 'get'
         }).then(({data}) =>{
             if(data && !data.err){
@@ -153,28 +169,53 @@ class SubDiscussLayout extends React.Component{
             }
         })
     }
+    updateTitleIndex = (payload, _id) =>{
+        console.log(_id, this.state.topicList)
+        let topic = this.state.topicList.get(_id);
+        Object.keys(payload).map((key) =>{
+            topic[key] += payload[key];
+        })
+    }
     navigateMessage = () =>{
         let socket = this.props.socket;
-            socket.discuss = ({type, payload}) => {
-
-                switch(type){
-                    case 'update board':
-                        return this.addToTitleBoard(payload);
-                    case 'update comment':
-                        // return this.addComment(payload);
-                }
+        socket.discuss = ({type, payload, _id}) => {
+            switch(type){
+                case 'update board':
+                    return this.addToTitleBoard(payload);
+                case 'topictitle':
+                    console.log(type, 1);
+                    this.updateTitleIndex(payload, _id)
+                    this.props.updateStore({
+                        type: 'TOPICTITLE',
+                        data: {_id}
+                    });
+                    return;
+                case 'topicbar':
+                    if(this.state.topic && this.state.topic._id === _id && this.state.bar){
+                        Object.assign(this.state.bar, payload);
+                        this.props.updateStore({
+                            type: 'TOPICBAR',
+                            data: {_id}
+                        });
+                    }
+                    return;
             }
+        }
     }
     componentDidMount(){
         this.fetchInitialData();
         this.navigateMessage();
     }
     componentWillUnmount(){
+        let msg = JSON.stringify({
+            type: 'xdiscuss'
+        })
+        sendMsgViaSocket(this.props, msg);
         delete this.props.socket.discuss;
     }
     render(){
         return (
-            <DiscussContext.Provider value = {{topicList:this.state.topicList}}>
+            <TitleContext.Provider value = {this.state}>
                 <div id = "discuss_layout">
                     <Switch>
                         <Route exact path = '/discuss'>
@@ -185,9 +226,9 @@ class SubDiscussLayout extends React.Component{
                         </Route>
                         <Redirect to = '/discuss'/>
                     </Switch>
-                    <TopicList handleSelectTopic = {this.selectTopic} list = {this.state.topicList}/>
+                    <TopicList handleSelectTopic = {this.selectTopic} state = {this.state}/>
                 </div>
-            </DiscussContext.Provider>
+            </TitleContext.Provider>
         )
     }
 

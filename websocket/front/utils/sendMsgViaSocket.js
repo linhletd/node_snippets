@@ -1,4 +1,4 @@
-function sendMsgViaSocket(props, msg){
+function sendMsgViaSocket(props, msg, cb){
     let {socket} = props;
     if(socket.readyState === 2 || socket.readyState === 3){
         let ws = new window.WebSocket('ws://localhost:8080');
@@ -15,6 +15,9 @@ function sendMsgViaSocket(props, msg){
             if(socket.readyState === 0){
                 socket.addEventListener('open', () =>{
                 socket.send(msg);
+                if(cb){
+                    cb()
+                }
                 })
             }
         }

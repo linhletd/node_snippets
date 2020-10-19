@@ -23,7 +23,10 @@ const LOGIN = 'LOGIN',
       TOOLBARCHANGE = 'TOOLBARCHANGE',
 
       OPENPROMPT = 'OPENPROMPT',
-      CLOSEPROMPT = 'CLOSEPROMPT'
+      CLOSEPROMPT = 'CLOSEPROMPT',
+      TOPICTITLE = 'TOPICTITLE',
+      TITLEBOARD = 'TITLEBOARD',
+      TOPICBAR = 'TOPICBAR'
     
 var user, socket, usersStatus = undefined;
 if(window.atob && /^InVzZXIi=|;InVzZXIi=/.test(document.cookie)){
@@ -161,42 +164,6 @@ let initialEditor = {
 function editor(state = initialEditor){
     return state;
 }
-// let initialEditorToolbar = {
-//     undo: 0,//0 disabled, 1 normal, 2 activated
-//     redo: 0,
-//     bold: 1, 
-//     italic: 1,
-//     underline: 1,
-//     order: 1,
-//     unorder: 1,
-//     inclevel: 0,
-//     declevel: 0,
-//     link: 1,
-//     quote: 1,
-//     code: 1,
-//     img: 1,
-//     fill: 'yellow',
-//     color: 'red',
-//     fontsize: '16px',
-//     fontfamily: 'Arial,Helvetica,sans-serif'
-
-// }
-// function toolbar(state = initialEditorToolbar, {type, data}){
-//     if(type === TOOLBARCHANGE){
-//         return {...state, ...data}
-//     }
-//     return state;
-// }
-
-// function linkPrompt(state = {closed: true}, {type, data}){
-//     switch(type){
-//         case OPENPROMPT:
-//             return data; //{it, as}
-//         case CLOSEPROMPT:
-//             return {closed: true};
-//     }
-//     return state;
-// }
 function popup(state = {}, action){
     switch(action.type){
         case WAITPLAYER: 
@@ -211,7 +178,23 @@ function viewPost(state = {}, action){
         return action.data;//_id
     }
     return state;
-} 
+}
+let initialDiscuss = {
+    title: {},
+    titleList: true,
+    topicBar: true,
+}
+function discuss(state = initialDiscuss, action){
+    switch(action.type){
+        case TOPICTITLE:
+            return {...state, title: action.data}
+        case TITLEBOARD:
+            return {...state, titleList: !state.titleList}
+        case TOPICBAR:
+            return {...state, topicBar: !state.topicBar}
+    }
+    return state;
+}
 let reducer = combineReducers({
     main,
     poong,
@@ -219,7 +202,8 @@ let reducer = combineReducers({
     // toolbar,
     // linkPrompt,
     popup,
-    viewPost
+    viewPost,
+    discuss
 })
 const store = createStore(reducer);
 export default store;

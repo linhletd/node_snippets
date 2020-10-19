@@ -14,11 +14,14 @@ class UserStatus extends React.Component{
         }
     }
     shouldComponentUpdate(nextProps){
-        // let user;
-        // if((user = nextProps.usersStatus.get(this.props.status._id))
-        //     && user.isOnline === this.currentStatus){
-        //         return false
-        // }
+        if(this.props.usersStatus && nextProps.usersStatus.size !== this.props.usersStatus.size){
+            return false;
+        }
+        let user;
+        if((user = nextProps.usersStatus.get(this.props.status._id))
+            && user.isOnline === this.currentStatus){
+                return false
+        }
         return true;
     }
     componentDidMount(){

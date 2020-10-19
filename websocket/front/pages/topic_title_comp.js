@@ -1,41 +1,50 @@
 import React from 'react';
 import UserStatus from './user_status';
 import TimeStamp from './time_stamp_comp';
-import DiscussContext from '../contexts/discusses';
+import {TitleContext} from '../contexts/discusses';
+import {connect} from 'react-redux';
 class TopicTitle extends React.Component{
-    constructor(props){
-        super();
-        this.prev = {};
-    }
+    // constructor(props){
+    //     super();
+    //     this.prev = {};
+    //     this.currentSize = props.state.topicList.size;
+    // }
     shouldComponentUpdate(nextProps){
-        if(nextProps.topic._id !== this.props.topic._id){
+        // if(nextProps.topic._id !== this.props.topic._id){
+        //     return true;
+        // }
+        // if(nextProps.state.topicList.size !== this.currentSize){
+        //     this.currentSize = nextProps.state.topicList.size;
+        //     return false;
+        // }
+        // if(nextProps.state.topicList !== this.props.state.topicList){
+        //     if(!this.topic){
+        //         return true;
+        //     }
+        //     let checkKeys = ['Comment', 'UpVote', 'DownVote'];
+        //     for(let i = 0; i < checkKeys.length; i++){
+        //         if(this.prev[checkKeys[i]] !== this.topic[checkKeys[i]]){
+        //             return true;
+        //         }
+        //     }
+        // }
+        if(nextProps.title._id === this.props.topic._id){
             return true;
-        }
-        if(nextProps.context !== this.props.context){
-            if(!this.topic){
-                return true;
-            }
-            let checkKeys = ['Comment', 'UpVote', 'DownVote'];
-            for(let i = 0; i < checkKeys.length; i++){
-                if(this.prev[checkKeys[i]] !== this.topic[checkKeys[i]]){
-                    return true;
-                }
-            }
         }
         return false;
     }
     render(){
-        let {topic, context, authorName} = this.props;
+        let {topic, state: {topicList}, authorName} = this.props;
         let t;
         if(!('Author' in topic)){
-            t = context.topicList.get(topic._id);
+            t = topicList.get(topic._id);
             t && (topic = t);
         }
-        this.prev.Comment = topic.Comment;
-        this.prev.Upvote = topic.UpVote;
-        this.prev.DownVote = topic.DownVote;
+        // this.prev.Comment = topic.Comment;
+        // this.prev.UpVote = topic.UpVote;
+        // this.prev.DownVote = topic.DownVote;
         if(topic.Comment !== undefined){
-            this.topic = topic;
+            // this.topic = topic;
             let tag = topic.Category[0] === 'C' ? 'tag code_tag' : topic.Category[0] === 'L' ? 'tag life_tag' : topic.Category[0] === 'O' ? 'tag other_tag' : '';
             return (
                 <div className = 'concise_tpc' id = {`list${topic._id}`} onClick = {this.props.handleSelectTopic}>
@@ -66,8 +75,14 @@ class TopicTitle extends React.Component{
 }
 class WithContext extends React.Component{
     render(){
-        return <TopicTitle {...this.props} context = {this.context}/>
+        return <TopicTitle {...this.props} state = {this.context}/>
     }
 }
-WithContext.contextType = DiscussContext;
+WithContext.contextType = TitleContext;
+function mapTitleProps(state){
+    return {
+        title: state.discuss.title
+    }
+}
+WithContext = connect(mapTitleProps, null)(WithContext);
 export default WithContext;

@@ -41,19 +41,22 @@ class GameNav extends React.Component{
         this.props.history.replace('/game/life');
     }
     shouldComponentUpdate(nextProps, nextState){
+        console.log(nextProps.location.pathname, this.props.location.pathname)
         if(nextProps.location.pathname === '/game/poong' && nextProps.location.pathname !== this.props.location.pathname){
             !this.poong.current.classList.contains('game_selected') && this.poong.current.classList.add('game_selected');
             this.life.current.classList.contains('game_selected') && this.life.current.classList.remove('game_selected');
             this.closeInviteBoard();
-            this.closePoongGuide()
+            this.closePoongGuide();
+            return false;
         }
         if(nextProps.location.pathname === '/game/life' && nextProps.location.pathname !== this.props.location.pathname){
             !this.life.current.classList.contains('game_selected') && this.life.current.classList.add('game_selected');
-            this.poong.current.classList.contains('game_selected') && this.poong.current.classList.remove('game_selected')
+            this.poong.current.classList.contains('game_selected') && this.poong.current.classList.remove('game_selected');
+            return false;
         }
         if(nextProps.location.pathname === '/game' && ['/game/poong', '/game/life'].indexOf(this.props.location.pathname) > -1){
             this.life.current.classList.contains('game_selected') && this.life.current.classList.remove('game_selected');
-            this.poong.current.classList.contains('game_selected') && this.poong.current.classList.remove('game_selected')
+            this.poong.current.classList.contains('game_selected') && this.poong.current.classList.remove('game_selected');
         }
         return false;
     }

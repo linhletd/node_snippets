@@ -270,7 +270,7 @@ class CommentOrReply extends React.Component{
                 return false;
             }
             render(){
-                return <div ref = {self.commentEdit} className = 'comment_edit' contentEditable = {true}/>
+                return <div ref = {self.commentEdit} className = {self.props.inputClass ? `comment_edit ${self.props.inputClass}` : 'comment_edit'} contentEditable = {true} />
             }
         }
         let mainProps = {filter: this.props.user._id, className: 'tag_board', InputComp: Input};
@@ -374,7 +374,7 @@ class CommentSection extends React.Component{
         return(
             <div className = 'comment_section'>
                 {comments}
-                <CommentOrReply handlePost = {this.handlePostComment}/>
+                <CommentOrReply handlePost = {this.handlePostComment} inputClass = 'comment_input'/>
             </div>
         )
     }

@@ -208,7 +208,6 @@ class PrimaryHeader extends React.Component{
     }
     render(){
         let user = {...this.props.user};
-        user.isOnline = true;
         let Person = () =>{
             return (
                 <div id = 'h_person' className = 'small_hide hdr_ico' onClick = {this.handleClickPerson}>

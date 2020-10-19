@@ -80,13 +80,15 @@ class AuthLayout extends React.Component{
             socket = this.props.socket;
         }
         socket.onmessage = (event)=>{
-            let {type, payload} = JSON.parse(event.data);
+            let parsedMsg = JSON.parse(event.data);
+            let {type, payload} = parsedMsg;
+            console.log(type);
             (()=>{
                 switch(type){
                     case 'ws id':
                         socket.id = payload;
                         return () =>{}
-                    case 'update board': case 'update comment':
+                    case 'update board': case 'topictitle': case 'topicbar':
                         return socket.discuss && socket.discuss || (()=>{});
                     case 'online': case 'offline':
                         return this.updateUsersStatusBoard;
@@ -131,7 +133,7 @@ class AuthLayout extends React.Component{
                     // default: 
                     //     return () =>{console.log('default: ', type)};
                 }
-            })()({type, payload})
+            })()(parsedMsg)
 
         }
     }
@@ -266,7 +268,7 @@ class AuthLayout extends React.Component{
                         </Switch>
                     </div>
                     <div id = 'app_right' ref = {this.right}>
-                        <InviteNoticeBoard history = {this.props.history}/>
+                        {/* <InviteNoticeBoard history = {this.props.history}/> */}
                     </div>
             </div>
         )

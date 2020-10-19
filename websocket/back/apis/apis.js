@@ -53,6 +53,11 @@ module.exports = function(app){
             })
         },
         getTopicTitle: function(req, res, next){
+            let socketId = req.query.s;
+            if(socketId){
+                let discuss = app.discussSet;
+                discuss.add(app.idMap.get(socketId));
+            }
             let cursor = topics.aggregate([
                 {
                     $addFields: {
@@ -97,9 +102,23 @@ module.exports = function(app){
         },
         getTopicContentById: function(req, res, next){
             let _id = ObjectId(req.params.topic_id);
+            let socketId = req.query.s;
+            let topicMap = app.topicMap;
+            if(socketId){
+                let ws = app.idMap.get(socketId);
+                ws.topic = _id;
+                let topic;
+                if((topic = topicMap.get(_id))){
+                    topic.add(ws);
+                }
+                else{
+                    topic = new Set([ws]);
+                    topicMap.set(_id, topic);
+                }
+            }
             topics.findOne({_id}, (err, topic) =>{
                 if(err) return res.json({err: err.message});
-                res.json(topic)
+                res.json(topic);
             })
 
         },
