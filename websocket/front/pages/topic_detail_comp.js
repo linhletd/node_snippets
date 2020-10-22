@@ -5,7 +5,7 @@ import WaittingNotation from '../ui/waitting_notation';
 import CommentSection from './comment_section_comp';
 import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
-import sendMsgViaSocket from '../utils/sendMsgViaSocket';
+import sendMsgViaSocket, {focusOnInput} from '../utils/sendMsgViaSocket';
 import { TitleContext } from '../contexts/discusses';
 class Bar extends React.Component{
     constructor(){
@@ -60,41 +60,7 @@ class Bar extends React.Component{
     }
     handleClickComment = () =>{
         let input = document.querySelector('.comment_input');
-        if(!input.hasChildNodes()){
-            input.focus();
-        }
-        else{
-            let r = new Range();
-            let sel = document.getSelection();
-            sel.removeAllRanges();
-            let last = input.lastChild;
-            if(last.nodeName === 'BR' && last.previousSibling && last.previousSibling.nodeName !== 'BR'){
-                last = last.previousSibling;
-            }
-            else if(last.nodeName === 'BR'){
-                r.setStartBefore(last);
-                r.collapse(true);
-                sel.addRange(r);
-                return;
-            }
-            if(last.nodeName === '#text'){
-                r.setStart(last, last.nodeValue.length);
-            }
-            else if(last.nodeName === 'A'){
-                r.setStartAfter(last);
-            }
-            else{
-                try{
-                    r.setStart(last.lastChild, last.lastChild.nodeValue.length)
-                }
-                catch{
-                    r.setStartAfter(last);
-                }
-            }
-            r.collapse(true);
-            sel.addRange(r);
-        }
-
+        focusOnInput(input);
         input.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
     }
     render(){
@@ -129,31 +95,6 @@ class Topic extends React.Component{
         this.state = {
             topic: null
         }
-    }
-    handleComment(e){
-        e.preventDefault();
-        let clickedButton = e.target;
-        let questionID = clickedButton.parentNode.parentNode.id;
-        let inputField = clickedButton.previousElementSibling;
-        let body = `comment=${inputField.value}&id=${questionID}`;
-        fetch('/discuss/comment',{
-            method: 'post',
-            headers:{
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body
-        }).then((res) => {
-            if(res.redirected){
-                return {err: 'session ended'}
-            }
-            return res.json();
-        })
-        .catch(e =>({err: e.message}))
-        .then((data) =>{
-            if(data.err === 'session ended'){
-               return this.props.history.replace('/auth/login');
-            }
-        })
     }
     getTopicContent = (nextProps) =>{
         let {search} = nextProps ? nextProps.location : this.props.location;
@@ -210,10 +151,13 @@ class Topic extends React.Component{
             this.getTopicContent();
             this.state.topic = null;
         }
-        if(nextState.topic && (!this.state.topic || nextState.topic._id !== this.state.topic._id)){
+        if(nextState.topic !== this.state.topic){
             return true;
         }
         if(nextProps.location.search !== this.props.location.search){
+            this.setState({topic: null});
+            this.context.topic = null;
+            this.context.barInfo = null;
             this.getTopicContent(nextProps);
         }
         return false;

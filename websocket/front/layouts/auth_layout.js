@@ -88,7 +88,8 @@ class AuthLayout extends React.Component{
                     case 'ws id':
                         socket.id = payload;
                         return () =>{}
-                    case 'update board': case 'topictitle': case 'topicbar':
+                    case 'update board': case 'topictitle': case 'topicbar': case 'comment': 
+                    case 'cmtbar': case 'reply': case 'repbar':
                         return socket.discuss && socket.discuss || (()=>{});
                     case 'online': case 'offline':
                         return this.updateUsersStatusBoard;
@@ -268,7 +269,7 @@ class AuthLayout extends React.Component{
                         </Switch>
                     </div>
                     <div id = 'app_right' ref = {this.right}>
-                        {/* <InviteNoticeBoard history = {this.props.history}/> */}
+                        <InviteNoticeBoard history = {this.props.history}/>
                     </div>
             </div>
         )

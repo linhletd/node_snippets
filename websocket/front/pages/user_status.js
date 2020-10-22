@@ -43,7 +43,7 @@ class UserStatus extends React.Component{
         }
         this.currentStatus = status.isOnline;
         let Child = props.children;
-        let onlineTimeStamp = activeTime === true ? <TimeStamp time = {status.isOnline ? 0 : status.LastActive}/> : '';
+        let onlineTimeStamp = activeTime === true ? <TimeStamp time = {status.isOnline ? 0 : status.LastActive} normal = {true}/> : '';
         if(Child){
             if(typeof Child === 'function'){
                 let attr = {};

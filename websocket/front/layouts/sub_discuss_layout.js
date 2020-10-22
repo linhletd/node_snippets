@@ -192,13 +192,140 @@ class SubDiscussLayout extends React.Component{
                     return;
                 case 'topicbar':
                     if(this.state.topic && this.state.topic._id === _id && this.state.bar){
-                        Object.assign(this.state.bar, payload);
-                        this.props.updateStore({
-                            type: 'TOPICBAR',
-                            data: {_id}
-                        });
+                        let {user, upvoted, downvoted} = payload;
+                        let {topic: {UpVotes, DownVotes}} = this.state;
+                        let idx1 = UpVotes.indexOf(user);
+                        let idx2 = DownVotes.indexOf(user);
+                        if(upvoted){
+                            idx1 === -1 && UpVotes.push(user);
+                            idx2 > -1 && DownVotes.splice(idx2, 1)
+                        }
+                        else if(downvoted){
+                            idx1 > -1 && UpVotes.splice(idx1, 1);
+                            idx2 === -1 && DownVotes.push(user)
+                        }
+                        else{
+                            idx1 > -1 && UpVotes.splice(idx1, 1);
+                            idx2 > -1 && DownVotes.splice(idx2, 1);
+                        }
+                        if(user === this.props.user._id){
+                            delete payload.user;
+                            Object.assign(this.state.bar, payload);
+                            this.props.updateStore({
+                                type: 'TOPICBAR',
+                                data: {_id}
+                            });
+                        }
                     }
                     return;
+                case 'comment':
+                    if(this.state.topic && this.state.topic._id === _id){
+                        this.state.topic.Comments.push(payload);
+                        this.props.updateStore({
+                            type: 'COMMENT'
+                        })
+                    }
+                    return;
+                case 'cmtbar':
+                    if(this.state.topic){
+                        let {Comments} = this.state.topic;
+                        let comment = (()=>{
+                            for(let i = 0; i < Comments.length; i++){
+                                if(Comments[i]._id === _id){
+                                    return Comments[i]
+                                }
+                            }
+                        })();
+                        let {UpVotes, DownVotes} = comment;
+                        let {user, upvoted, downvoted} = payload;
+                        if(upvoted){
+                            UpVotes.push(user);
+                        }
+                        if(downvoted){
+                            DownVotes.push(user);
+                        }
+                        if(upvoted === false){
+                            UpVotes.splice(UpVotes.indexOf(user), 1)
+                        }
+                        if(downvoted === false){
+                            DownVotes.splice(DownVotes.indexOf(user), 1)
+                        }
+                        let action = {
+                            type: 'COMMENTBAR',
+                            data: {
+                                _id
+                            }
+                        }
+                        if(user === this.props.user._id){
+                            action.data.o = true;
+                        }
+                        this.props.updateStore(action);
+                        return;
+                    }
+                case 'reply':
+                    if(this.state.topic){
+                        let {Comments} = this.state.topic;
+                        let comment = (()=>{
+                            for(let i = 0; i < Comments.length; i++){
+                                if(Comments[i]._id === _id){
+                                    return Comments[i]
+                                }
+                            }
+                        })();
+                        if(comment){
+                            comment.Replies.push(payload);
+                            let data = {_id}
+                            this.props.updateStore({
+                                type: 'REPSEC',
+                                data
+                            });
+                            this.props.updateStore({
+                                type: 'COMMENTBAR',
+                                data
+                            })
+                        }
+                    }
+                case 'repbar':
+                    if(this.state.topic){
+                        let {Comments} = this.state.topic;
+                        let {user, upvoted, downvoted, cmtId} = payload;
+                        let reply = (()=>{
+                            for(let i = 0; i < Comments.length; i++){
+                                if(Comments[i]._id === cmtId){
+                                    let replies = Comments[i].Replies;
+                                    for(let j = 0; j < replies.length; j++){
+                                        if(replies[j] === _id){
+                                            return replies[j];
+                                        }
+                                    }
+                                }
+                            }
+                        })();
+                        let {UpVotes, DownVotes} = reply;
+                        if(upvoted){
+                            UpVotes.push(user);
+                        }
+                        if(downvoted){
+                            DownVotes.push(user);
+                        }
+                        if(upvoted === false){
+                            UpVotes.splice(UpVotes.indexOf(user), 1)
+                        }
+                        if(downvoted === false){
+                            DownVotes.splice(DownVotes.indexOf(user), 1)
+                        }
+                        let action = {
+                            type: 'REPBAR',
+                            data: {
+                                _id
+                            }
+                        }
+                        if(user === this.props.user._id){
+                            action.data.o = true;
+                        }
+                        this.props.updateStore(action);
+                        return;
+                    }
             }
         }
     }

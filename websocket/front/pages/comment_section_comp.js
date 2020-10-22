@@ -3,6 +3,8 @@ import {connect} from 'react-redux';
 import UserStatus from './user_status';
 import BrowseUserPage from './browse_user_page';
 import TimeStamp from './time_stamp_comp';
+import {TitleContext} from '../contexts/discusses';
+import sendMsgViaSocket, {focusOnInput} from '../utils/sendMsgViaSocket';
 class CommentOrReply extends React.Component{
     constructor(props){
         super()
@@ -235,10 +237,8 @@ class CommentOrReply extends React.Component{
                         else{
                             let r = document.getSelection().rangeCount && document.getSelection().getRangeAt(0);
                             if(r && r.startContainer.parentNode.className === 'tag_name'){
-                                console.log('ahahha')
                                 this.replaceWithText(r.startContainer.parentNode, r);
                                 r = document.getSelection().rangeCount && document.getSelection().getRangeAt(0);
-                                console.log(r)
                             }
                             if(r){
                                 r.deleteContents();
@@ -311,6 +311,246 @@ class CommentedOrReplied extends React.Component{
         )
     }
 }
+class CommentBar extends React.Component{
+    constructor(props){
+        super();
+        this.state = {};
+        this.updateState(props.comment);
+        this.updateState1(props);
+    }
+    updateState = (comment) =>{
+        this.state.upvoted = comment.UpVotes.length;
+        this.state.downvoted = comment.DownVotes.length;
+        this.state.replied = comment.Replies.length;
+    }
+    updateState1 = (props) =>{
+        let {comment: {UpVotes, DownVotes}, user: {_id}} = props;
+        if(UpVotes.indexOf(_id) > -1){
+            this.state.up = true;
+            this.state.down = false;
+        }
+        else if(DownVotes.indexOf(_id) > -1){
+            this.state.up = false;
+            this.state.down = true;
+        }
+        else{
+            this.state.up = false;
+            this.state.down = false;
+        }
+    }
+    upvoteComment = () =>{
+        let obj = {
+            type: 'c_up',
+            payload: {
+                topicId: this.props.topic._id,
+                commentId: this.props.comment._id
+            }
+        }
+        
+        if(this.state.up){
+            obj.type = 'c_unup';
+        }
+        else if(this.state.down){
+            obj.type = 'c_toup';
+        }
+        sendMsgViaSocket(this.props, JSON.stringify(obj));
+    }
+    downvoteComment = () =>{
+        let obj = {
+            type: 'c_down',
+            payload: {
+                topicId: this.props.topic._id,
+                commentId: this.props.comment._id
+            }
+        }
+        if(this.state.down){
+            obj.type = 'c_undown';
+        }
+        else if(this.state.up){
+            obj.type = 'c_todown';
+        }
+        sendMsgViaSocket(this.props, JSON.stringify(obj));
+    }
+    handleClickReplyIcon = (e) =>{
+        if(this.props.showReply(true)){
+            this.props.showReply();
+        }
+        else{
+            let target = e.target.nodeName === 'I' ? e.target.parentNode : e.target;
+            this.props.showReply(()=>{
+                let input = target.parentNode.parentNode.querySelector('.comment_edit');
+                input.focus();
+            })
+        }
+    }
+    shouldComponentUpdate(nextProps){
+        if(nextProps.cmtBar && nextProps.cmtBar._id === this.props.comment._id){
+            this.updateState(nextProps.comment);
+            if(nextProps.cmtBar.o){
+                this.updateState1(nextProps);
+            }
+            return true
+        }
+        return false;
+    }
+    render(){
+        let {upvoted, downvoted, replied, up, down} = this.state;
+        return (
+            <div className = 'cmt_idx'>
+                <div onClick = {this.upvoteComment}>{up ? <i style = {{color: 'green'}} className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}{upvoted}</div>
+                <div onClick = {this.downvoteComment}>{down ? <i style = {{color: 'green'}} className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}{downvoted}</div>
+                <div onClick = {this.handleClickReplyIcon}><i className="fa fa-reply"></i>{replied}</div>
+                <TimeStamp time = {this.props.comment.PostTime}/>
+            </div>
+        )
+    }
+}
+function mapStateToCMBar(state){
+    return {
+        cmtBar: state.discuss.cmtBar,
+        socket: state.main.socket,
+        user: state.main.user
+    }
+}
+CommentBar = connect(mapStateToCMBar, null)(CommentBar);
+
+class Reply extends React.Component{
+    constructor(props){
+        super();
+        this.state = {};
+        this.updateState(props.reply);
+        this.updateState1(props);
+    }
+    updateState = (reply) =>{
+        this.state.upvoted = reply.UpVotes.length;
+        this.state.downvoted = reply.DownVotes.length;
+    }
+    updateState1 = (props) =>{
+        let {reply: {UpVotes, DownVotes}, user: {_id}} = props;
+        if(UpVotes.indexOf(_id) > -1){
+            this.state.up = true;
+            this.state.down = false;
+        }
+        else if(DownVotes.indexOf(_id) > -1){
+            this.state.up = false;
+            this.state.down = true;
+        }
+        else{
+            this.state.up = false;
+            this.state.down = false;
+        }
+    }
+    upvoteReply = () =>{
+        let obj = {
+            type: 'r_up',
+            payload: {
+                replyId: this.props.reply._id,
+                topicId: this.props.topic._id,
+                commentId: this.props.comment._id
+            }
+        }
+        
+        if(this.state.up){
+            obj.type = 'r_unup';
+        }
+        else if(this.state.down){
+            obj.type = 'r_toup';
+        }
+        sendMsgViaSocket(this.props, JSON.stringify(obj));
+    }
+    downvoteReply = () =>{
+        let obj = {
+            type: 'r_down',
+            payload: {
+                replyId: this.props.reply._id,
+                topicId: this.props.topic._id,
+                commentId: this.props.comment._id
+            }
+        }
+        if(this.state.down){
+            obj.type = 'r_undown';
+        }
+        else if(this.state.up){
+            obj.type = 'r_todown';
+        }
+        sendMsgViaSocket(this.props, JSON.stringify(obj));
+    }
+    shouldComponentUpdate(nextProps){
+        if(nextProps.repBar && nextProps.repBar === this.props.reply._id){
+            this.updateState(nextProps.reply);
+            if(nextProps.repBar.o){
+                this.updateState1(nextProps);
+            }
+            return true
+        }
+        return false;
+    }
+    render(){
+        let {reply} = this.props;
+        let {up, down, upvoted, downvoted} = this.state;
+        return(
+            <div>
+                <CommentedOrReplied data = {reply}/>
+                <div>
+                    <div onClick = {this.upvoteReply}>{up ? <i style = {{color: 'green'}} className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}{upvoted}</div>
+                    <div onClick = {this.downvoteReply}>{down ? <i style = {{color: 'green'}} className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}{downvoted}</div>
+                    <TimeStamp time = {reply.PostTime}/>
+                </div>
+            </div>
+        )
+    }
+}
+function mapStateToReply(state){
+    return {
+        user: state.main.user,
+        socket: state.main.socket,
+        repBar: state.discuss.repBar
+    }
+}
+Reply = connect(mapStateToReply, null)(Reply);
+class Replies extends React.Component{
+    handleReply = (e) =>{
+        let button = e.target;
+        let input = button.previousSibling.firstChild;
+        let msg = JSON.stringify({
+            type: 'reply',
+            payload: {
+                topicId: this.props.topic._id,
+                commentId: this.props.comment._id,
+                content: input.innerHTML
+            }
+        })
+        input.innerHTML = '';
+        input.focus();
+        sendMsgViaSocket(this.props, msg);
+    }
+    shouldComponentUpdate(nextProps){
+        if(nextProps.repSec && nextProps.repSec._id === this.props.comment._id){
+            return true;
+        }
+        return false;
+    }
+    render(){
+        let replies = this.props.replies.map((reply) =>{
+            return (
+                <Reply topic = {this.props.topic} comment = {this.props.comment} reply = {reply} key = {reply._id.slice(18)}/>
+            )
+        });
+        return(
+            <div>
+                {replies}
+                <CommentOrReply handlePost = {this.handleReply}/>
+            </div>
+        )
+    }
+}
+function mapStateToReplies(state){
+    return {
+        repSec: state.discuss.repSec,
+        socket: state.main.socket
+    }
+}
+Replies = connect(mapStateToReplies, null)(Replies);
 class Comment extends React.Component{
     constructor(props){
         super();
@@ -318,65 +558,92 @@ class Comment extends React.Component{
             showReply: false
         }
     }
+    showReply = (cb) =>{
+        if(typeof cb === 'boolean'){
+            return this.state.showReply;
+        }
+        if(this.state.showReply){
+            this.setState({showReply: false}, cb)
+            return false;
+        }
+        this.setState({showReply: true}, cb);
+        return true;
+    }
     render(){   
-        let Replies = (props) =>{
-            let replies = props.replies.map((reply) =>{
-                return (
-                    <div key = {reply._id.slice(18)} id = {reply._id}>
-                        <CommentedOrReplied data = {reply}/>
-                        <div>
-                            <button>up</button>
-                            <button>down</button>
-                            <TimeStamp time = {reply.PostTime}/>
-                        </div>
-                    </div>
-                )
-            });
-            return(
-                <div>
-                    {replies}
-                    <CommentOrReply/>
-                </div>
-            )
-        }  
         return(
-            <div id = {this.props.comment._id}>
+            <div className = {this.props.childClass}>
                 <CommentedOrReplied data = {this.props.comment}/>
-                <div className = 'cmt_idx'>
-                    <div><i className="fa fa-thumbs-up"></i></div>
-                    <div><i className="fa fa-thumbs-down"></i></div>
-                    <div><i className="fa fa-reply"></i></div>
-                    <TimeStamp time = {this.props.comment.PostTime}/>
-                </div>
-                {this.state.showReply ? <Replies replies = {this.props.comment.replies}/> : ''}
+                <CommentBar comment = {this.props.comment} showReply = {this.showReply} topic = {this.props.topic}/>
+                {this.state.showReply ? <Replies replies = {this.props.comment.Replies} comment = {this.props.comment} topic = {this.props.topic}/> : ''}
             </div>
         )
     }
 }
 class CommentSection extends React.Component{
+    constructor(props){
+        super();
+        this.state = {
+            showAll: false
+        }
+        this.endHighLight = false;
+        this.comment = React.createRef();
+    }
     handlePostComment = (e) =>{
         let button = e.target;
-        fetch('/discuss/comment',{
-            method: 'post',
-            headers:{
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
+        let input = button.previousSibling.firstChild;
+        let msg = JSON.stringify({
+            type: 'comment',
+            payload: {
                 topicId: this.props.topic._id,
-                content: button.previousSibling.firstChild.innerHTML
-            })
+                content: input.innerHTML
+            }
         })
-    } 
+        sendMsgViaSocket(this.props, msg);
+        input.innerHTML = '';
+        // setTimeout(()=>{
+        //     input.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
+            input.focus();
+        // },1000)
+    }
+    handleClickShowAll = () =>{
+        this.setState({
+            showAll: true
+        })
+    }
+    shouldComponentUpdate(nextProps){
+        if(nextProps.comment !== this.props.comment){
+            this.endHighLight = true
+        }
+        else{
+            this.endHighLight = false;
+        }
+        return true;
+    }
     render(){
-        let comments = this.props.topic.Comments.map(comment =>{
+        let {Comments} = this.props.topic;
+        let x;
+        if((x = Comments.length - 2) > 0 && !this.state.showAll){
+            Comments = Comments.slice(x)
+        }
+        let comments = Comments.map((comment, idx) =>{
+            if(idx === Comments.length - 1){
+                return <Comment comment = {comment} topic = {this.props.topic} key = {comment._id.slice(18)} childClass = {this.endHighLight ? 'cmt_flash': ''}/>
+            }
             return <Comment comment = {comment} topic = {this.props.topic} key = {comment._id.slice(18)}/>
         })
         return(
-            <div className = 'comment_section'>
+            <div className = 'comment_section' ref = {this.comment}>
+                {x >= 1 && !this.state.showAll ? <div onClick = {this.handleClickShowAll}>{x > 1 ? `Show all (+${x} comments)` : `Show all (+${x} comment)`}</div> : ''}
                 {comments}
                 <CommentOrReply handlePost = {this.handlePostComment} inputClass = 'comment_input'/>
             </div>
         )
     }
 }
-export default CommentSection;
+function mapStateToCSProps(state){
+    return {
+        comment: state.discuss.comment,
+        socket: state.main.socket
+    }
+}
+export default connect(mapStateToCSProps, null)(CommentSection);

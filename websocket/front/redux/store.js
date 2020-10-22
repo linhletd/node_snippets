@@ -20,13 +20,14 @@ const LOGIN = 'LOGIN',
       LEAVEGAME = 'LEAVEGAME',
       ENDGAME = 'ENDGAME',
 
-      TOOLBARCHANGE = 'TOOLBARCHANGE',
-
-      OPENPROMPT = 'OPENPROMPT',
-      CLOSEPROMPT = 'CLOSEPROMPT',
       TOPICTITLE = 'TOPICTITLE',
       TITLEBOARD = 'TITLEBOARD',
-      TOPICBAR = 'TOPICBAR'
+      TOPICBAR = 'TOPICBAR',
+      COMMENT = 'COMMENT',
+      COMMENTBAR = 'COMMENTBAR',
+      REPSEC = 'REPSEC',
+      REPBAR = 'REPLY'
+
     
 var user, socket, usersStatus = undefined;
 if(window.atob && /^InVzZXIi=|;InVzZXIi=/.test(document.cookie)){
@@ -183,15 +184,26 @@ let initialDiscuss = {
     title: {},
     titleList: true,
     topicBar: true,
+    comment: true,
+    cmtBar: {},
+    repSec: {}
 }
 function discuss(state = initialDiscuss, action){
     switch(action.type){
         case TOPICTITLE:
-            return {...state, title: action.data}
+            return {...state, title: action.data};
         case TITLEBOARD:
-            return {...state, titleList: !state.titleList}
+            return {...state, titleList: !state.titleList};
         case TOPICBAR:
-            return {...state, topicBar: !state.topicBar}
+            return {...state, topicBar: !state.topicBar};
+        case COMMENT:
+            return {...state, comment: !state.comment};
+        case COMMENTBAR:
+            return {...state, cmtBar: action.data};
+        case REPSEC:
+            return {...state, repSec: action.data};
+        case REPBAR:
+            return {...state, repBar: action.data}
     }
     return state;
 }

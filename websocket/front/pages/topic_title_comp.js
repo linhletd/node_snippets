@@ -28,7 +28,7 @@ class TopicTitle extends React.Component{
         //         }
         //     }
         // }
-        if(nextProps.title._id === this.props.topic._id){
+        if(nextProps.title._id === this.props.topic._id || nextProps.topic._id !== this.props.topic._id){
             return true;
         }
         return false;
@@ -54,7 +54,7 @@ class TopicTitle extends React.Component{
                         <div className = 'topic_info'>
                             <div className = 'topic_meta'>
                                 <div><i className="fa fa-tag"></i><div className = {tag}>{topic.Category}</div></div>
-                                <div><i className="fa fa-clock-o"></i><TimeStamp time = {topic.PostTime}/></div>
+                                <div><i className="fa fa-clock-o"></i><TimeStamp time = {topic.PostTime} normal = {true}/></div>
                                 {/* {authorName ? <div><i className="fa fa-user-o"></i><Link to = {`/user?id=${topic._id}`}>{topic.Author}</Link></div> : ""} */}
                             </div>
                             <div className = 'topic_idx'>

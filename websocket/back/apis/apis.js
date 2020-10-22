@@ -29,7 +29,8 @@ module.exports = function(app){
                 PostTime,
                 UpVotes: [],
                 DownVotes: [],
-                Comments: []
+                Comments: [],
+                Comment: 0
             }
             topics.insertOne(newTopic,(err, doc) =>{
                 if(err) return res.json({err: err.message});
@@ -60,17 +61,18 @@ module.exports = function(app){
             }
             let cursor = topics.aggregate([
                 {
+                    $project: {Comments: 0}
+                },
+                {
                     $addFields: {
-                        UpVote: {$size: "$UpVotes"},
-                        DownVote: {$size: "$DownVotes"},
-                        Comment: {$size: "$Comments"}
+                        UpVote: {$size: '$UpVotes'},
+                        DownVote: {$size: '$DownVotes'},
                     }
                 },
                 {
                     $project: {
                         UpVotes: 0,
                         DownVotes: 0,
-                        Comments: 0
                     },
                 },
                 {
@@ -81,6 +83,7 @@ module.exports = function(app){
             ]);
             let checked = false;
             cursor.on('error',(err) =>{
+                console.log(err)
                 if(checked){
                     return res.end(`],"err": ${err.message}}`)
                 }
@@ -101,11 +104,20 @@ module.exports = function(app){
             })
         },
         getTopicContentById: function(req, res, next){
-            let _id = ObjectId(req.params.topic_id);
+            let _id = req.params.topic_id;
             let socketId = req.query.s;
             let topicMap = app.topicMap;
             if(socketId){
                 let ws = app.idMap.get(socketId);
+                if(ws.topic){
+                    let s = app.topicMap.get(ws.topic);
+                    if(s.size === 1){
+                        app.topicMap.delete(ws.topic);
+                    }
+                    else{
+                        s.delete(ws);
+                    }
+                }
                 ws.topic = _id;
                 let topic;
                 if((topic = topicMap.get(_id))){
@@ -116,42 +128,11 @@ module.exports = function(app){
                     topicMap.set(_id, topic);
                 }
             }
-            topics.findOne({_id}, (err, topic) =>{
+            topics.findOne({_id: ObjectId(_id)}, (err, topic) =>{
                 if(err) return res.json({err: err.message});
                 res.json(topic);
             })
 
-        },
-        postComment: function(req, res, next){
-            let {topicId, content} = req.body;
-            let newComment = {
-                _id: ObjectId(),
-                Content: content,
-                PostTime: Date.now(),
-                PostedBy: req.user._id,
-                UpVotes: [],
-                DownVotes: [],
-                Replies: []
-            }
-            topicId = new ObjectId(topicId);
-            topics.updateOne(
-                {_id: topicId},
-                {$push: {Comments: newComment}},
-                {upsert: false}
-            ,(err, doc) =>{
-                if(err) return res.json({err: err.message});
-                else if(doc.modifiedCount !== 0){
-                    newComment.tid = req.body.topicId;//tid topicid
-                    let message = {
-                        type: 'update comment',
-                        payload: newComment
-                    }
-                    app.idMap.forEach((socket) =>{
-                        socket.send(JSON.stringify(message));
-                    })
-                }
-                res.json({})
-            })
         },
         getUserSignal: function(req, res, next){
             let cursor = users.find({})

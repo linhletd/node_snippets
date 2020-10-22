@@ -1,10 +1,11 @@
 import React from 'react';
-import * as timeago from 'timeago.js';
+import timeago from '../utils/timeago';
 class TimeStamp extends React.Component{
     constructor(props){
         super();
         this.timer = undefined;
         this.timeStamp = React.createRef();
+        this.idx = !props.normal ? 1 : 0;
     }
     setRefreshTime = () =>{
         if(this.timer){
@@ -26,7 +27,7 @@ class TimeStamp extends React.Component{
             }
             this.timer = setInterval(() => {
                 let x;
-                if(this.timeStamp.current && (x = timeago.format(this.props.time)) !== this.timeStamp.current.innerText){
+                if(this.timeStamp.current && (x = timeago(this.props.time, this.idx)) !== this.timeStamp.current.innerText){
                     this.timeStamp.current.innerText = x;
                 }
             }, interval);
@@ -39,11 +40,11 @@ class TimeStamp extends React.Component{
         this.setRefreshTime();
     }
     render(){
-        if(!this.props.time){
+        if(this.props.time === undefined){
             return <span className = 'now'>now</span>
         }
         else{
-            return <span ref = {this.timeStamp} className = 'ago'>{timeago.format(this.props.time)}</span>
+            return <span ref = {this.timeStamp} className = 'ago'>{timeago(this.props.time, this.idx)}</span>
         }
     }
 
