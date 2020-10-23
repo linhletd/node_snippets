@@ -1,6 +1,6 @@
 import React from 'react';
 import UserStatus from '../pages/user_status';
-import {Redirect, withRouter} from 'react-router-dom';
+import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
 import {runNotation, stopRunNotation} from '../utils/operateNotationWait';
 import WaittingNotation from '../ui/waitting_notation';

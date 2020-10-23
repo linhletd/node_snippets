@@ -3,8 +3,7 @@ import {connect} from 'react-redux';
 import UserStatus from './user_status';
 import BrowseUserPage from './browse_user_page';
 import TimeStamp from './time_stamp_comp';
-import {TitleContext} from '../contexts/discusses';
-import sendMsgViaSocket, {focusOnInput} from '../utils/sendMsgViaSocket';
+import sendMsgViaSocket from '../utils/sendMsgViaSocket';
 class CommentOrReply extends React.Component{
     constructor(props){
         super();
@@ -298,6 +297,7 @@ function mapStateToProps(state){
     }
 }
 CommentOrReply = connect(mapStateToProps, null)(CommentOrReply);
+
 class CommentedOrReplied extends React.Component{
     constructor(props){
         super();
@@ -318,6 +318,7 @@ class CommentedOrReplied extends React.Component{
         )
     }
 }
+
 class CommentBar extends React.Component{
     constructor(props){
         super();
@@ -515,6 +516,7 @@ function mapStateToReply(state){
     }
 }
 Reply = connect(mapStateToReply, null)(Reply);
+
 class Replies extends React.Component{
     constructor(props){
         super();
@@ -565,6 +567,7 @@ function mapStateToReplies(state){
     }
 }
 Replies = connect(mapStateToReplies, null)(Replies);
+
 class Comment extends React.Component{
     constructor(props){
         super();
@@ -593,6 +596,7 @@ class Comment extends React.Component{
         )
     }
 }
+
 class CommentSection extends React.Component{
     constructor(props){
         super();
@@ -616,10 +620,7 @@ class CommentSection extends React.Component{
         })
         sendMsgViaSocket(this.props, msg);
         input.innerHTML = '';
-        // setTimeout(()=>{
-        //     input.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
-            input.focus();
-        // },1000)
+        input.focus();
     }
     handleClickShowAll = () =>{
         this.setState({
