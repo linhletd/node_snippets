@@ -7,15 +7,14 @@ class TimeStamp extends React.Component{
         this.timeStamp = React.createRef();
         this.idx = !props.normal ? 1 : 0;
     }
-    setRefreshTime = () =>{
-        if(this.timer){
-            clearInterval(this.timer);
-            this.timer = undefined;
-        }
+    calcInterval(){
         let gap = Date.now() - this.props.time;
         if(this.props.time && gap < 36 * 3600 * 1000){
             let interval;
-            if(gap < 30 * 60 * 1000){
+            if(gap < 60 * 1000){
+                interval = (1 + Math.floor(Math.random()* 150)/100)*60/3 * 1000;//1-1.5 min
+            }
+            else if(gap < 30 * 60 * 1000){
                 interval = (1 + Math.floor(Math.random()* 150)/100)*60 * 1000;//1-1.5 min
             }
             else if(gap < 3600 * 1000){
@@ -25,19 +24,25 @@ class TimeStamp extends React.Component{
             else{
                 interval = (1 + Math.floor(Math.random()* 200)/100)* 3600 * 1000; // 1-2hr
             }
-            this.timer = setInterval(() => {
-                let x;
-                if(this.timeStamp.current && (x = timeago(this.props.time, this.idx)) !== this.timeStamp.current.innerText){
-                    this.timeStamp.current.innerText = x;
-                }
-            }, interval);
+            return interval;
         }
     }
-    componentDidUpdate(){
-        this.setRefreshTime();
+    setRefreshTime = () =>{
+        this.timer = setTimeout(() => {
+            let x;
+            if(this.timeStamp.current && (x = timeago(this.props.time, this.idx)) !== this.timeStamp.current.innerText){
+                this.timeStamp.current.innerText = x;
+            }
+            this.setRefreshTime()
+        }, this.calcInterval());
     }
     componentDidMount(){
         this.setRefreshTime();
+    }
+    componentWillUnmount(){
+        if(this.timer){
+            clearTimeout(this.timer)
+        }
     }
     render(){
         if(this.props.time === undefined){

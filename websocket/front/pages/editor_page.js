@@ -640,12 +640,6 @@ class EditorApp extends React.Component{
     handleSelectFontColor = (e) =>{
         let target = e.target;
         this.changeStyle({prop: 'color', val: target.value});
-        // this.props.updateState({
-        //     type: 'TOOLBARCHANGE',  
-        //     data: {
-        //         color: target.value
-        //     }
-        // })
         this.changer.setToolbarState({color: target.value});
     }
     handleBgroundColor = (e) =>{
@@ -653,12 +647,6 @@ class EditorApp extends React.Component{
         let val = target.value ? target.value : target.firstChild ? target.firstChild.style.backgroundColor : target.style.backgroundColor;
         this.changeStyle({prop: 'backgroundColor', val});
         if(target.value){
-            // this.props.updateState({
-            //     type: 'TOOLBARCHANGE',
-            //     data: {
-            //         fill: target.value
-            //     }
-            // })
             this.changer.setToolbarState({fill: target.value});
         }
     }
@@ -771,12 +759,6 @@ class EditorApp extends React.Component{
         .catch((e) =>{
 
         })
-//         {"asset_id":"a74f9d09d983ce6acb8d775bbbf3c609","public_id":"docs_uploading_example/953dedfa7f762360_vssqg0","version":1602432327,
-// "version_id":"69bd31adaa78dd504fde6fef773f813a","signature":"85b8641d5b75ee98699ea7637e7fdb3b417fd79b","width":512,"height":512,
-// "format":"png","resource_type":"image","created_at":"2020-10-11T16:05:27Z","tags":[],"pages":1,"bytes":344637,"type":"upload","etag":"fbc4e9d60ac7f189ad57b5fd5cefee44","placeholder":false,
-// "url":"http://res.cloudinary.com/demo/image/upload/v1602432327/docs_uploading_example/953dedfa7f762360_vssqg0.png",
-// "secure_url":"https://res.cloudinary.com/demo/image/upload/v1602432327/docs_uploading_example/953dedfa7f762360_vssqg0.png","access_mode":"public","context":{},"
-// metadata":{"color_id":["color1","color2"]},"existing":false,"original_filename":"953dedfa7f762360","original_extension":"PNG"}
     }
     handleImage = (blob) =>{
         let {img} = this.toolbarState;
@@ -877,6 +859,29 @@ class EditorApp extends React.Component{
                 super();
                 this.toolbar = React.createRef();
                 this.state = self.toolbarState;
+                this.fontSizes = [8,9,10,11,12,14,16,18,20,24,28,32,38,46,54,62,72];
+                this.fontFams = [];
+                [
+                    'Georgia,serif',
+                    '"Palatino Linotype","Book Antiqua",Palatino,serif',
+                    '"Times New Roman",Times,serif',
+                    'Arial,Helvetica,sans-serif',
+                    '"Arial Black",Gadget,sans-serif',
+                    '"Comic Sans MS",cursive,sans-serif',
+                    'Impact,Charcoal,sans-serif',
+                    '"Lucida Sans Unicode","Lucida Grande",sans-serif',
+                    'Tahoma,Geneva,sans-serif',
+                    '"Trebuchet MS",Helvetica,sans-serif',
+                    'Verdana,Geneva,sans-serif',
+                    '"Courier New",Courier,monospace',
+                    '"Lucida Console",Monaco,monospace'
+                ].map(val =>{
+                    this.fontFams.push({
+                        font: {fontFamily: val},
+                        name: val.match(/\b([\w\s]+)/)[1]
+                    });
+                });
+                console.log(this.fontFams)
             }
             selectFile = (e) =>{
                 if(this.state.img !== 0){
@@ -897,7 +902,11 @@ class EditorApp extends React.Component{
             render(){
                 let {click} = this.props, state = this.state;
                 let emptyFontStyle = state.fontfamily === 'false' ? {display: 'none'} : {display: 'block'};
-                let emptySizeStyle = state.fontsize === 'false' ? {display: 'none'} : {display: 'block'}
+                let emptySizeStyle = state.fontsize === 'false' ? {display: 'none'} : {display: 'block'};
+                let sizeOpts = this.fontSizes.map((cur, idx) =>(<option key = {idx} value = {`${cur}px`}>{cur}</option>));
+                let fontOpts = this.fontFams.map((cur, idx) =>{
+                    return <option key = {idx} value = {cur.font.fontFamily} style = {cur.font}>{cur.name}</option>
+                })
                 return (
                     <div className = 'tool_bar' ref = {this.toolbar}>
                         <div onClick = {click.undo} className = {state.undo ? '' : 'disabled'}><i className="fa fa-reply"></i></div>
@@ -936,41 +945,12 @@ class EditorApp extends React.Component{
                             </i>
                         </div>
                         <div className = 'ctn select'>
-                          <select onChange = {click.handleFont} value = {state.fontfamily} >
-                                <option value = 'Georgia,serif' style = {{fontFamily: 'Georgia,serif'}}>Georgia</option>
-                                <option value = '"Palatino Linotype","Book Antiqua",Palatino,serif' style = {{fontFamily: 'Palatino Linotype,Book Antiqua,Palatino,serif'}}>Palatino Linotype</option>
-                                <option value = '"Times New Roman",Times,serif' style = {{fontFamily: '"Times New Roman",Times,serif'}}>Times New Roman</option>
-                                <option value = 'Arial,Helvetica,sans-serif' style = {{fontFamily: 'Arial,Helvetica,sans-serif'}}>Arial</option>
-                                <option value = '"Arial Black",Gadget,sans-serif' style = {{fontFamily: '"Arial Black", Gadget, sans-serif'}}>Arial Black</option>
-                                <option value = '"Comic Sans MS",cursive,sans-serif' style = {{fontFamily: '"Comic Sans MS",cursive,sans-serif'}}>Comic Sans MS</option>
-                                <option value = 'Impact,Charcoal,sans-serif' style = {{fontFamily: 'Impact,Charcoal,sans-serif'}}>Impact</option>
-                                <option value = '"Lucida Sans Unicode","Lucida Grande",sans-serif' style = {{fontFamily: '"Lucida Sans Unicode","Lucida Grande",sans-serif'}}>Lucida Sans Unicode</option>
-                                <option value = 'Tahoma,Geneva,sans-serif' style = {{fontFamily: 'Tahoma,Geneva,sans-serif'}}>Tahoma</option>
-                                <option value = '"Trebuchet MS",Helvetica,sans-serif' style = {{fontFamily: '"Trebuchet MS",Helvetica,sans-serif'}}>Trebuchet MS</option>
-                                <option value = 'Verdana,Geneva,sans-serif' style = {{fontFamily: 'Verdana,Geneva,sans-serif'}}>Verdana</option>
-                                <option value = '"Courier New",Courier,monospace' style = {{fontFamily: '"Courier New",Courier,monospace'}}>Courier New</option>
-                                <option value = '"Lucida Console",Monaco,monospace' style = {{fontFamily: '"Lucida Console",Monaco,monospace'}}>Lucida Console</option>
+                            <select onChange = {click.handleFont} value = {state.fontfamily} >
+                                {fontOpts}
                                 {state.fontfamily === 'false' ? <option value = 'false' style = {emptyFontStyle}></option> : ''}
-        
                             </select>
                             <select onChange = {click.handleFontSize} value = {state.fontsize}>
-                                <option value = '8px'>8</option>
-                                <option value = '9px'>9</option>
-                                <option value = '10px'>10</option>
-                                <option value = '11px'>11</option>
-                                <option value = '12px'>12</option>
-                                <option value = '14px'>14</option>
-                                <option value = '16px'>16</option>
-                                <option value = '18px'>18</option>
-                                <option value = '20px'>20</option>
-                                <option value = '24px'>24</option>
-                                <option value = '28px'>28</option>
-                                <option value = '32px'>32</option>
-                                <option value = '38px'>38</option>
-                                <option value = '46px'>46</option>
-                                <option value = '54px'>54</option>
-                                <option value = '62px'>62</option>
-                                <option value = '72px'>72</option>
+                                {sizeOpts}
                                 {state.fontsize === 'false' ? <option value = 'false' style = {emptySizeStyle}></option> : ''}
                             </select>
                         </div>

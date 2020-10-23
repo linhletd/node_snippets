@@ -26,7 +26,7 @@ const LOGIN = 'LOGIN',
       COMMENT = 'COMMENT',
       COMMENTBAR = 'COMMENTBAR',
       REPSEC = 'REPSEC',
-      REPBAR = 'REPLY'
+      REPBAR = 'REPBAR'
 
     
 var user, socket, usersStatus = undefined;

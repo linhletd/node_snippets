@@ -7,10 +7,11 @@ import {TitleContext} from '../contexts/discusses';
 import sendMsgViaSocket, {focusOnInput} from '../utils/sendMsgViaSocket';
 class CommentOrReply extends React.Component{
     constructor(props){
-        super()
+        super();
+        this.postBtn = React.createRef();
     }
     componentDidMount(){
-
+        this.postBtn.current.disabled = true;
     }
     selectTotag = (node) =>{
         if(node === this.selecting) return;
@@ -203,6 +204,12 @@ class CommentOrReply extends React.Component{
                     if(r && r.startContainer.parentNode.nodeName === 'A'){
                         this.replaceWithText(r.startContainer.parentNode, r);
                     }
+                    if(editorNode.innerText.length){
+                        self.postBtn.current.disabled && (self.postBtn.current.disabled = false);
+                    }
+                    else{
+                        !self.postBtn.current.disabled && (self.postBtn.current.disabled = true);
+                    }
                 }
                 editorNode.onkeydown = (e) =>{
                     if(self.selecting && (e.key === 'ArrowUp' || e.key === 'ArrowDown')){
@@ -280,7 +287,7 @@ class CommentOrReply extends React.Component{
             <div className = {'cor'}>
                 <UserStatus status = {this.props.user} noName = {true} childClass = 'user_xsmall'/>
                 <BrowseUserPage mainProps = {mainProps} parProps = {parProps} childProps = {childProps}/>
-                <button onClick = {this.props.handlePost}>post</button>
+                <button ref = {this.postBtn} onClick = {this.props.handlePost}>post</button>
             </div>
         )
     }
@@ -476,7 +483,7 @@ class Reply extends React.Component{
         sendMsgViaSocket(this.props, JSON.stringify(obj));
     }
     shouldComponentUpdate(nextProps){
-        if(nextProps.repBar && nextProps.repBar === this.props.reply._id){
+        if(nextProps.repBar !== this.props.repBar && nextProps.repBar && nextProps.repBar._id === this.props.reply._id){
             this.updateState(nextProps.reply);
             if(nextProps.repBar.o){
                 this.updateState1(nextProps);
@@ -489,7 +496,7 @@ class Reply extends React.Component{
         let {reply} = this.props;
         let {up, down, upvoted, downvoted} = this.state;
         return(
-            <div>
+            <div className = {this.props.childClass}>
                 <CommentedOrReplied data = {reply}/>
                 <div>
                     <div onClick = {this.upvoteReply}>{up ? <i style = {{color: 'green'}} className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}{upvoted}</div>
@@ -509,8 +516,13 @@ function mapStateToReply(state){
 }
 Reply = connect(mapStateToReply, null)(Reply);
 class Replies extends React.Component{
+    constructor(props){
+        super();
+        this.endHighLight = false;
+    }
     handleReply = (e) =>{
         let button = e.target;
+        button.disabled = true;
         let input = button.previousSibling.firstChild;
         let msg = JSON.stringify({
             type: 'reply',
@@ -526,14 +538,16 @@ class Replies extends React.Component{
     }
     shouldComponentUpdate(nextProps){
         if(nextProps.repSec && nextProps.repSec._id === this.props.comment._id){
+            this.endHighLight = true;
+            console.log(this.endHighLight)
             return true;
         }
         return false;
     }
     render(){
-        let replies = this.props.replies.map((reply) =>{
+        let replies = this.props.replies.map((reply, idx) =>{
             return (
-                <Reply topic = {this.props.topic} comment = {this.props.comment} reply = {reply} key = {reply._id.slice(18)}/>
+                <Reply topic = {this.props.topic} comment = {this.props.comment} reply = {reply} key = {reply._id.slice(18)} childClass = {this.endHighLight && this.props.replies.length - 1 === idx ? 'cmt_flash': ''}/>
             )
         });
         return(
@@ -587,9 +601,11 @@ class CommentSection extends React.Component{
         }
         this.endHighLight = false;
         this.comment = React.createRef();
+        this.show = 2;
     }
     handlePostComment = (e) =>{
         let button = e.target;
+        button.disabled = true;
         let input = button.previousSibling.firstChild;
         let msg = JSON.stringify({
             type: 'comment',
@@ -612,7 +628,8 @@ class CommentSection extends React.Component{
     }
     shouldComponentUpdate(nextProps){
         if(nextProps.comment !== this.props.comment){
-            this.endHighLight = true
+            this.endHighLight = true;
+            this.show++;
         }
         else{
             this.endHighLight = false;
@@ -622,8 +639,11 @@ class CommentSection extends React.Component{
     render(){
         let {Comments} = this.props.topic;
         let x;
-        if((x = Comments.length - 2) > 0 && !this.state.showAll){
+        if((x = Comments.length - this.show) > 0 && !this.state.showAll){
             Comments = Comments.slice(x)
+        }
+        else{
+            this.state.showAll = true;
         }
         let comments = Comments.map((comment, idx) =>{
             if(idx === Comments.length - 1){

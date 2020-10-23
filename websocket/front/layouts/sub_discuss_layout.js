@@ -170,7 +170,6 @@ class SubDiscussLayout extends React.Component{
         })
     }
     updateTitleIndex = (payload, _id) =>{
-        console.log(_id, this.state.topicList)
         let topic = this.state.topicList.get(_id);
         Object.keys(payload).map((key) =>{
             topic[key] += payload[key];
@@ -236,6 +235,7 @@ class SubDiscussLayout extends React.Component{
                                 }
                             }
                         })();
+                        if(!comment) return;
                         let {UpVotes, DownVotes} = comment;
                         let {user, upvoted, downvoted} = payload;
                         if(upvoted){
@@ -286,6 +286,7 @@ class SubDiscussLayout extends React.Component{
                         }
                     }
                 case 'repbar':
+                    console.log(1)
                     if(this.state.topic){
                         let {Comments} = this.state.topic;
                         let {user, upvoted, downvoted, cmtId} = payload;
@@ -294,13 +295,14 @@ class SubDiscussLayout extends React.Component{
                                 if(Comments[i]._id === cmtId){
                                     let replies = Comments[i].Replies;
                                     for(let j = 0; j < replies.length; j++){
-                                        if(replies[j] === _id){
+                                        if(replies[j]._id === _id){
                                             return replies[j];
                                         }
                                     }
                                 }
                             }
                         })();
+                        if(!reply) return;
                         let {UpVotes, DownVotes} = reply;
                         if(upvoted){
                             UpVotes.push(user);
