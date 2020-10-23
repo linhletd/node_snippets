@@ -35,9 +35,9 @@ class FlashPopup extends React.Component{
             this.timer = undefined;
         }, 5000);
     }
-    componentDidMount(){
-        this.setTimer
-    }
+    // componentDidMount(){
+    //     this.setTimer
+    // }
     componentDidUpdate(){
         this.flashRef.current.classList.contains('hide') && this.flashRef.current.classList.remove('hide');
         this.setTimer();

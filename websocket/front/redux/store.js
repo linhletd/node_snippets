@@ -211,8 +211,6 @@ let reducer = combineReducers({
     main,
     poong,
     editor,
-    // toolbar,
-    // linkPrompt,
     popup,
     viewPost,
     discuss

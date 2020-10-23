@@ -405,8 +405,8 @@ class CommentBar extends React.Component{
         let {upvoted, downvoted, replied, up, down} = this.state;
         return (
             <div className = 'cmt_idx'>
-                <div onClick = {this.upvoteComment}>{up ? <i style = {{color: 'green'}} className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}{upvoted}</div>
-                <div onClick = {this.downvoteComment}>{down ? <i style = {{color: 'green'}} className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}{downvoted}</div>
+                <div onClick = {this.upvoteComment}>{up ? <i className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}{upvoted}</div>
+                <div onClick = {this.downvoteComment}>{down ? <i className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}{downvoted}</div>
                 <div onClick = {this.handleClickReplyIcon}><i className="fa fa-reply"></i>{replied}</div>
                 <TimeStamp time = {this.props.comment.PostTime}/>
             </div>
@@ -497,11 +497,11 @@ class Reply extends React.Component{
         let {reply} = this.props;
         let {up, down, upvoted, downvoted} = this.state;
         return(
-            <div className = {this.props.childClass}>
+            <div className = {this.props.childClass ? `reply ${this.props.childClass}`: 'reply'}>
                 <CommentedOrReplied data = {reply}/>
                 <div>
-                    <div onClick = {this.upvoteReply}>{up ? <i style = {{color: 'green'}} className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}{upvoted}</div>
-                    <div onClick = {this.downvoteReply}>{down ? <i style = {{color: 'green'}} className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}{downvoted}</div>
+                    <div onClick = {this.upvoteReply}>{up ? <i className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}{upvoted}</div>
+                    <div onClick = {this.downvoteReply}>{down ? <i className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}{downvoted}</div>
                     <TimeStamp time = {reply.PostTime}/>
                 </div>
             </div>
@@ -553,7 +553,7 @@ class Replies extends React.Component{
             )
         });
         return(
-            <div>
+            <div className = 'reply_section'>
                 {replies}
                 <CommentOrReply handlePost = {this.handleReply}/>
             </div>
@@ -588,7 +588,7 @@ class Comment extends React.Component{
     }
     render(){   
         return(
-            <div className = {this.props.childClass}>
+            <div className = {this.props.childClass ? `comment ${this.props.childClass}`: 'comment'}>
                 <CommentedOrReplied data = {this.props.comment}/>
                 <CommentBar comment = {this.props.comment} showReply = {this.showReply} topic = {this.props.topic}/>
                 {this.state.showReply ? <Replies replies = {this.props.comment.Replies} comment = {this.props.comment} topic = {this.props.topic}/> : ''}

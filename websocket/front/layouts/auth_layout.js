@@ -1,8 +1,5 @@
 import React from 'react';
 import {connect} from 'react-redux';
-import HomePage from '../pages/home_page.js';
-import UserStatus from '../pages/user_status';
-import InviteBoard from '../pages/notify_page';
 import SubDiscussLayout from '../layouts/sub_discuss_layout';
 import PrimaryHeader from '../ui/primary_header.js';
 import SubUserLayout from '../layouts/sub_user_layout';
@@ -234,43 +231,43 @@ class AuthLayout extends React.Component{
         return(
             <div id = 'main_app'>
                 <GlobalPopup/>
-                    <PrimaryHeader user = {this.props.user}/>
-                    <div id = 'app_left'>
-                        <BrowserUserPage 
-                        mainProps = {{filter: this.props.user._id, id: 'status_board'}}
-                        parProps = {{id: 'status_list', className: 'board'}}
-                        childProps = {{childClass: 'user_tiny', activeTime: true}}
-                        />
-                    </div>
-                    <div id = 'app_body'>
-                    <div id = 'flash_popup' className = 'hide'/>
-                        <Switch>
-                            <Route exact path = '/'>
-                                <WeatherApp/>
-                            </Route>
-                            <Route path = '/user'>
-                                <SubUserLayout/>
-                            </Route>
-                            <Route path = '/discuss'>
-                                <SubDiscussLayout/>
-                            </Route>
-                            <Route path = '/game'>
-                                <SubGameLayout/>
-                            </Route>
-                            <Route path = '/editor'>
-                                <EditorApp/>
-                            </Route>
-                            <Route path = '/similarity'>
-                                <SimilarApp/>
-                            </Route>
-                            <Route path = '/sql_query'>
-                                <NorthWindQuery/>
-                            </Route>
-                        </Switch>
-                    </div>
-                    <div id = 'app_right' ref = {this.right}>
-                        <InviteNoticeBoard history = {this.props.history}/>
-                    </div>
+                <PrimaryHeader user = {this.props.user}/>
+                <div id = 'app_left'>
+                    <BrowserUserPage 
+                    mainProps = {{filter: this.props.user._id, id: 'status_board'}}
+                    parProps = {{id: 'status_list', className: 'board'}}
+                    childProps = {{childClass: 'user_tiny', activeTime: true}}
+                    />
+                </div>
+                <div id = 'app_body'>
+                <div id = 'flash_popup' className = 'hide'/>
+                    <Switch>
+                        <Route exact path = '/'>
+                            <WeatherApp/>
+                        </Route>
+                        <Route path = '/user'>
+                            <SubUserLayout/>
+                        </Route>
+                        <Route path = '/discuss'>
+                            <SubDiscussLayout/>
+                        </Route>
+                        <Route path = '/game'>
+                            <SubGameLayout/>
+                        </Route>
+                        <Route path = '/editor'>
+                            <EditorApp/>
+                        </Route>
+                        <Route path = '/similarity'>
+                            <SimilarApp/>
+                        </Route>
+                        <Route path = '/sql_query'>
+                            <NorthWindQuery/>
+                        </Route>
+                    </Switch>
+                </div>
+                <div id = 'app_right' ref = {this.right}>
+                    <InviteNoticeBoard history = {this.props.history}/>
+                </div>
             </div>
         )
     }

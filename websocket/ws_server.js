@@ -117,8 +117,10 @@ module.exports = function applyWebsocket(server, app){
             idMap.delete(socketID);
             if(ownerMap.get(userID).size === 1){
                 ownerMap.delete(userID);
+                let msg = JSON.stringify({type: 'offline', payload: {_id: userID}});
                 idMap.forEach((socket) => {
-                    socket.send(JSON.stringify({type: 'offline', payload: {_id: userID}}));
+                    console.log('send')
+                    socket.send(msg);
                 })
                 users.updateOne({_id: ObjectId(userID)}, {
                     $set: {
@@ -150,12 +152,7 @@ module.exports = function applyWebsocket(server, app){
         });
 
         ws.on('message', function incoming(message){
-            // console.log(`client say ${message}`)
             let {type, payload} = JSON.parse(message);
-            // if(payload._id && !ownerMap.get(payload._id)){
-            //     console.log('xxx')
-            //     return;
-            // }
             console.log(type);
             (()=>{
                 switch(type){

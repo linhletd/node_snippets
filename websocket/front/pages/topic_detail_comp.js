@@ -67,8 +67,8 @@ class Bar extends React.Component{
         let {barInfo} = this.props;
         return(
             <div className = 'topic_thumb'>
-                <div onClick = {this.handleClickUpvote}>{barInfo.upvoted ? <i style = {{color: 'green'}} className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}&nbsp;Upvote</div>
-                <div onClick = {this.handleClickDownvote}>{barInfo.downvoted ? <i style = {{color: 'green'}} className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}&nbsp;Downvote</div>
+                <div onClick = {this.handleClickUpvote}>{barInfo.upvoted ? <i className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}&nbsp;Upvote</div>
+                <div onClick = {this.handleClickDownvote}>{barInfo.downvoted ? <i className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}&nbsp;Downvote</div>
                 <div onClick = {this.handleClickComment}><i className="fa fa-comment-o"></i>&nbsp;Comment</div>
             </div>
         )
@@ -109,6 +109,7 @@ class Topic extends React.Component{
                     .then((topic) => {
                         this.setState({topic}, () =>{
                             document.getElementById('content_ctn').innerHTML = topic.Content;
+                            document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
                         })
                     })
                     document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
@@ -177,7 +178,7 @@ class Topic extends React.Component{
             return (
                 <div id = 'topic_ctn' key = {1}>
                     <TopicTitle authorName = {true} topic = {{_id: topic._id}}/>
-                    <div id = 'content_ctn'/>
+                    <div id = 'content_ctn' className = 'editor_area'/>
                     <Bar barInfo = {barInfo} topic = {topic}/>
                     <CommentSection topic = {topic}/>
                 </div>

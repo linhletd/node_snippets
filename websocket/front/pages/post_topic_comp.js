@@ -10,8 +10,21 @@ class PostNewTopic extends React.Component {
         this.title = null;
         this.validated = false;
     }
+    flashPostSuccess = () =>{
+        let ctn = document.getElementById('flash_popup');
+        let div = document.createElement('div');
+        div.innerText = 'Successfully posted';
+        div.className = 'post_success';
+        ctn.appendChild(div);
+        ctn.classList.remove('hide');
+        setTimeout(() =>{
+            ctn.classList.add('hide');
+            div.remove();
+        }, 3000)
+    }
     postTopic = (e) =>{
-        console.log('post');
+        let target = e.target;
+        target.disabled = true;
         let bodyData = {
             title: this.title.innerText,
             category: this.postCategory.innerText,
@@ -39,9 +52,15 @@ class PostNewTopic extends React.Component {
                 return this.props.history.replace('/auth/login');
             }
             else if(data.err){
-                this.postButton.current.parentNode.nextSibling.innerText = data.err;
+                target.parentNode.nextSibling.innerText = data.err;
+                target.disabled = false;
             }
             else{
+                this.postCategory && this.postCategory.classList.remove('selected');
+                this.postCategory = null;
+                this.title.innerHTML = '';
+                this.content.innerHTML = '';
+                this.flashPostSuccess();
 
             }
         })

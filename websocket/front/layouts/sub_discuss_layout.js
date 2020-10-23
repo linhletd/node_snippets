@@ -4,29 +4,32 @@ import {withRouter, Switch, Route, Redirect} from 'react-router-dom';
 import TopicDetail from '../pages/topic_detail_comp.js';
 import fetchReq from '../utils/xhr';
 import PostNewTopic from '../pages/post_topic_comp'
-import {TitleContext, BarContext, CommentContext, CIndexContext, ReplyContext, RIndexContext} from '../contexts/discusses';
+import {TitleContext} from '../contexts/discusses';
 import TopicTitle from '../pages/topic_title_comp';
 import WaittingNotation from '../ui/waitting_notation';
 import sendMsgViaSocket from '../utils/sendMsgViaSocket';
 class TopicList extends React.Component{
-    // constructor(props){
-    //     super();
-    //     this.currentSize = props.state.topicList.size;
-    // }
-    // shouldComponentUpdate(nextProps){
-    //     if(nextProps.state.topicList.size === this.currentSize){
-    //         return false
-    //     }
-    //     else{
-    //         this.currentSize = nextProps.state.topicList.size;
-    //     }
-    //     return true;
-    // }
+    constructor(){
+        super();
+        this.checked = false;
+    }
+    componentDidUpdate(){
+        if(this.props.state.topicList.size && this.checked){
+            let f = document.getElementById('browse_topic').firstChild;
+            f.classList.add('cmt_flash');
+            setTimeout(()=>{
+                f.classList.remove('cmt_flash');
+            }, 4000)
+        }
+        else if(this.props.state.topicList.size && !this.checked){
+            this.checked = true;
+        }
+    }
     render(){
         if(this.props.state.topicList.size){
             let list = [...this.props.state.topicList.values()];
             let topics = list.map(topic =>{
-                return <TopicTitle topic = {topic} key = {topic._id.slice(18)} handleSelectTopic = {this.props.handleSelectTopic}/>
+                return <TopicTitle topic = {topic} key = {topic._id.slice(18)} handleSelectTopic = {this.props.handleSelectTopic} />
             });
             return (
                 <div id = 'browse_topic'>
