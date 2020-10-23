@@ -798,9 +798,6 @@ class EditorApp extends React.Component{
         if(this.promptState.showPrompt){
             let {it, as} = this.promptState;
             !as && it.next(false);
-            // this.props.updateState({
-            //     type: 'CLOSEPROMPT',
-            // })
             this.changer.setPromptState({showPrompt: false})
         }
     }
@@ -881,7 +878,6 @@ class EditorApp extends React.Component{
                         name: val.match(/\b([\w\s]+)/)[1]
                     });
                 });
-                console.log(this.fontFams)
             }
             selectFile = (e) =>{
                 if(this.state.img !== 0){
@@ -977,17 +973,11 @@ class EditorApp extends React.Component{
             link = () =>{
                 let {it} = this.state;
                 it && it.next(this.state.url)
-                // this.props.updateState({
-                //     type: 'CLOSEPROMPT',
-                // })
                 this.setState({showPrompt: false});
             }
             unlink = () =>{
                 let {it} = this.state;
                 it && it.next(false);
-                // this.props.updateState({
-                //     type: 'CLOSEPROMPT',
-                // })
                 this.setState({showPrompt: false});
             }
             handleChange = (e) =>{
@@ -1061,11 +1051,4 @@ function mapstateToProps(state){
         editorNode: state.editor.editorNode,
     }
 }
-function mapDispatchToProps(dispatch){
-    return {
-        updateState: function(action){
-            dispatch(action);
-        }
-    }
-}
-export default connect(mapstateToProps, mapDispatchToProps)(EditorApp);
+export default connect(mapstateToProps, null)(EditorApp);
