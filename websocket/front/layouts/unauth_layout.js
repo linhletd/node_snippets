@@ -3,6 +3,7 @@ import {Switch, Route, Redirect} from 'react-router-dom';
 import LoginPage from '../pages/login_pages.js';
 import RegisterPage from '../pages/register_page.js';
 import ForgotPasswordPage from '../pages/forgot_pwd_page.js';
+import {connect} from 'react-redux';
 
 class UnauthLayout extends React.Component{
     componentDidMount(){
@@ -14,6 +15,10 @@ class UnauthLayout extends React.Component{
         document.getElementById('footer').style.width = '';
     }
     render(){
+        if(this.props.user){
+            return <Redirect to = '/'/>
+            
+        }
         return(
             <div id = "unauth-layout">
                 <Switch>
@@ -33,4 +38,9 @@ class UnauthLayout extends React.Component{
     }
 
 }
-export default UnauthLayout;
+function mapStateToProps(state){
+    return {
+        user: state.main.user
+    }
+}
+export default connect(mapStateToProps)(UnauthLayout);

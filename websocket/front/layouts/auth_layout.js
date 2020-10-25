@@ -228,6 +228,7 @@ class AuthLayout extends React.Component{
         }
     }
     render(){
+        console.log('render')
         return(
             <div id = 'main_app'>
                 <GlobalPopup/>

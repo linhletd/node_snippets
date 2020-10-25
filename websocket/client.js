@@ -33,12 +33,8 @@ class App extends React.Component{
     }
     login = this.handleLoginEvent();
     render(){
-        let style = {minHeight: '85vh'};
-        if(this.props.user && /\/auth/.test(this.props.location.pathname)){
-            this.props.history.replace('/');
-        }
         return (
-            <div id = 'app' style = {style}>
+            <div id = 'app'>
                 <Switch>
                     <Route path = '/auth'>
                         <UnauthLayout {...this.props} handleLogin = {this.handleLoginEvent}/>
