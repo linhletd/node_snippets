@@ -35,14 +35,14 @@ class App extends React.Component{
     render(){
         return (
             <div id = 'app'>
-                <Switch>
+                {/* <Switch>
                     <Route path = '/auth'>
                         <UnauthLayout {...this.props} handleLogin = {this.handleLoginEvent}/>
                     </Route>
-                    <Route path = '/'>
+                    <Route path = '/'> */}
                         <AuthLayout/>
-                    </Route>
-                </Switch>
+                    {/* </Route>
+                </Switch> */}
             </div>
         )
     }
