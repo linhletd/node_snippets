@@ -1142,7 +1142,7 @@ class EditorNodeTraveler{
                 }
                 else{
                     r1.selectNodeContents(node);
-                    let p = document.createElement('p');
+                    let p = document.createElement('div');
                     r0.insertNode(p);
                     ct1 = r1.extractContents();
                     let f = ct1.firstChild;
@@ -1599,7 +1599,7 @@ class EditorNodeTraveler{
                     li.appendChild(cur);
                     break;
                 }
-                case 'P':{
+                case 'P': case 'DIV':{
                     let li = document.createElement('li');
                     list.appendChild(li);
                     r.selectNodeContents(cur);
@@ -2059,7 +2059,7 @@ class EditorNodeTraveler{
     }
     createPX = (p) =>{
         if(!p){
-            p = document.createElement('p');
+            p = document.createElement('div');
         }
         p.className = 'img_ctn';
         if(p.hasChildNodes()){
@@ -2090,7 +2090,7 @@ class EditorNodeTraveler{
         }
         else{
             let p1;
-            if((p1 = this.isBelongTag('P', common) || this.isBelongTag('LI', common)) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
+            if(((p1 = this.isBelongTag('DIV', common) && p1 !== this.root) || this.isBelongTag('LI', common)) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
                 r1.selectNodeContents(p1);
                 r1.deleteContents();
                 this.insertFig(p1, fig);
@@ -2161,10 +2161,10 @@ class EditorNodeTraveler{
     }
     properDeleteContent(r){
         let pli;
-        if((pli =this.isBelongTag('P', r.startContainer) || this.isBelongTag('LI', r.startContainer)) && pli.classList.contains('img_ctn')){
+        if(((pli =this.isBelongTag('DIV', r.startContainer) && pli !== this.root) || this.isBelongTag('LI', r.startContainer)) && pli.classList.contains('img_ctn')){
             r.setStartAfter(pli);
         }
-        if((pli =this.isBelongTag('P', r.endContainer) || this.isBelongTag('LI', r.endContainer)) && pli.classList.contains('img_ctn')){
+        if(((pli =this.isBelongTag('DIV', r.endContainer) && pli !== this.root) || this.isBelongTag('LI', r.endContainer)) && pli.classList.contains('img_ctn')){
             r.setEndBefore(pli);
         }
         let end = r.endContainer, start = r.startContainer, off = r.startOffset;
