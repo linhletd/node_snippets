@@ -32,13 +32,6 @@ class App extends React.Component{
 
     }
     login = this.handleLoginEvent();
-    componentDidMount(){
-        let tempContainer = document.createElement('div');
-        tempContainer.id = 'temp_container';
-        tempContainer.style.display = 'none';
-        document.getElementsByTagName('body')[0].appendChild(tempContainer);
-
-    }
     render(){
         let style = {minHeight: '85vh'};
         if(this.props.user && /\/auth/.test(this.props.location.pathname)){
@@ -66,4 +59,6 @@ function mapDispatchToProps(dispatch){
     }
 }
 const RoutedApp = withRouter(connect(null, mapDispatchToProps)(App));
-render(<BrowserRouter><Provider store = {store}><RoutedApp/></Provider></BrowserRouter>, document.getElementById('root'))
+document.addEventListener('DOMContentLoaded',()=>{
+    render(<BrowserRouter><Provider store = {store}><RoutedApp/></Provider></BrowserRouter>, document.getElementById('root'))
+})

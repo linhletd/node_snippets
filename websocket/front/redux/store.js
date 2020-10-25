@@ -33,9 +33,10 @@ var user, socket, usersStatus = undefined;
 if(window.atob && /^InVzZXIi=|;InVzZXIi=/.test(document.cookie)){
     user = JSON.parse(atob((';' + document.cookie +';').match(/;InVzZXIi=(.+?);/)[1].replace(/%2F/g,'/').replace(/%3D/g, '=')));
     socket = new window.WebSocket('ws://localhost:8080');
+    console.log(123, user)
 }
 
-function main(state = {user, socket, usersStatus},{type, data}){
+function main(state = {user, socket, usersStatus, mutateStore: {}},{type, data}){
     switch(type){
         case LOGIN:
             return {...state, user: data};

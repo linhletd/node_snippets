@@ -104,6 +104,17 @@ class SubDiscussLayout extends React.Component{
                 this.state.topicList = new Map(entries)
             //     return {topicList: newState}
             // }));
+            let {search} = this.props.location;
+            let match = search.match(/\?id=(\w{24})\b/);
+            if(match && match[1]){
+                setTimeout(()=>{
+                    let t = document.getElementById(`list${match[1]}`);
+                    if(t){
+                        this.selectedTitle = t;
+                        t.classList.add('selected_title');
+                    }
+                },10) 
+            }
         }
         else {
             // this.setState((prevState) => {
@@ -345,7 +356,11 @@ class SubDiscussLayout extends React.Component{
         sendMsgViaSocket(this.props, msg);
         delete this.props.socket.discuss;
     }
+    goToCreateTopic = () =>{
+        this.props.history.push('/discuss');
+    }
     render(){
+        let topicPlus = <i onClick = {this.goToCreateTopic} className="fa fa-plus plus_topic"></i>
         return (
             <TitleContext.Provider value = {this.state}>
                 <div id = "discuss_layout">
@@ -355,6 +370,7 @@ class SubDiscussLayout extends React.Component{
                         </Route>
                         <Route path = '/discuss/detail'>
                             <TopicDetail/>
+                            {topicPlus}
                         </Route>
                         <Redirect to = '/discuss'/>
                     </Switch>

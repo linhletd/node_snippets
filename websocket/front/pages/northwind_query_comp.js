@@ -1,6 +1,7 @@
 import React from 'react';
 import  Guide from './guide_comp'
 import {stringify} from 'query-string';
+import WaittingNotation from '../ui/waitting_notation';
 const Table = (props) =>{
     let {data} = props;
     let title = Object.keys(data[0]);
@@ -343,6 +344,7 @@ class NorthWinQuery extends React.Component{
         this.opt.firstChild.disabled = true;
         let query = `?${stringify({query: this.editor.innerText})}`
         if(this.editor.innerText.length){
+            this.setWaitState();
             fetch('/sql_query/preview' + query,{
                 method: 'GET'
             })
@@ -404,7 +406,23 @@ class NorthWinQuery extends React.Component{
     render(){
         console.log('render')
         let {data} = this.state;
-        let content = data ? data.err ? <p className = 'fb_msg'>{data.err}</p> : <Table data = {data.data}/> : '';
+        // let content = data ? data.err ? <p className = 'fb_msg'>{data.err}</p> : <Table data = {data.data}/> : <WaittingNotation autoStop = {true}/>;
+        let self = this;
+        class Content extends React.Component{
+            state = {wait: false}
+            componentDidMount(){
+                self.setWaitState = ()=>{
+                    this.setState({
+                        wait: true
+                    })
+                }
+            }
+            render(){
+                return(
+                    data ? ((this.state.wait = false) || data.err) ? <p className = 'fb_msg'>{data.err}</p> : <Table data = {data.data}/> : this.state.wait ? <WaittingNotation autoStop = {true}/> : ''
+                )
+            }
+        }
         return(
             <div id = 'sql_query'>
                 <div id = 'sql_toggle' onClick = {this.clickToggle}>show</div>
@@ -418,7 +436,7 @@ class NorthWinQuery extends React.Component{
                     <button onClick = {this.jsonDownload}><i className="fa fa-download"></i>.json</button>
                     <button onClick = {this.csvDownload}><i className="fa fa-download"></i>.csv</button>
                 </div>
-                {content}
+                <Content/>
             </div>
         )
     }

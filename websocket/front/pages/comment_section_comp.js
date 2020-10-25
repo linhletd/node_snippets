@@ -284,7 +284,7 @@ class CommentOrReply extends React.Component{
         let childProps = {childClass: 'user_tiny', click: this.clickTagList};
         return(
             <div className = {'cor'}>
-                <UserStatus status = {this.props.user} noName = {true} childClass = 'user_xsmall'/>
+                <UserStatus status = {this.props.user} noName = {true} childClass = {this.props.childClass}/>
                 <BrowseUserPage mainProps = {mainProps} parProps = {parProps} childProps = {childProps}/>
                 <button ref = {this.postBtn} onClick = {this.props.handlePost}>post</button>
             </div>
@@ -312,9 +312,7 @@ class CommentedOrReplied extends React.Component{
     render(){
         let content = <div ref = {this.node} className = 'comment_cnt'/>;
         return (
-            <div className = {'cored'}>
-                <UserStatus children = {content} status = {{_id: this.props.data.PostedBy}} childClass = 'user_xsmall'/>
-            </div>
+            <UserStatus children = {content} status = {{_id: this.props.data.PostedBy}} childClass = {`cored ${this.props.childClass}`}/>
         )
     }
 }
@@ -357,9 +355,15 @@ class CommentBar extends React.Component{
         
         if(this.state.up){
             obj.type = 'c_unup';
+            this.state.up = false;
         }
         else if(this.state.down){
             obj.type = 'c_toup';
+            this.state.up = true;
+            this.state.down = false;
+        }
+        else{
+            this.state.up = true
         }
         sendMsgViaSocket(this.props, JSON.stringify(obj));
     }
@@ -373,9 +377,15 @@ class CommentBar extends React.Component{
         }
         if(this.state.down){
             obj.type = 'c_undown';
+            this.state.down = false;
         }
         else if(this.state.up){
             obj.type = 'c_todown';
+            this.state.down = true;
+            this.state.up = false;
+        }
+        else{
+            this.state.down = true;
         }
         sendMsgViaSocket(this.props, JSON.stringify(obj));
     }
@@ -460,9 +470,15 @@ class Reply extends React.Component{
         
         if(this.state.up){
             obj.type = 'r_unup';
+            this.state.up = false;
         }
         else if(this.state.down){
             obj.type = 'r_toup';
+            this.state.up = false;
+            this.state.down = true;
+        }
+        else{
+            this.state.up = true;
         }
         sendMsgViaSocket(this.props, JSON.stringify(obj));
     }
@@ -498,7 +514,7 @@ class Reply extends React.Component{
         let {up, down, upvoted, downvoted} = this.state;
         return(
             <div className = {this.props.childClass ? `reply ${this.props.childClass}`: 'reply'}>
-                <CommentedOrReplied data = {reply}/>
+                <CommentedOrReplied data = {reply} childClass = 'user_tiny'/>
                 <div>
                     <div onClick = {this.upvoteReply}>{up ? <i className="fa fa-thumbs-up"></i> :<i className="fa fa-thumbs-o-up"></i>}{upvoted}</div>
                     <div onClick = {this.downvoteReply}>{down ? <i className="fa fa-thumbs-down"></i> :<i className="fa fa-thumbs-o-down"></i>}{downvoted}</div>
@@ -555,7 +571,7 @@ class Replies extends React.Component{
         return(
             <div className = 'reply_section'>
                 {replies}
-                <CommentOrReply handlePost = {this.handleReply}/>
+                <CommentOrReply handlePost = {this.handleReply} childClass = {'user_tiny'}/>
             </div>
         )
     }
@@ -589,7 +605,7 @@ class Comment extends React.Component{
     render(){   
         return(
             <div className = {this.props.childClass ? `comment ${this.props.childClass}`: 'comment'}>
-                <CommentedOrReplied data = {this.props.comment}/>
+                <CommentedOrReplied data = {this.props.comment} childClass = 'user_xsmall'/>
                 <CommentBar comment = {this.props.comment} showReply = {this.showReply} topic = {this.props.topic}/>
                 {this.state.showReply ? <Replies replies = {this.props.comment.Replies} comment = {this.props.comment} topic = {this.props.topic}/> : ''}
             </div>
@@ -654,9 +670,9 @@ class CommentSection extends React.Component{
         })
         return(
             <div className = 'comment_section' ref = {this.comment}>
-                {x >= 1 && !this.state.showAll ? <div onClick = {this.handleClickShowAll}>{x > 1 ? `Show all (+${x} comments)` : `Show all (+${x} comment)`}</div> : ''}
+                {x >= 1 && !this.state.showAll ? <div className = 'cmt_plus' onClick = {this.handleClickShowAll}>{x > 1 ? `Show all (+${x} comments)` : `Show all (+${x} comment)`}</div> : ''}
                 {comments}
-                <CommentOrReply handlePost = {this.handlePostComment} inputClass = 'comment_input'/>
+                <CommentOrReply handlePost = {this.handlePostComment} inputClass = 'comment_input' childClass = {'user_xsmall'}/>
             </div>
         )
     }
