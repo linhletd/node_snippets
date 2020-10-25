@@ -2090,7 +2090,7 @@ class EditorNodeTraveler{
         }
         else{
             let p1;
-            if(((p1 = this.isBelongTag('DIV', common) && p1 !== this.root) || this.isBelongTag('LI', common)) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
+            if((((p1 = this.isBelongTag('DIV', common)) && p1 !== this.root) || (p1 = this.isBelongTag('LI', common))) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
                 r1.selectNodeContents(p1);
                 r1.deleteContents();
                 this.insertFig(p1, fig);
@@ -2161,10 +2161,10 @@ class EditorNodeTraveler{
     }
     properDeleteContent(r){
         let pli;
-        if(((pli =this.isBelongTag('DIV', r.startContainer) && pli !== this.root) || this.isBelongTag('LI', r.startContainer)) && pli.classList.contains('img_ctn')){
+        if((((pli =this.isBelongTag('DIV', r.startContainer)) && pli !== this.root) || (pli = this.isBelongTag('LI', r.startContainer))) && pli.classList.contains('img_ctn')){
             r.setStartAfter(pli);
         }
-        if(((pli =this.isBelongTag('DIV', r.endContainer) && pli !== this.root) || this.isBelongTag('LI', r.endContainer)) && pli.classList.contains('img_ctn')){
+        if((((pli =this.isBelongTag('DIV', r.endContainer)) && pli !== this.root) || (pli = this.isBelongTag('LI', r.endContainer))) && pli.classList.contains('img_ctn')){
             r.setEndBefore(pli);
         }
         let end = r.endContainer, start = r.startContainer, off = r.startOffset;
