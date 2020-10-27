@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang = "vi">
+  <head>
+    <meta charset="utf8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>feedback</title>
+    <style>
+        *{
+            margin: 0px;
+        }
+        #ctn{
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #ctn>*{
+            width: 90%;
+            max-width: 500px;
+        }
+        #ctn>p{
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        #input{
+            min-height: 150px;
+            outline: none;
+            border: 1px solid rgb(81, 175, 238);
+            border-radius: 5px;
+            padding: 5px 5px;
+        }
+        #post{
+            width: 80px;
+            background-color: rgb(133, 182, 133);
+            border-radius: 5px;
+            border: none;
+            height: 25px;
+            margin-top: 5px;
+            outline: none;
+        }
+    </style>
+  </head>
+  <body>
+    <div id = 'ctn'>
+        <p>Feedback content (not exceed 1000 characters):</p>
+        <textarea id = 'input'></textarea>
+        <button id = 'post' disabled>Submit</button>
+    </div>
+    <script>
+        input.focus();
+        input.oninput = ()=>{
+            if(input.value.length <= 1000 && input.value.length > 0){
+                post.disabled && (post.disabled = false)
+            }
+            else{
+                !post.disabled && (post.disabled = true)
+            }
+        }
+        post.onclick = () =>{
+            post.disabled = true;
+            fetch('/feedback',{
+                method: 'post',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({feedback: input.value})
+            }).then((res) => res.text()).then(text =>{
+                ctn.innerHTML = `<p>${text}</p>`;
+            })
+        }
+    </script>
+  </body>
+</html>
