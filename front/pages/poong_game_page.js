@@ -74,7 +74,7 @@ class PoongGame extends React.Component{
     sendMsgViaSocket = (msg) =>{
         let {socket} = this.props;
         if(socket.readyState === 2 || socket.readyState === 3){
-            let ws = new window.WebSocket('ws://localhost:8080');
+            let ws = new window.WebSocket('wss://linhletd.glitch.me');
             this.props.updateStore({type: 'OPENSOCKET', data: ws});
             ws.onopen = (e) =>{
                 ws.send(msg);
