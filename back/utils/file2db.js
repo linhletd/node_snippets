@@ -1,34 +1,34 @@
 const fs = require('fs');
-const readline = require('readline');
+// const readline = require('readline');
 const ReadRow = require('../helpers/readrow.js');
 const delimiterParser = require('../helpers/parserow.js');
 
 //rely on 'readline' module
-function insertRecordsFromFile(conn,table,file,delimiter,cb = delimiterParser.bind({}, delimiter)){
-    let linestream = readline.createInterface({
-        input: fs.createReadStream(file),
-        terminal: false
-        });
-    console.log('running...')
-    let data = false;
-    linestream.on("line", ln => {
-        if(data && /\w/.test(ln)){
-            let record = cb(ln);
-            console.log(record)
-            let cmd = `INSERT INTO ${table} VALUES (?)`
-            conn.query(cmd,[record], (err, result) => {
-                if(err) throw err;
-                console.log('one record inserted');
-            })
-        }
-        else{
-            data = true;
-        }
-    });
-    linestream.on('close',()=>{
-        console.log('reading finished');
-    })
-}
+// function insertRecordsFromFile(conn,table,file,delimiter,cb = delimiterParser.bind({}, delimiter)){
+//     let linestream = readline.createInterface({
+//         input: fs.createReadStream(file),
+//         terminal: false
+//         });
+//     console.log('running...')
+//     let data = false;
+//     linestream.on("line", ln => {
+//         if(data && /\w/.test(ln)){
+//             let record = cb(ln);
+//             console.log(record)
+//             let cmd = `INSERT INTO ${table} VALUES (?)`
+//             conn.query(cmd,[record], (err, result) => {
+//                 if(err) throw err;
+//                 console.log('one record inserted');
+//             })
+//         }
+//         else{
+//             data = true;
+//         }
+//     });
+//     linestream.on('close',()=>{
+//         console.log('reading finished');
+//     })
+// }
 
 //write own method
 function insertRecordsFromFile_alt(conn,table,file,delimiter,max = 10000 , size = 1024,cb = delimiterParser.bind({}, delimiter)){
