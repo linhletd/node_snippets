@@ -176,7 +176,7 @@ class EditorApp extends React.Component{
             let spanx = common.parentNode, ctn = spanx.parentNode;
             e.preventDefault();
             if(e.keyCode === 13 && spanx === ctn.firstChild){
-                if(ctn.nodeName === 'P'){
+                if(ctn.nodeName === 'DIV'){
                     ctn.parentNode.insertBefore(document.createElement('br'), ctn);
                 }
                 else if(ctn.nodeName === 'LI'){
@@ -186,7 +186,7 @@ class EditorApp extends React.Component{
                 }
             }
             if(e.keyCode === 13 && spanx === ctn.lastChild){
-                if(ctn.nodeName === 'P'){
+                if(ctn.nodeName === 'DIV'){
                     let br = document.createElement('br');
                     this.traveler.insertAfter(br, ctn);
                     this.currentRange.setStartBefore(br);

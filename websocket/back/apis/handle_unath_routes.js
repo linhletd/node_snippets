@@ -106,15 +106,6 @@ module.exports = function(app){
                 //
             }
         },
-        logout: (req, res, next) => {
-            req.session.destroy((err) => {
-                //
-            });
-            res.clearCookie('connect.sid');
-            res.clearCookie('InVzZXIi');
-            res.redirect('/auth/login');
-
-        }
 
     };
 

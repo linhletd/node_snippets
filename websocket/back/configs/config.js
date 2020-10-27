@@ -9,6 +9,10 @@ const express = require('express');
 const useUnauthRoute = require('../routes/unauth_routes');
 const useAuthRoute = require('../routes/auth_routes')
 module.exports = function config(app){
+    app.get('/favicon.ico', (req, res, next)=>{
+        res.writeHead(200, {'Content-Type': "image/x-icon"});
+        return res.end()
+    })
     useHelmet(app);
     app.use(morgan('tiny'))
     app.get('/script',(req, res) => {
@@ -21,16 +25,20 @@ module.exports = function config(app){
     app.use(bodyParser.urlencoded({extended: true}));
     app.use(bodyParser.json());
     app.use(cookieParser(process.env.SESS_SECRET));
-
+    app.get('/feedback', (req, res) =>{
+        res.sendFile(process.cwd() + '/statics/html/feedback.html');
+    })
+    app.get('/term-privacy', (req, res) =>{
+        res.sendFile(process.cwd() + '/statics/html/term_privacy.html');
+    })
     // app.use(morgan('dev'));
     useUnauthRoute(app);
     useAuthRoute(app);
 
 
     /*****************************************/
-
     app.use((req, res) => {
-        res.sendFile(process.cwd() + '/index.html')
+        res.sendFile(process.cwd() + '/index.html');
     });
 
 }

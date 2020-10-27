@@ -87,7 +87,7 @@ class WeatherApp extends React.PureComponent{
         }
     }
     componentDidMount(){
-        this.fetchData({q: 'hanoi'})
+        this.fetchData({q: 'thai nguyen'})
         .then((data) => {
             this.checkAndSetState({weather: data, showInput: false})
         });

@@ -2090,9 +2090,15 @@ class EditorNodeTraveler{
         }
         else{
             let p1;
-            if((((p1 = this.isBelongTag('DIV', common)) && p1 !== this.root) || (p1 = this.isBelongTag('LI', common))) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
-                r1.selectNodeContents(p1);
-                r1.deleteContents();
+            if((((p1 = this.isBelongTag('DIV', common)) && p1 !== this.root) || (p1 = this.isBelongTag('P', common)) || (p1 = this.isBelongTag('LI', common))) && !p1.classList.contains('img_ctn') && !this.hasRealText(p1)){
+                if(p1.nodeName === 'P'){
+                    let temp = p1;
+                    temp.parentNode.replaceChild((p1 = this.createPX()), temp);
+                }
+                else{
+                    r1.selectNodeContents(p1);
+                    r1.deleteContents();
+                }
                 this.insertFig(p1, fig);
             }
             else if(common.parentNode.classList.contains('zero_space')){

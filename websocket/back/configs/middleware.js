@@ -15,10 +15,13 @@ module.exports = function(app){
                 cur.close(4000, 'session terminated')
             })) : "";
             if(/^\/auth/.test(req.url)){
+                console.log(true)
                 return next();
             }
             res.clearCookie('InVzZXIi');
             res.clearCookie('connect.sid');
+            let intent = Buffer.from(req.url).toString('base64');
+                res.cookie('aW50ZW50VVJM', intent, {httpOnly: false, sameSite: 'strict', maxAge: 100});
             return res.redirect('/auth/login');
         },
         ensureSQLConnected(req, res, next){

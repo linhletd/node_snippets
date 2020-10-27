@@ -8,6 +8,7 @@ module.exports = function(app){
     const customMidleware = require('../configs/middleware')(app);
     let apis = apisf(app);
     let apis1 = sqlrelate(app);
+    app.post('/feedback', apis.feedback);
     app.use(customMidleware.ensureAuthenticated);
 
     app.get('/logout', apis.logout)

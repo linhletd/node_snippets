@@ -31,7 +31,9 @@ class LoginPage extends React.Component{
             body: JSON.stringify(body)
         }).then(res =>{
             if(res.headers.get('content-type') === 'text/html'){
-                window.open('/','_self')
+                let intentURL = sessionStorage.getItem('inTentURL');
+                sessionStorage.removeItem('inTentURL');
+                window.open(intentURL || '/','_self')
             }
             else{
                 return res.json();

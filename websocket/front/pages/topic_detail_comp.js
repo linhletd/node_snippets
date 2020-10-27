@@ -109,10 +109,10 @@ class Topic extends React.Component{
                     .then((topic) => {
                         this.setState({topic}, () =>{
                             document.getElementById('content_ctn').innerHTML = topic.Content;
-                            document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
+                            document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "start"})
                         })
                     })
-                    document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
+                    document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "start"})
                 }
                 else{
                     throw new Error('error')

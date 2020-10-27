@@ -63,10 +63,6 @@ class Guide extends React.Component{
         }
         return(
             <div className = {`guide${data.hide ? ' hide' : ''}`} id = {data.id}>
-                {/* <div>
-                    <p>{data.header}</p>
-                    {data.closable ? <i className="fa fa-window-close-o" onClick = {this.close}></i> : ''}
-                </div> */}
                 {data.closable ? <i className="fa fa-window-close-o" onClick = {this.close}></i> : ''}
                 <div className = 'guide_content'>
                     <i className="fa fa-chevron-left" onClick = {this.goPrev}></i>

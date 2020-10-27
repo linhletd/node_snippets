@@ -11,6 +11,8 @@ import NorthWindQuery from '../pages/northwind_query_comp'
 import InviteNoticeBoard from '../pages/notify_game_comp';
 import BrowserUserPage from '../pages/browse_user_page';
 import {GlobalPopup} from '../pages/popup_comp';
+import EditorGuide from '../pages/editor_guide_comp';
+import Welcome from '../pages/welcome_comp';
 import {Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
 let worker = new Worker('/js/worker.bundle.js');
@@ -168,6 +170,7 @@ class AuthLayout extends React.Component{
         })
     }
     componentDidMount(){
+        console.log('did mount')
         this.getInitialUsersStatus();
         this.handleIncomingMsg();
         this.detectMustAlternativeWs();
@@ -228,7 +231,6 @@ class AuthLayout extends React.Component{
         }
     }
     render(){
-        console.log('render')
         return(
             <div id = 'main_app'>
                 <GlobalPopup/>
@@ -245,6 +247,7 @@ class AuthLayout extends React.Component{
                     <Switch>
                         <Route exact path = '/'>
                             <WeatherApp/>
+                            <Welcome/>
                         </Route>
                         <Route path = '/user'>
                             <SubUserLayout/>
@@ -256,6 +259,7 @@ class AuthLayout extends React.Component{
                             <SubGameLayout/>
                         </Route>
                         <Route path = '/editor'>
+                            <EditorGuide/>
                             <EditorApp/>
                         </Route>
                         <Route path = '/similarity'>

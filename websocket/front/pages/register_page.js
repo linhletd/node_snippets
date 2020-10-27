@@ -1,4 +1,3 @@
-import { json } from 'body-parser';
 import React from 'react';
 import fetchReq from '../utils/xhr'
 

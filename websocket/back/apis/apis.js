@@ -165,11 +165,30 @@ module.exports = function(app){
         },
 
         logout: function(req, res, next){
+            req.session.destroy((err) => {
+                //
+            });
             res.clearCookie('InVzZXIi');
             res.clearCookie('connect.sid');
             res.json({result: 'ok'})
+        },
+        feedback: (req, res, next) =>{
+            let {feedback} = req.body;
+            let feedbacks = client.db(db).collection('feedbacks');
+            let newFb = {
+                Content: feedback,
+                PostTime: new Date(),
+                user: req.user ? req.user._id : null
+            }
+            feedbacks.insertOne(newFb,(err) =>{
+                if(!err){
+                    res.send('Thank you!');
+                }
+                else{
+                    res.send('Error occured')
+                }
+            })
         }
-
     }
     return apiObject
 }

@@ -13,8 +13,5 @@ module.exports = function(app){
     router.get('/auth/github', handlers.thirdPartyAuth('github'))
     router.get('/auth/github/callback',handlers.login('github'));
 
-    router.get('/user/logout',handlers.logout)
-
-
     app.use(router)
 }
