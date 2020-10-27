@@ -2,8 +2,8 @@ const dotenv = require('dotenv').config();
 let path = require('path');
 module.exports = {
     entry: {
-        main: './websocket/client.js',
-        worker: './websocket/front/workers/detect_wakeup.js',
+        main: './client.js',
+        worker: './front/workers/detect_wakeup.js',
     },
     output: {
         path: path.resolve(__dirname, 'statics', 'js'),
