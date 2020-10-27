@@ -1,6 +1,6 @@
 const router = require('express').Router();
 const handlersf = require('../apis/handle_unath_routes.js');
-const dotenv = require('dotenv').config({path: '../../../.env'});
+const dotenv = require('dotenv').config();
 
 module.exports = function(app){
     let handlers = handlersf(app);

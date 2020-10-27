@@ -1,7 +1,7 @@
 'use strict';
 const http = require('http');
 const express = require('express');
-const dotenv = require('dotenv').config({path: '../.env'});
+const dotenv = require('dotenv').config();
 const MongoClient = require('mongodb').MongoClient;
 const config = require('./back/configs/config');
 const applyWebsocket = require('./ws_server');

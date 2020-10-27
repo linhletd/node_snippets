@@ -1,3 +1,4 @@
+const dotenv = require('dotenv').config();
 const nodemailer = require('nodemailer');
 const generateToken = require('./generate_token')
 let mailAdress = process.env.MAIL_ADDRESS,

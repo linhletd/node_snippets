@@ -1,6 +1,6 @@
 const passport = require('passport');
 const bcrypt = require('bcrypt');
-const dotenv = require('dotenv').config({path: '../../.env'});
+const dotenv = require('dotenv').config();
 const LocalStrategy = require('passport-local').Strategy;
 const FbStrategy = require('passport-facebook').Strategy;
 const GithubStrategy = require('passport-github').Strategy;

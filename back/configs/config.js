@@ -2,7 +2,7 @@ const bodyParser = require('body-parser');
 let cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const useHelmet = require('../secure/helmet');
-const dotenv = require('dotenv').config({path: '../../../.env'})
+const dotenv = require('dotenv').config();
 const express = require('express');
 // const formidable = require('formidable');
 

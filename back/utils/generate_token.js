@@ -1,3 +1,4 @@
+const dotenv = require('dotenv').config();
 let jwt = require('jwt-simple');
 let crypt = require('./crypt');
 function generateToken(sub, type){

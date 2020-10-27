@@ -2,7 +2,7 @@ const router = require('express').Router();
 const apisf = require('../apis/apis.js');
 const sqlrelate = require('../apis/mysql_relate');
 const others = require('../apis/other_apis');
-const dotenv = require('dotenv').config({path: '../../../.env'});
+const dotenv = require('dotenv').config();
 
 module.exports = function(app){
     const customMidleware = require('../configs/middleware')(app);

@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const dotenv = require('dotenv').config({path: '../../../.env'});
+const dotenv = require('dotenv').config();
 const assignIcon = require('../utils/avartar_factory');
 const sendEmail = require('../utils/send_email');
 const {generateToken, getPayloadFromToken} = require('../utils/generate_token');
