@@ -1,0 +1,14 @@
+/node_modules
+*test*
+/*.json
+.env
+*.pem
+/images
+/data
+/.vscode
+/utils
+/helpers
+/saved_data
+sha256.js
+bundle.js
+.vscode
