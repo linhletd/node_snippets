@@ -1,9 +1,9 @@
 import React from 'react';
 import UserStatus from '../pages/user_status';
-import {Redirect, withRouter} from 'react-router-dom';
+import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
 import PoongPopup from '../pages/poong_popup_page';
-// import sendMsgViaSocket from '../utils/sendMsgViaSocket'
+import sendMsgViaSocket from '../utils/sendMsgViaSocket';
 
 class PoongGame extends React.Component{
     constructor(props){
@@ -11,20 +11,16 @@ class PoongGame extends React.Component{
         this.game = React.createRef();
         this.unit = 'vw';
         this.hwratio = 0.5;
-        console.log(innerWidth, innerHeight)
         if( innerWidth < 600){
-            console.log(1)
             this.wratio = 0.94;
             this.width = Math.floor(100 * this.wratio);
         }
         else if(innerWidth < 1199){
-            console.log(2)
             this.wratio = 0.9;
             this.width = Math.floor((innerWidth - 240 -10)/innerWidth * 100 * this.wratio);
         }
         else{
             this.wratio = 0.9;
-            console.log(3)
             this.width = Math.floor((innerWidth - 240 * 2 -10)/innerWidth * 100 * this.wratio);
         }
         this.height = this.width * this.hwratio;
@@ -70,29 +66,6 @@ class PoongGame extends React.Component{
             mainGoing: undefined
         }
         this.bulletsList = new Map();
-    }
-    sendMsgViaSocket = (msg) =>{
-        let {socket} = this.props;
-        if(socket.readyState === 2 || socket.readyState === 3){
-            let ws = new window.WebSocket('wss://linhletd.glitch.me');
-            this.props.updateStore({type: 'OPENSOCKET', data: ws});
-            ws.onopen = (e) =>{
-                ws.send(msg);
-            }
-        }
-        else{
-            try{
-                socket.send(msg);
-            }
-            catch(e){
-                if(socket.readyState === 0){
-                    socket.addEventListener('open', () =>{
-                    socket.send(msg);
-                    })
-                }
-            }
-        }
-        
     }
     mainGo = (ev) =>{
         this.itv.mainGoing && clearInterval(this.itv.mainGoing) && (this.itv.mainGoing = undefined);
@@ -144,7 +117,7 @@ class PoongGame extends React.Component{
                 type: 'go',
                 payload: {x: x/this.width, y: y/this.width, alpha, inviteId: this.props.mutateData.inviteId}
             }
-            this.sendMsgViaSocket(JSON.stringify(msg));
+            sendMsgViaSocket(JSON.stringify(msg));
             player.x = x; player.y = y; player.alpha = alpha;
             let elem = document.getElementById('shooting_yard').querySelector(`#${this.mainPlayer}`);
             elem.style.left = `${x}vw`; elem.style.top = `${y}vw`; elem.style.transform = `rotate(${alpha}rad)`;
@@ -185,7 +158,7 @@ class PoongGame extends React.Component{
                     inviteId: this.props.mutateData.inviteId
                 }
             }
-            this.sendMsgViaSocket(JSON.stringify(msg))
+            sendMsgViaSocket(JSON.stringify(msg))
         }
 
         let key = `${playerId}_${bulletsQty}`;
@@ -329,13 +302,11 @@ class PoongGame extends React.Component{
             type: 'leave',
             payload: {inviteId}
         }
-        this.sendMsgViaSocket(JSON.stringify(msg));
+        sendMsgViaSocket(JSON.stringify(msg));
         updateStore({
             type: 'ENDGAME',
             data: {}
         })
-        // console.log(this.props.location)
-        // this.props.history.replace('/game');
     }
     handleLeaveMsg = () =>{
         this.freezed = true;
@@ -533,7 +504,7 @@ class PoongGame extends React.Component{
                         <SampleBullet/>
                         <div id = 'bullets'/>
                         <div id = 'poong_popup' className = 'hide'>
-                            <PoongPopup sendMsg = {this.sendMsgViaSocket}/>
+                            <PoongPopup sendMsg = {sendMsgViaSocket}/>
                         </div>
                     </div>
                     <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button> {/*do not replace this.shoot... by other method that already binding, because of this.mainplayer*/}                    
