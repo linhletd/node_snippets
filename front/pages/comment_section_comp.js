@@ -557,7 +557,6 @@ class Replies extends React.Component{
     shouldComponentUpdate(nextProps){
         if(nextProps.repSec && nextProps.repSec._id === this.props.comment._id){
             this.endHighLight = true;
-            console.log(this.endHighLight)
             return true;
         }
         return false;

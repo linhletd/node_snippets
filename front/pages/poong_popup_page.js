@@ -4,6 +4,7 @@ import {withRouter} from 'react-router-dom';
 import {connect} from 'react-redux';
 import {runNotation, stopRunNotation} from '../utils/operateNotationWait';
 import WaittingNotation from '../ui/waitting_notation';
+import sendMsgViaSocket from '../utils/sendMsgViaSocket';
 class PoongPopup extends React.Component {
     constructor(props){
         super();
@@ -21,7 +22,7 @@ class PoongPopup extends React.Component {
             type: 'continue',
             payload: {inviteId}
         }
-        this.props.sendMsg(JSON.stringify(msg));
+        sendMsgViaSocket(this.props, JSON.stringify(msg));
         this.setState({continuable: true});
         updateStore({
             type: 'CONTINUEGAME',
@@ -96,7 +97,8 @@ function mapStateToProps(state, ownProp){
     return {
         user: state.main.user,
         mutateData: state.poong.mutateData,
-        popup: state.poong.popup
+        popup: state.poong.popup,
+        socket: state.main.socket
     }
 }
 function mapDispatchToProps(dispatch){

@@ -3,7 +3,8 @@ import {connect} from 'react-redux';
 import {withRouter} from 'react-router-dom';
 import BrowseUserPage from '../pages/browse_user_page';
 import Guide from './guide_comp';
-import WaitPlayerPopupContent from '../pages/wait_player_content_comp'
+import WaitPlayerPopupContent from '../pages/wait_player_content_comp';
+import sendMsgViaSocket from '../utils/sendMsgViaSocket';
 class GameNav extends React.Component{
     constructor(props){
         super();
@@ -40,8 +41,7 @@ class GameNav extends React.Component{
     clickLife = () =>{
         this.props.history.replace('/game/life');
     }
-    shouldComponentUpdate(nextProps, nextState){
-        console.log(nextProps.location.pathname, this.props.location.pathname)
+    shouldComponentUpdate(nextProps){
         if(nextProps.location.pathname === '/game/poong' && nextProps.location.pathname !== this.props.location.pathname){
             !this.poong.current.classList.contains('game_selected') && this.poong.current.classList.add('game_selected');
             this.life.current.classList.contains('game_selected') && this.life.current.classList.remove('game_selected');
@@ -94,32 +94,8 @@ class GameNav extends React.Component{
             type: 'invite',
             payload: {_id, inviteId}
         }
-        this.sendMsgViaSocket(JSON.stringify(msg))
+        sendMsgViaSocket(this.props, JSON.stringify(msg))
         this.closeInviteBoard.bind(this)();
-    }
-    sendMsgViaSocket = (msg) =>{
-        let {socket} = this.props;
-        console.log(socket.readyState)
-        if(socket.readyState === 2 || socket.readyState === 3){
-            let ws = new window.WebSocket('wss://linhletd.glitch.me');
-            this.props.updateStore({type: 'OPENSOCKET', data: ws});
-            ws.onopen = (e) =>{
-                ws.send(msg);
-            }
-        }
-        else{
-            try{
-                socket.send(msg);
-            }
-            catch(e){
-                if(socket.readyState === 0){
-                    socket.addEventListener('open', () =>{
-                    socket.send(msg);
-                    })
-                }
-            }
-        }
-        
     }
     openInviteBoard = () =>{
         let node = document.getElementById('invite_board');

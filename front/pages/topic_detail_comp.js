@@ -119,7 +119,6 @@ class Topic extends React.Component{
                 }
             }
             catch(e){
-                console.log(e)
                 this.props.history.replace('/discuss')
             }
         }

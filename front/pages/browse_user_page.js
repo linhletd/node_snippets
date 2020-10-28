@@ -15,13 +15,10 @@ class BrowseUserPage extends React.Component{
             if(usersStatus){
                 let filtered = [...usersStatus.values()].filter(this.filter);
                 if(!filtered.length && this.props.mainProps.InputComp){
-                    this.state.empty = true
-                    // this.list.current.classList.add('hide');
-                    // console.log('hide')
+                    this.state.empty = true;
                 }
                 else if(this.props.mainProps.InputComp && filtered.length){
                     this.state.empty = false;
-                    // this.list.current.classList.contains('hide') && this.list.current.classList.remove('hide');
                 }
                 let sorted;
                 if(this.props.mainProps.noSort){
