@@ -30,7 +30,6 @@ class PostNewTopic extends React.Component {
             category: this.postCategory.innerText,
             content: this.content.innerHTML
         };
-        console.log(bodyData)
         fetch('/discuss/post_topic',{
             body: JSON.stringify(bodyData),
             method: 'post',
