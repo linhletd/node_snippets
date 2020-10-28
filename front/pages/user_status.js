@@ -14,6 +14,9 @@ class UserStatus extends React.Component{
         }
     }
     shouldComponentUpdate(nextProps){
+        if(this.props.children !== nextProps.children){
+            return true;
+        }
         if(this.props.usersStatus && nextProps.usersStatus.size !== this.props.usersStatus.size){
             return false;
         }
