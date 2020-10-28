@@ -32,7 +32,8 @@ const LOGIN = 'LOGIN',
 var user, socket, usersStatus = undefined;
 if(window.atob && /^InVzZXIi=|;InVzZXIi=/.test(document.cookie)){
     user = JSON.parse(atob((';' + document.cookie +';').match(/;InVzZXIi=(.+?);/)[1].replace(/%2F/g,'/').replace(/%3D/g, '=')));
-    socket = new window.WebSocket('wss://linhletd.glitch.me');
+    let {protocol, host, port} = window.location;
+    socket = new window.WebSocket(`ws${protocol.match(/s/) ? 's' : ''}://${host}`);
 }
 
 function main(state = {user, socket, usersStatus, mutateStore: {}},{type, data}){
@@ -104,13 +105,11 @@ function poong(state = initialPoong, {type, data}){
             {
                 let {mainSide, mainUId, subUId, inviteId} = data;
                 let subSide = mainSide == 'a' ? 'b' : 'a',
-                    s = {side: mainSide, _id: mainUId},
-                    m = {side: subSide, _id: subUId},
-                    sideList = [m, s].sort((a,b) =>{
-                        return (a.side.codePointAt(0) - b.side.codePointAt(0))
-                    })
-                    state.mutateData.inviteId = inviteId;
-                return {...state, gameStatus: {mainSide, sideList, active: true}, waitingfor: null, noticeList: new Map()};
+                    sides = {}
+                sides[mainSide] = mainUId;
+                sides[subSide] = subUId;
+                state.mutateData.inviteId = inviteId;
+                return {...state, gameStatus: {mainSide, sides, active: true}, waitingfor: null, noticeList: new Map()};
             }
         case FINISHGAME:
             {
