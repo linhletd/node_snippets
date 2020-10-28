@@ -16,16 +16,13 @@ module.exports = function applyWebsocket(server, app){
     let client = app.client;
     let db = client.db(process.env.MG_DB_NAME);
     let users = db.collection('users');
-    let sessions = db.collection('sessions');
     let topics = db.collection('topics');
     let sessionParser = require('./back/auths/session')(client);
     let wss = new WebSocket.Server({noServer: true});
     server.on('upgrade',(req, socket, head) =>{
-        console.log('client want to communicate via websocket');
         sessionParser(req, {}, function next(){
             if(req.session.passport && req.session.passport.user){
                 let socketID = uuid.v4();
-                // console.log(req.session.passport)
                 let user = req.session.passport.user;
                 let sessionID = req.sessionID;
                 wss.handleUpgrade(req, socket, head, (ws) =>{
@@ -99,7 +96,6 @@ module.exports = function applyWebsocket(server, app){
             needClearCurrentGameRef(socket){
                 let oldRef = socket.ref && socket.ref.game;
                 if(oldRef){
-                    console.log('send leave')
                     oldRef.send(JSON.stringify({
                         type: 'leave',
                         payload: {inviteId: socket.inviteId}
@@ -112,14 +108,12 @@ module.exports = function applyWebsocket(server, app){
             }
         }
         ws.on('close',() => {
-            console.log('close');
             utils.needClearCurrentGameRef(ws);
             idMap.delete(socketID);
             if(ownerMap.get(userID).size === 1){
                 ownerMap.delete(userID);
                 let msg = JSON.stringify({type: 'offline', payload: {_id: userID}});
                 idMap.forEach((socket) => {
-                    console.log('send')
                     socket.send(msg);
                 })
                 users.updateOne({_id: ObjectId(userID)}, {
@@ -153,7 +147,6 @@ module.exports = function applyWebsocket(server, app){
 
         ws.on('message', function incoming(message){
             let {type, payload} = JSON.parse(message);
-            console.log(type);
             (()=>{
                 switch(type){
                     case 'invite':
@@ -492,7 +485,6 @@ module.exports = function applyWebsocket(server, app){
                         return ()=>{
                             topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},
                             {$addToSet: {'Comments.$.UpVotes': ws.owner}},(err) =>{
-                                console.log(err)
                                 if(!err){
                                     let msg1 = JSON.stringify({
                                         type: 'cmtbar',
@@ -502,7 +494,6 @@ module.exports = function applyWebsocket(server, app){
                                             upvoted: true,
                                         }
                                     });
-                                    console.log([...topicMap.keys()]);
                                     topicMap.get(ws.topic).forEach((sock) =>{
                                         sock.send(msg1)
                                     });
@@ -626,7 +617,6 @@ module.exports = function applyWebsocket(server, app){
                                 $push: {'Comments.$.Replies': newRep},
                                 $inc: {'Comment': 1}
                             }, (err) =>{
-                                console.log(err)
                                 if(!err){
                                     let msg1 = JSON.stringify({
                                         type: 'reply',
@@ -656,7 +646,6 @@ module.exports = function applyWebsocket(server, app){
                             {$addToSet: {'Comments.$.Replies.$[elem].UpVotes': ws.owner}},
                             {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
                             ,(err) =>{
-                                console.log(err)
                                 if(!err){
                                     let msg1 = JSON.stringify({
                                         type: 'repbar',
@@ -683,7 +672,6 @@ module.exports = function applyWebsocket(server, app){
                             },
                             {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
                             ,(err) =>{
-                                console.log(err)
                                 if(!err){
                                     let msg1 = JSON.stringify({
                                         type: 'repbar',
@@ -710,7 +698,6 @@ module.exports = function applyWebsocket(server, app){
                             },
                             {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
                             ,(err) =>{
-                                console.log(err)
                                 if(!err){
                                     let msg1 = JSON.stringify({
                                         type: 'repbar',
@@ -736,7 +723,6 @@ module.exports = function applyWebsocket(server, app){
                             },
                             {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
                             ,(err) =>{
-                                console.log(err)
                                 if(!err){
                                     let msg1 = JSON.stringify({
                                         type: 'repbar',
@@ -763,7 +749,6 @@ module.exports = function applyWebsocket(server, app){
                             },
                             {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
                             ,(err) =>{
-                                console.log(err)
                                 if(!err){
                                     let msg1 = JSON.stringify({
                                         type: 'repbar',
@@ -790,7 +775,6 @@ module.exports = function applyWebsocket(server, app){
                             },
                             {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
                             ,(err) =>{
-                                console.log(err)
                                 if(!err){
                                     let msg1 = JSON.stringify({
                                         type: 'repbar',
