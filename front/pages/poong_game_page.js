@@ -7,7 +7,7 @@ import sendMsgViaSocket from '../utils/sendMsgViaSocket';
 
 class PoongGame extends React.Component{
     constructor(props){
-        super(props); // props for start game
+        super();
         this.game = React.createRef();
         this.unit = 'vw';
         this.hwratio = 0.5;
@@ -36,10 +36,10 @@ class PoongGame extends React.Component{
         this.bulletSpeed = 30; //ms
         this.playerSpeed = 100;
         this.bulletsStock = 10;
-        this.startGame();
+        this.startGame(props);
     }
-    startGame(nextProps){
-        !nextProps ? this.mainPlayer = this.props.gameStatus.mainSide : this.mainPlayer = nextProps.gameStatus.mainSide;
+    startGame(props){
+        this.mainPlayer = props.gameStatus.mainSide;
         this.subPlayer = this.mainPlayer === 'a' ? 'b' : 'a';
         this.freezed = false;
         this.playersList = new Map([
@@ -51,6 +51,7 @@ class PoongGame extends React.Component{
                 bulletsQty: this.bulletsStock,
                 secret: undefined,
                 id: 'a',
+                side: props.gameStatus.sides['a']
             }],
             ['b', {
                 isAlive: true,
@@ -60,6 +61,7 @@ class PoongGame extends React.Component{
                 bulletsQty: this.bulletsStock,
                 secret: undefined,
                 id: 'b',
+                side: props.gameStatus.sides['b']
             }]
         ]);
         this.itv = {
@@ -117,7 +119,7 @@ class PoongGame extends React.Component{
                 type: 'go',
                 payload: {x: x/this.width, y: y/this.width, alpha, inviteId: this.props.mutateData.inviteId}
             }
-            sendMsgViaSocket(JSON.stringify(msg));
+            sendMsgViaSocket(this.props, JSON.stringify(msg));
             player.x = x; player.y = y; player.alpha = alpha;
             let elem = document.getElementById('shooting_yard').querySelector(`#${this.mainPlayer}`);
             elem.style.left = `${x}vw`; elem.style.top = `${y}vw`; elem.style.transform = `rotate(${alpha}rad)`;
@@ -158,19 +160,14 @@ class PoongGame extends React.Component{
                     inviteId: this.props.mutateData.inviteId
                 }
             }
-            sendMsgViaSocket(JSON.stringify(msg))
+            sendMsgViaSocket(this.props, JSON.stringify(msg))
         }
 
         let key = `${playerId}_${bulletsQty}`;
         let newBullet = {x0: x, y0: y, alpha, key, dxy: this.jump.bind(this)(alpha), isActive: true, owner: playerId};
         player.bulletsQty--;
         this.bulletsList.set(key, newBullet);
-        this.setBoardState((prevState) =>{
-            let newState = new Map(prevState.sideList), newSide = {...newState.get(player.id)};
-            newSide.bulletNum = player.bulletsQty;
-            newState.set(player.id,newSide);
-            return {sideList: newState};
-        });
+        this.setBoardState();
         let bullet = this.sampleBullet.cloneNode(true);
         bullet.style.left = `${x}vw`;
         bullet.style.top =  `${y}vw`;
@@ -215,16 +212,11 @@ class PoongGame extends React.Component{
                             type: 'FINISHGAME',
                             data:{
                                 result: player.id === this.mainPlayer ? 'loose' : 'win',
-                                subPlayer: this.mainPlayer === 'a' ? this.props.gameStatus.sideList[1] : this.props.gameStatus.sideList[0]
+                                subPlayer: {_id: this.mainPlayer === 'a' ? this.props.gameStatus.sides['b'] : this.props.gameStatus.sides['a']}
                             }
                         })
                     }, 800)
-                    this.setBoardState((prevState) =>{
-                        let newState = new Map(prevState.sideList), newSide = {...newState.get(player.id)};
-                        newSide.isAlive = player.isAlive;
-                        newState.set(player.id,newSide);
-                        return {sideList: newState};
-                    })
+                    this.setBoardState()
                 }
             })
             if(checked){
@@ -297,12 +289,12 @@ class PoongGame extends React.Component{
     leaveGame = () =>{
         this.setBoardState = () =>{};
         this.freeze()
-        let {socket, updateStore} = this.props, {inviteId} = this.props.mutateData;
+        let {updateStore} = this.props, {inviteId} = this.props.mutateData;
         let msg = {
             type: 'leave',
             payload: {inviteId}
         }
-        sendMsgViaSocket(JSON.stringify(msg));
+        sendMsgViaSocket(this.props, JSON.stringify(msg));
         updateStore({
             type: 'ENDGAME',
             data: {}
@@ -377,35 +369,26 @@ class PoongGame extends React.Component{
         class PlayerBoard extends React.Component{
             constructor(props){
                 super();
-                let state = new Map();
-                self.props.gameStatus.sideList.map((side) =>{
-                    side = {...side};
-                    side.user = {_id: side._id};
-                    let player = self.playersList.get(side.side);
-                    side.bulletNum = player.bulletsQty;
-                    side.isAlive = player.isAlive;
-                    state.set(side.side, side)
-                })
                 this.state = {
-                    sideList: state
+                    x: true
                 };
-                self.setBoardState = (obj,cb) =>{
-                    this.setState(obj, cb);
+                self.setBoardState = (cb) =>{
+                    this.setState({x: !this.state.x}, cb);
                 };
             }
-            render(){
+            render(){ 
                 let ScoreStatus = (props) =>{
                     return (
                         <div className = 'score_status'>
-                            <span>bullets:&nbsp;{props.bulletNum}<span className = 'ibullet'/></span>
+                            <span>bullets:&nbsp;{props.bulletsQty}<span className = 'ibullet'/></span>
                             <span>alive:&nbsp;<i className={props.isAlive ? "fa fa-meh-o alive" : "fa fa-meh-o dead"}/></span>
                         </div>
                     )
                 }
                 return (
                     <div id = 'player_board'>
-                        {[...this.state.sideList.values()].map(side => <UserStatus key = {side.user._id} status = {side.user} childClass = 'user_small'
-                         children = {ScoreStatus.bind(this,{bulletNum: side.bulletNum, isAlive: side.isAlive, side: side.side})}/>)}
+                        {[...self.playersList.values()].map(side => <UserStatus key = {side.side.slice(18)} status = {{_id: side.side}} childClass = 'user_small'
+                         children = {<ScoreStatus bulletsQty = {side.bulletsQty} isAlive = {side.isAlive}/>}/>)}
                     </div>
                 )
             }
@@ -504,7 +487,7 @@ class PoongGame extends React.Component{
                         <SampleBullet/>
                         <div id = 'bullets'/>
                         <div id = 'poong_popup' className = 'hide'>
-                            <PoongPopup sendMsg = {sendMsgViaSocket}/>
+                            <PoongPopup/>
                         </div>
                     </div>
                     <button id = "shoot" onClick = {this.shoot.bind(this,this.mainPlayer)}>shoot</button> {/*do not replace this.shoot... by other method that already binding, because of this.mainplayer*/}                    
