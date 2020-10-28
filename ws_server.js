@@ -1,6 +1,6 @@
 const ObjectId = require('mongodb').ObjectId;
 const WebSocket = require('ws');
-const dotenv = require('dotenv').config({path: '../.env'});
+const dotenv = require('dotenv').config();
 const uuid = require('uuid');
 let idMap = new Map();
 let ownerMap = new Map();
