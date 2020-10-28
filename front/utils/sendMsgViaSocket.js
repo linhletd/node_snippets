@@ -1,7 +1,8 @@
 function sendMsgViaSocket(props, msg, cb){
     let {socket} = props;
     if(socket.readyState === 2 || socket.readyState === 3){
-        let ws = new window.WebSocket('wss://linhletd.glitch.me');
+        let {protocol, host, port} = window.location;
+        let ws = new window.WebSocket(`ws${protocol.match(/s/) ? 's' : ''}://${host}`);
         props.updateStore({type: 'OPENSOCKET', data: ws});
         ws.onopen = (e) =>{
             ws.send(msg);

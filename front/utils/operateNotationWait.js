@@ -1,6 +1,6 @@
 function runNotation(parNode){
     if(!parNode || !parNode.children.length){
-        console.log('err', parNode);
+        //
     }
     let run;
     (run = (cur)=>{
@@ -24,12 +24,10 @@ function stopRunNotation(){
     clearTimeout(this.waitTimer);
     this.waitTimer = undefined;
     if(!this.popup.current){
-        console.log('no current');
         return;
     }
     let parNode = this.popup.current.querySelector('.wait_ctn');
     if(!parNode || !parNode.children.length){
-        console.log('err');
         return;
     }
     parNode.childNodes.forEach(elem => {
