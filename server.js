@@ -38,20 +38,12 @@ let mysqlConnect = new Promise((resolve, reject) => {
         }
     })
 })
-// let dbConnection = Promise.all([mongoConnect, mysqlConnect]);
-// dbConnection.then(([client, conn]) => {
 mongoConnect.then(client =>{
 try{
     /************** clear previous redundants *********************/
-    let db = client.db(process.env.MG_DB_NAME);
-    let users = db.collection('users');
-    let topics = db.collection('topics');
-    // topics.drop()
-    let sessions = db.collection('sessions');
-    sessions.find({session: {$regex:/"ws":\[.+?\]/}}).forEach((doc) =>{
-        let resetValue = doc.session.replace(/"ws":\[.+?\]/,'"ws":[]');
-        sessions.updateOne({_id: doc._id},{$set: {session: resetValue}})
-    })
+    // let db = client.db(process.env.MG_DB_NAME);
+    // let users = db.collection('users');
+    // let topics = db.collection('topics');
     /**********************************************/
 
     const app = express();
@@ -67,8 +59,8 @@ try{
 
 
 
-    server.listen(8080, () =>{
-        console.log('server is listening on port 8080')
+    server.listen(process.env.PORT, () =>{
+        console.log(`server is listening on port ${process.env.PORT}`)
     })
 }
 catch(e){
