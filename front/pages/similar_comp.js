@@ -16,7 +16,6 @@ class SimilarApp extends React.Component{
         return false;
     }
     render(){
-        console.log('render')
         let self = this;
         class SimilarInput extends React.Component{
             state = {
