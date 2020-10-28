@@ -53,7 +53,7 @@ class WaitPlayerPopupContent extends React.Component{
             type: 'cancel',
             payload: {_id: waittingFor._id}
         }
-        sendMsgViaSocket(JSON.stringify(msg));
+        sendMsgViaSocket(this.props, JSON.stringify(msg));
     }
     handlePlayerOffline = () =>{
         this.stopRunNotation();
