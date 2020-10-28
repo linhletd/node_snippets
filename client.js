@@ -1,7 +1,7 @@
 import React from 'react';
 import {render} from 'react-dom';
 import {connect, Provider} from 'react-redux';
-import {BrowserRouter, Switch, Route,withRouter} from 'react-router-dom';
+import {BrowserRouter, withRouter} from 'react-router-dom';
 import store from './front/redux/store.js';
 import AuthLayout from './front/layouts/auth_layout.js';
 import UnauthLayout from './front/layouts/unauth_layout.js'
@@ -12,7 +12,8 @@ class App extends React.Component{
     }
     handleLoginEvent = (data) =>{
         let handle = (userData) =>{
-            let ws = new window.WebSocket('ws://localhost:8080');
+            let {protocol, host, port} = window.location;
+            let ws = new window.WebSocket(`ws${protocol.match(/s/) ? 's' : ''}://${host}${port ? ':' + port : ''}`);
             this.props.updateStore({type: 'LOGIN', data: {user: userData, socket: ws}});
             let intentURL = sessionStorage.getItem('inTentURL');
             sessionStorage.removeItem('inTentURL');
