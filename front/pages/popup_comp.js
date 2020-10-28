@@ -6,7 +6,6 @@ class GlobalPopup extends React.Component{
         this.popup = React.createRef();
     }
     componentDidUpdate(){
-        console.log(this.props)
         this.popup.current.classList.remove('hide')
     }    
     render(){
@@ -35,9 +34,6 @@ class FlashPopup extends React.Component{
             this.timer = undefined;
         }, 5000);
     }
-    // componentDidMount(){
-    //     this.setTimer
-    // }
     componentDidUpdate(){
         this.flashRef.current.classList.contains('hide') && this.flashRef.current.classList.remove('hide');
         this.setTimer();
