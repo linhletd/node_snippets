@@ -134,7 +134,6 @@ class NorthWinQuery extends React.Component{
                     let x = document.createTextNode('');
                     r.insertNode(x);
                     start = x;
-                    console.log('insert x');
                     setTimeout(() =>{
                         x.remove();
                     }, 0)
@@ -359,7 +358,6 @@ class NorthWinQuery extends React.Component{
                 return {err: e.message};
             })
             .then((data) =>{
-                console.log(data)
                 this.setState({data: data}, () =>{
                     this.opt.firstChild.disabled = false;
                 })
@@ -404,9 +402,7 @@ class NorthWinQuery extends React.Component{
         }
     }  
     render(){
-        console.log('render')
         let {data} = this.state;
-        // let content = data ? data.err ? <p className = 'fb_msg'>{data.err}</p> : <Table data = {data.data}/> : <WaittingNotation autoStop = {true}/>;
         let self = this;
         class Content extends React.Component{
             state = {wait: false}
