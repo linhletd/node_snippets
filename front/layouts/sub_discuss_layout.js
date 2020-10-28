@@ -96,14 +96,11 @@ class SubDiscussLayout extends React.Component{
     }
     addToTitleBoard = (data) =>{
         if(Array.isArray(data)){
-            // this.setState((prevState => {
-                let entries = [];
-                data.map((cur) =>{
-                    entries.push([cur._id, cur])
-                })
-                this.state.topicList = new Map(entries)
-            //     return {topicList: newState}
-            // }));
+            let entries = [];
+            data.map((cur) =>{
+                entries.push([cur._id, cur])
+            })
+            this.state.topicList = new Map(entries)
             let {search} = this.props.location;
             let match = search.match(/\?id=(\w{24})\b/);
             if(match && match[1]){
@@ -117,12 +114,9 @@ class SubDiscussLayout extends React.Component{
             }
         }
         else {
-            // this.setState((prevState) => {
-                let newEntries = [...this.state.topicList];
-                newEntries.unshift([data._id, data]);
-                this.state.topicList = new Map(newEntries)
-            //     return {topicList: new Map(newEntries)};
-            // })
+            let newEntries = [...this.state.topicList];
+            newEntries.unshift([data._id, data]);
+            this.state.topicList = new Map(newEntries);
         }
         this.props.updateStore({
             type: 'TITLEBOARD'
@@ -196,7 +190,6 @@ class SubDiscussLayout extends React.Component{
                 case 'update board':
                     return this.addToTitleBoard(payload);
                 case 'topictitle':
-                    console.log(type, 1);
                     this.updateTitleIndex(payload, _id)
                     this.props.updateStore({
                         type: 'TOPICTITLE',
@@ -300,7 +293,6 @@ class SubDiscussLayout extends React.Component{
                         }
                     }
                 case 'repbar':
-                    console.log(1)
                     if(this.state.topic){
                         let {Comments} = this.state.topic;
                         let {user, upvoted, downvoted, cmtId} = payload;

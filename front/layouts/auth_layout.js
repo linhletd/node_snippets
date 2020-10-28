@@ -53,25 +53,20 @@ class AuthLayout extends React.Component{
     createAlternativeWs = () =>{
         let {socket: curSocket} = this.props;
         if(curSocket.readyState === 2 || curSocket.readyState === 3){
-            let ws = new window.WebSocket('wss://linhletd.glitch.me');
+            let {protocol, host, port} = window.location;
+            let ws = new window.WebSocket(`ws${protocol.match(/s/) ? 's' : ''}://${host}`);
             this.props.updateStore({type: 'OPENSOCKET', data: ws});
         }
     }
     detectMustAlternativeWs = () =>{
         this.props.socket.onclose = (e) =>{
-            console.log('close');
             worker.postMessage('');
         }
         worker.onmessage = (e) =>{
-            console.log('wake up')
-            setTimeout(()=>{//development only
-                this.createAlternativeWs();
-            }, 15000)
+            this.createAlternativeWs();
         }
         window.ononline = ()=>{
-            setTimeout(()=>{
-                this.createAlternativeWs();
-            }, 15000)
+            this.createAlternativeWs();
         }
     }
     handleIncomingMsg = (socket) =>{
@@ -81,7 +76,6 @@ class AuthLayout extends React.Component{
         socket.onmessage = (event)=>{
             let parsedMsg = JSON.parse(event.data);
             let {type, payload} = parsedMsg;
-            console.log(type);
             (()=>{
                 switch(type){
                     case 'ws id':
@@ -99,7 +93,6 @@ class AuthLayout extends React.Component{
                         }
                     default:
                         if(payload.inviteId !== this.props.mutateData.inviteId){
-                            console.log('different inviteId');
                             return ()=>{}
                         }
                         //all method below is for handle game message
@@ -129,9 +122,6 @@ class AuthLayout extends React.Component{
                             let handleGame = socket.handleGame
                             return handleGame && handleGame || (()=>{});
                         }
-
-                    // default: 
-                    //     return () =>{console.log('default: ', type)};
                 }
             })()(parsedMsg)
 
@@ -164,13 +154,12 @@ class AuthLayout extends React.Component{
                 })
             }
             else {
-                console.log(data);
+                //
             }
 
         })
     }
     componentDidMount(){
-        console.log('did mount')
         this.getInitialUsersStatus();
         this.handleIncomingMsg();
         this.detectMustAlternativeWs();

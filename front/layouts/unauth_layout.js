@@ -11,7 +11,6 @@ class UnauthLayout extends React.Component{
         footer.style.width = '100vw';
         footer.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"});
         if(window.atob && /^aW50ZW50VVJM=|;aW50ZW50VVJM=/.test(document.cookie)){
-            console.log('hahahha')
             let intentURL = atob((';' + document.cookie +';').match(/;aW50ZW50VVJM=(.+?);/)[1].replace(/%2F/g,'/').replace(/%3D/g, '='));
             sessionStorage.setItem('inTentURL', intentURL);
         }
