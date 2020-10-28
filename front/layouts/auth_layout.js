@@ -53,7 +53,7 @@ class AuthLayout extends React.Component{
     createAlternativeWs = () =>{
         let {socket: curSocket} = this.props;
         if(curSocket.readyState === 2 || curSocket.readyState === 3){
-            let {protocol, host, port} = window.location;
+            let {protocol, host} = window.location;
             let ws = new window.WebSocket(`ws${protocol.match(/s/) ? 's' : ''}://${host}`);
             this.props.updateStore({type: 'OPENSOCKET', data: ws});
         }
