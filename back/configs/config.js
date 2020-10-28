@@ -10,8 +10,7 @@ const useUnauthRoute = require('../routes/unauth_routes');
 const useAuthRoute = require('../routes/auth_routes')
 module.exports = function config(app){
     app.get('/favicon.ico', (req, res, next)=>{
-        res.writeHead(200, {'Content-Type': "image/x-icon"});
-        return res.end()
+        return res.sendFile(process.cwd() + '/statics/image/icon.png')
     })
     useHelmet(app);
     app.use(morgan('tiny'))
