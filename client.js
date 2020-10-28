@@ -13,7 +13,7 @@ class App extends React.Component{
     handleLoginEvent = (data) =>{
         let handle = (userData) =>{
             let {protocol, host, port} = window.location;
-            let ws = new window.WebSocket(`ws${protocol.match(/s/) ? 's' : ''}://${host}${port ? ':' + port : ''}`);
+            let ws = new window.WebSocket(`ws${protocol.match(/s/) ? 's' : ''}://${host}`);
             this.props.updateStore({type: 'LOGIN', data: {user: userData, socket: ws}});
             let intentURL = sessionStorage.getItem('inTentURL');
             sessionStorage.removeItem('inTentURL');
