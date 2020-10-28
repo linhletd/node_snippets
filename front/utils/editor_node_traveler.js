@@ -1,7 +1,3 @@
-/*
-target: span node has only textnode inside;
-p or li tag contains only 1 line;
-*/
 class EditorNodeTraveler{
     constructor(root, changer, observer, toolbarState){
         this.root = root;
@@ -819,100 +815,6 @@ class EditorNodeTraveler{
             bigRight,
         })
     }
-    _handleRightBranch = ()=>{
-        let {bigRight, initRight} = this.state;
-        if(!initRight){
-            bigRight ? this.state.range.setEndBefore(bigRight) : this.state.range.setEndAfter(this.state.common.lastChild);
-            this.state.common = null;
-            return;
-        }
-        let par = initRight;
-        while(par != bigRight){
-            this.goDownAndNextToModify(par.parentNode.firstChild, par);
-            par = par.parentNode;
-        }
-        let parNode;
-        let r = this.state.range.cloneRange();
-        if(initRight.hasChildNodes() && initRight.nodeName != 'SPAN'){
-            parNode = initRight;
-            r.setStartBefore(parNode.firstChild);
-        }
-        else{
-            parNode = initRight.parentNode;
-            r.setStartBefore(initRight);
-        }
-        this.reassignRange(r);
-        let div = parNode.cloneNode(false);
-        div.appendChild(r.extractContents());
-        this.goDownAndNextToModify(div.firstChild);
-        let r1 = new Range();
-        r1.selectNodeContents(div);
-        let ct = r1.extractContents();
-        let end = ct.lastChild;
-        end && r.insertNode(ct);
-        this.state.range.setEndAfter(end);
-        if(end.nextSibling && this.isSpanEmpty(end.nextSibling)){
-            end.nextSibling.remove();
-        }
-    }
-
-    _handleLeftBranch = () => {
-        let {bigLeft, initLeft,initRight, bigRight} = this.state;
-
-        if(!initLeft){
-            !(bigLeft === bigRight && initRight) && this.goDownAndNextToModify(bigLeft, bigRight);
-            this.state.range.setStartBefore(bigLeft);
-            return;
-        } 
-        let par = initLeft;
-        while(par !== bigLeft.parentNode){
-            this.goDownAndNextToModify(par.nextSibling, bigRight);
-            par = par.parentNode;
-        }
-        let parNode;
-        let r = this.state.range.cloneRange();
-        if(initLeft.hasChildNodes() && initLeft.nodeName !== 'SPAN'){
-            parNode = initLeft;
-            r.setEndAfter(parNode.lastChild);
-        }
-        else{
-            parNode = initLeft.parentNode;
-            r.setEndAfter(initLeft);
-        }
-        this.reassignRange(r);
-        let div = parNode.cloneNode(false);
-        div.appendChild(r.extractContents());
-        this.goDownAndNextToModify(div.firstChild);
-        let r1 = new Range();
-        r1.selectNodeContents(div);
-        let ct = r1.extractContents();
-        let start = ct.firstChild;
-        start && r.insertNode(ct);
-        this.state.range.setStartBefore(start);
-        if(start.previousSibling && this.isSpanEmpty(start.previousSibling)){
-            start.previousSibling.remove();
-        }
-    }
-    _transfer = (extRange) =>{
-        let {startContainer: start, endContainer: end, startOffset, endOffset} = this.state.range;
-        let common = extRange.commonAncestorContainer;
-        let div = common.cloneNode(false);
-        let content = extRange.extractContents();
-        
-        div.appendChild(content);
-        this.state.range.setStart(start == common ? div : start, start == common ? 0 : startOffset);
-        this.state.range.setEnd(end == common ? div : end, end == common ? div.childNodes.length : endOffset);
-        return div;
-    }
-    _reverse = (extRange, div) => {
-        let {startContainer: start, endContainer: end, startOffset, endOffset} = this.state.range,
-            {commonAncestorContainer: common, startOffset: extStartOff, endOffset: extEndOff } = extRange;
-        let r = new Range();
-        r.selectNodeContents(div);
-        extRange.insertNode(r.extractContents())
-        this.state.range.setStart(start == div ? common : start, start == div ? extStartOff + startOffset : startOffset);
-        this.state.range.setEnd(end == div ? common : end, end == div ? extEndOff + endOffset : endOffset);
-    }
     isBelongTag = (nodeName, node, constraint) =>{
         if(!node) throw new Error('invalid second arg');
         if(node === this.root) return false;
@@ -923,7 +825,6 @@ class EditorNodeTraveler{
             } 
         }
         catch(e){
-            console.log(e);
             return false;
         }
         return node.nodeName == nodeName ? node : false;
@@ -2020,13 +1921,11 @@ class EditorNodeTraveler{
         div.style.fontSize = '14px';
         let cap = this.createCap();
         fig.onclick = (e) =>{
-            console.log('click')
             fig.querySelectorAll('img, div, table').forEach(node =>{
                 !node.classList.contains('img_focus') && node.classList.add('img_focus')
             })
         }
         fig.onmouseleave = ()=>{
-            console.log('leave')
             fig.querySelectorAll('img, div, table').forEach(node =>{
                 node.classList.contains('img_focus') && node.classList.remove('img_focus')
             })
@@ -2142,7 +2041,7 @@ class EditorNodeTraveler{
               };
             
             reader.onerror = function() {
-                console.log(reader.error);
+                //
             };
         }
         else{
