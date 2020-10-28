@@ -1,7 +1,8 @@
 import React from 'react';
 import {connect} from 'react-redux';
 import UserStatus from '../pages/user_status';
-import WaittingNotation from '../ui/waitting_notation'
+import WaittingNotation from '../ui/waitting_notation';
+import sendMsgViaSocket from '../utils/sendMsgViaSocket';
 class WaitPlayerPopupContent extends React.Component{
     constructor(props){
         super();
@@ -9,10 +10,7 @@ class WaitPlayerPopupContent extends React.Component{
         this.popup = React.createRef();
     }
     runNotation = (parNode) =>{
-        // console.log(parNode)
         if(!parNode || !parNode.children.length){
-            console.log('err');
-            throw new Error('err')
             return;
         }
         let run;
@@ -38,7 +36,6 @@ class WaitPlayerPopupContent extends React.Component{
         this.waitTimer = undefined;
         let parNode = this.popup.current.querySelector('.wait_ctn');
         if(!parNode || !parNode.children.length){
-            console.log('err');
             return;
         }
         parNode.childNodes.forEach(elem => {
@@ -48,19 +45,6 @@ class WaitPlayerPopupContent extends React.Component{
             elem.classList.add('lowlight');
         });
     }
-    sendMsgViaSocket = (msg) =>{
-        let {socket} = this.props;
-        if(socket.readyState === 2 || socket.readyState === 3){
-            let ws = new window.WebSocket('wss://linhletd.glitch.me');
-            this.props.updateStore({type: 'OPENSOCKET', data: ws});
-            ws.onopen = (e) =>{
-                ws.send(msg);
-            }
-        }
-        else{
-            socket.send(msg);
-        }
-    }
     handleCancel = () =>{
         clearTimeout(this.waitTimer)
         this.props.data.close();
@@ -69,7 +53,7 @@ class WaitPlayerPopupContent extends React.Component{
             type: 'cancel',
             payload: {_id: waittingFor._id}
         }
-        this.sendMsgViaSocket(JSON.stringify(msg));
+        sendMsgViaSocket(JSON.stringify(msg));
     }
     handlePlayerOffline = () =>{
         this.stopRunNotation();
