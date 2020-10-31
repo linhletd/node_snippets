@@ -138,8 +138,9 @@ input:hover,
     background-color: #17661b;
 }
 .fb {
-  background-color: #3B5998;
+  background-color: hsl(222, 24%, 81%);
   color: white;
+  opacity: 0.1
 }
 
 .github {
@@ -434,6 +435,9 @@ input:hover,
     width: calc(100% - 20px);
     min-height: 100%;
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 #sql_opt{
     width: 240px;
@@ -470,7 +474,6 @@ input:hover,
 }
 #sql_editor{
     min-height: 200px;
-    width: 100%;
     outline: none;
 }
 @keyframes flicker{
@@ -481,6 +484,7 @@ input:hover,
 #sql_toggle{
     cursor: pointer;
     position: fixed;
+    align-self: flex-start;
     width: 60px;
     height: 30px;
     background-color: hsl(300, 87%, 75%);
@@ -492,7 +496,7 @@ input:hover,
     color: white;
     animation: flicker 1s 5 forwards;
 }
-#sql_query .pre_data{
+.pre_data{
     width: 100%;
     overflow: auto;
 }
@@ -801,6 +805,16 @@ input:hover,
     align-items: center;
     width: max-content;
     height: max-content;
+}
+.user_xl img{
+    width: 60px;
+    height: 60px;
+}
+.user_xl .signal {
+    left: 45px;
+    top: 47px;
+    height: 12px;
+    width: 12px;
 }
 .user_small img{
     width: 42px;
@@ -1211,6 +1225,10 @@ td, thead{
     margin-bottom: 15px;
     border-color: pink;
 }
+#topic_wait{
+    position: fixed;
+    top: 60px;
+}
 .topic_meta>div{
     display: flex;
     align-items: center;
@@ -1297,7 +1315,7 @@ td, thead{
     cursor: pointer;
 }
 .concise_tpc:not([class~=nolink]):hover, .selected_title{
-    background-color: rgba(74, 243, 220, 0.07);
+    background-color: rgba(74, 243, 220, 0.179);
     border-radius: 5px;
 }
 .topic_title{
@@ -1584,7 +1602,7 @@ td, thead{
 }
 
 #similar_app{
-    width: 100%;
+    width: 95%;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1636,7 +1654,6 @@ td, thead{
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin-left: 7px;
 }
 #display_result>p{
     font-weight: bold;
@@ -1651,7 +1668,7 @@ td, thead{
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: space-around;
 }
 #display_result>div>ol .illustrate{
     letter-spacing: 2px;
@@ -1698,14 +1715,6 @@ td, thead{
 #display_result>div>table>tbody>tr:nth-child(2)>td:nth-child(2){
     border: none;
     background: none;
-}
-@media screen and (max-width:480px){
-    #display_result>div{
-        justify-content: start;
-    }
-    #display_result>div>table{
-        margin-right: 25px;
-    }
 }
 table{
     empty-cells: show;
@@ -1948,6 +1957,9 @@ button:disabled{
     width: 90%;
     margin-top: 10px;
 }
+#wel-wait{
+    margin-top: 30px;
+}
 .wel_msg{
     display: grid;
     grid-template-columns: 50px 1fr;
@@ -1983,7 +1995,70 @@ button:disabled{
     border-radius: 4px;
     border: none;
 }
+#forgotten{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+#fogotten >*{
+    width: 90%;
+    text-align: center;
+}
+#user_layout{
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#user_layout{
+    width: 90%;
+    text-align: center;
+}
+@keyframes shrinkgrid{
+    0%{row-gap: 70px; opacity: 0.3;}
+    100%{row-gap: 10px; opacity: 1;}
+}
+#signup_ver{
+    width: 100%;
+    height: 100%;
+    display: grid;
+    justify-items: center;
+    grid-template-columns: 1fr;
+    animation: shrinkgrid 1s 1 forwards;
+}
+#signup_ver>p{
+    background-color: rgba(255, 105, 180, 0.207);
+    border-radius: 10px;
+    padding: 5px 5px;
+    width: max-content;
+    margin-bottom: 0px;
+    /* display: inline-block;
+    overflow-wrap: break-word; */
+    width: 90%;
+}
+#signup_ver>div{
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: 5px;
+    justify-items: center;
+}
+#signup_ver button{
+    background-color: rgb(71, 211, 43);
+    border-radius: 5px;
+    border: none;
+}
+.clock_face{
+    border: 1px solid rgba(97, 97, 194, 0.563);
+    border-radius: 3px;
+    width: 40px;
+}
 @media screen and (max-width: 1199px) and (min-width: 600px){
+    #sql_editor{
+        width: calc(0.9 * (100vw - 240px));
+    }
     #main_app{
         grid-template-columns: 1fr 240px;
         grid-template-rows: 40px 1fr;
@@ -2009,6 +2084,9 @@ button:disabled{
     }
 }
 @media screen and (max-width: 599px){
+    #sql_editor{
+        width: 90vw;
+    }
     .plus_topic{
         right: 40px
     }
@@ -2055,7 +2133,7 @@ button:disabled{
     }
     #sql_toggle{
         font-size: 0.8em;
-        width: 45px;
+        width: 48px;
         height: 25px;
         top: 25px;
         transform: translateX(-25px) rotate(-45deg);
@@ -2063,6 +2141,9 @@ button:disabled{
     }
 }
 @media screen and (min-width: 1200px){
+    #sql_editor{
+        width: calc(0.9 * (100vw - 2 * 240px));
+    }
     .large_hide{
         display: none;
     }
