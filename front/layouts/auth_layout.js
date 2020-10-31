@@ -13,7 +13,7 @@ import BrowserUserPage from '../pages/browse_user_page';
 import {GlobalPopup} from '../pages/popup_comp';
 import EditorGuide from '../pages/editor_guide_comp';
 import Welcome from '../pages/welcome_comp';
-import {Route, Switch, withRouter} from 'react-router-dom';
+import {Redirect, Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
 let worker = new Worker('/js/worker.bundle.js');
 
@@ -257,6 +257,7 @@ class AuthLayout extends React.Component{
                         <Route path = '/sql_query'>
                             <NorthWindQuery/>
                         </Route>
+                        <Redirect to = '/'/>
                     </Switch>
                 </div>
                 <div id = 'app_right' ref = {this.right}>
