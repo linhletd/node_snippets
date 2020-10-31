@@ -1,15 +1,21 @@
 import React from 'react';
-import fetchReq from '../utils/xhr'
+import fetchReq from '../utils/xhr';
+import {Redirect, withRouter} from 'react-router-dom';
 
 class RegisterPage extends React.Component{
     constructor(props){
         super();
         this.state = {
             validity: []
-        }
+        };
+        this.focus = React.createRef();
+    }
+    componentDidMount(){
+        this.focus.current.focus();
     }
     handleRegist = (e)=>{
         e.preventDefault();
+        e.target.disabled = true;
         let body = {};
         let validity = [0];
         let inputs = [...document.getElementById('regist_form').querySelectorAll('input')]
@@ -37,7 +43,10 @@ class RegisterPage extends React.Component{
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(body)
-        }).then(({err, user}) =>{
+        }).catch((e) =>{
+            return {err: e.message}
+        })
+        .then(({err, user}) =>{
             if(err){
                 validity = [];
                if(err === 'Already registered'){
@@ -55,8 +64,8 @@ class RegisterPage extends React.Component{
                 }
             }
             else{
-            let {handleLogin} = this.props;
-            handleLogin(user);
+            this.props.data.pendingUser = user;
+            this.props.history.push('/auth/verify');
             }
         })
     }
@@ -67,7 +76,7 @@ class RegisterPage extends React.Component{
                 <p>Register information</p>
                 <form id = "regist_form" autoComplete = "off">
                     {validity[0] ? <p className = 'validate'>{validity[0]}</p> : ''}
-                    <input type = "text" name = "regist_name" placeholder = "Name" required = {true}/>
+                    <input ref = {this.focus} type = "text" name = "regist_name" placeholder = "Name" required = {true}/>
                     {validity[1] ? <p className = 'validate'>{validity[1]}</p> : ''}
                     <input type = "email" name ="regist_email" placeholder = "Email" required = {true}/>
                     {validity[2] ? <p className = 'validate'>{validity[2]}</p> : ''}
@@ -81,4 +90,4 @@ class RegisterPage extends React.Component{
         )
     }
 }
-export default RegisterPage;
+export default withRouter(RegisterPage);

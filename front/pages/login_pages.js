@@ -1,13 +1,21 @@
 import React from 'react';
 import {Link, withRouter} from 'react-router-dom'
 class LoginPage extends React.Component{
-    state = {
-        validity: [],
-        email: '',
-        password: ''
+    constructor(){
+        super();
+        this.state = {
+            validity: [],
+            email: '',
+            password: ''
+        };
+        this.focus = React.createRef();
+    }
+    componentDidMount(){
+        this.focus.current.focus();
     }
     localLogin = (e) =>{
         e.preventDefault();
+        e.target.disabled = true;
         let body = {};
         let validity = [0];
         document.getElementById('login_form').querySelectorAll('input').forEach(node =>{
@@ -27,21 +35,28 @@ class LoginPage extends React.Component{
         }
         fetch('/auth/login',{
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify(body)
         }).then(res =>{
-            if(res.headers.get('content-type') === 'text/html'){
-                let intentURL = sessionStorage.getItem('inTentURL');
-                sessionStorage.removeItem('inTentURL');
-                window.open(intentURL || '/','_self')
-            }
-            else{
-                return res.json();
-            }
+            return res.json();
+        }).catch((e)=>{
+            return {err: e.message}
         })
         .then(data =>{
             if(!data) return;
-            if(data.err){
+            let {user, err} = data;
+            if(user && user.Verified !== 0){
+                this.props.handleLogin(user);
+                return;
+            }
+            else if(user){
+                this.props.data.pendingUser = user;
+                this.props.history.push('/auth/verify');
+            }
+            if(err){
                 let msg = data.err.message || data.err;
                 if(msg === 'incorrect password'){
                     this.setState({
@@ -90,7 +105,7 @@ class LoginPage extends React.Component{
                 <p>You must login to use this app</p>
                 <form id = "login_form">
                     {validity[0] ? <p className = 'validate'>{validity[0]}</p> : ''}
-                    <input type = "email" name = "login_email" placeholder = 'Email' value = {email} onChange = {this.handleInputChange} required = {true}/>
+                    <input ref = {this.focus} type = "email" name = "login_email" placeholder = 'Email' value = {email} onChange = {this.handleInputChange} required = {true}/>
                     {validity[1] ? <p className = 'validate'>{validity[1]}</p> : ''}
                     <input type = "password" name = "login_password" placeholder = 'Password' value = {password} onChange = {this.handleInputChange} required = {true}/>
                     {validity[2] ? <p className = 'validate'>{validity[2]}</p> : ''}
@@ -101,8 +116,8 @@ class LoginPage extends React.Component{
                     <Link to = {`/auth/register`}>Sign up an account</Link>
                 </div>
                 <div id = 'social_login'>
-                    <a href = '/auth/fb' onClick = {this.fbLogin} className ="fb btn"><i className="fa fa-facebook fa-fw"></i>Login with Facebook</a>
                     <a href = '/auth/github' onClick = {this.ghLogin} className ="github btn"><i className="fa fa-github fa-fw"></i>Login with Github</a>
+                    <a href = '/auth/fb' onClick = {this.fbLogin} className ="fb btn" disabled = {true}><i className="fa fa-facebook fa-fw"></i>Login with Facebook</a>
                 </div>
             </div>
             
