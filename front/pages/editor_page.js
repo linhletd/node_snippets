@@ -826,8 +826,7 @@ class EditorApp extends React.Component{
         if(!this.props.focus){
             editor.focus();
         }
-    }
-    componentWillUnmount(){
+        window.scrollTo(0, 0)
     }
     render(){
         let click = {
