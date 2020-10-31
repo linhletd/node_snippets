@@ -109,10 +109,9 @@ class Topic extends React.Component{
                     .then((topic) => {
                         this.setState({topic}, () =>{
                             document.getElementById('content_ctn').innerHTML = topic.Content;
-                            document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "start"})
+                            window.scrollTo(0, 0)
                         })
                     })
-                    document.getElementById('topic_ctn').scrollIntoView({behavior: "smooth", block: "start"})
                 }
                 else{
                     throw new Error('error')
@@ -185,7 +184,7 @@ class Topic extends React.Component{
         }
         else{
             return (
-                <div id = 'topic_ctn' key = {2}>
+                <div id = 'topic_wait' key = {2}>
                     <WaittingNotation autoStop = {true}/>
                 </div>
             );
