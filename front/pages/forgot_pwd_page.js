@@ -7,9 +7,9 @@ const ForgotPasswordPage = () =>{
         history.push('/auth/login')
     }
     return (
-        <div>
-            <h3>Currently, This feature is not supported, please contact author linhletd</h3>
-            <button onClick = {back}>Go to login</button>
+        <div id = 'forgotten'>
+            <p>Currently, This feature is not supported, please contact author linhletd by using <a href = '/feedback'>link</a></p>
+            <button onClick = {back} className = 'btn_blue'>Go to login</button>
         </div>
     )
 }
