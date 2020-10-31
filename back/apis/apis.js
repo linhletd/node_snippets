@@ -141,6 +141,9 @@ module.exports = function(app){
                 Avartar: 1,
                 LastActive: 1
             })
+            .sort({
+                LastActive: -1
+            })
             let checked = false;
             cursor.on('error',(err) =>{
                 if(checked){
