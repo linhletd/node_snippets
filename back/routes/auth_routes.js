@@ -3,13 +3,13 @@ const apisf = require('../apis/apis.js');
 const sqlrelate = require('../apis/mysql_relate');
 const others = require('../apis/other_apis');
 const dotenv = require('dotenv').config();
-
+const Middleware = require('../configs/middleware');
 module.exports = function(app){
-    const customMidleware = require('../configs/middleware')(app);
+    let customMiddleware = new Middleware(app);
     let apis = apisf(app);
     let apis1 = sqlrelate(app);
     app.post('/feedback', apis.feedback);
-    app.use(customMidleware.ensureAuthenticated);
+    app.use(customMiddleware.ensureAuthenticated);
 
     app.get('/logout', apis.logout)
 
@@ -21,7 +21,7 @@ module.exports = function(app){
     app.post('/others/currentweather', others.currentWeather);
     app.post('/others/similarity', others.similarity);
 
-    app.use('/sql_query', customMidleware.ensureSQLConnected)
+    app.use('/sql_query', customMiddleware.ensureSQLConnected)
     app.get('/sql_query/preview', apis1.getPreviewNorthWindData);
     app.get('/sql_query/download', apis1.downloadNorthWindData)
 
