@@ -1,8 +1,8 @@
 const bcrypt = require('bcrypt');
 const dotenv = require('dotenv').config();
-const assignIcon = require('../utils/avartar_factory');
+const assignIcon = require('../utils/avatar_factory');
 const sendEmail = require('../utils/send_email');
-const {generateToken, getPayloadFromToken} = require('../utils/generate_token');
+const {getPayloadFromToken} = require('../utils/generate_token');
 function encodeHTML(str) {
     return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 }
