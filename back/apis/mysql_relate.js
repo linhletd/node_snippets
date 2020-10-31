@@ -28,7 +28,7 @@ module.exports = function (app){
                         res.end('], "err": "err occurs while loading data"}')
                     }
                     else{
-                        res.json({err: "err occurs while loading data"})
+                        res.json({err: "invalid sql query command"})
                     }
                 })
             }
@@ -73,7 +73,7 @@ module.exports = function (app){
                             res.end('     ],\r\n "  err": "err occurs while loading data"\r\n}')
                         }
                         else{
-                            res.json({err: "err occurs while loading data"})
+                            res.json({err: "invalid sql query command"})
                         }
                     })
                 }
@@ -119,7 +119,7 @@ module.exports = function (app){
                     });
                     query.on('error', (err) =>{
                         console.log('load data err', err.message);
-                        res.end('err occurs while loading data');
+                        res.end('invalid sql query command');
                     })
                 }
             }
