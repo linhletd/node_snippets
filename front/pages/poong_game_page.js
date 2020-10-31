@@ -174,7 +174,14 @@ class PoongGame extends React.Component{
         bullet.style.display = 'block';
         bullet.id = key;
         document.getElementById('bullets').appendChild(bullet);
-        this.bulletGo.bind(this, key)();
+        if(playerId === this.mainPlayer){
+            setTimeout(()=>{
+                this.bulletGo.bind(this, key)();
+            }, 150)
+        }
+        else{
+            this.bulletGo.bind(this, key)();
+        }
     }
     jump(alpha){
         let step = this.bulletStep;
