@@ -1,5 +1,6 @@
 import React from 'react';
 import UserStatus from './user_status';
+import WaittingNotation from '../ui/waitting_notation';
 let msg0 = <p>Hey! Wait a second...</p>
 let msg1 = <p>Hi, I am Linh - Author of this site, did you check your current weather through above app? Is it correct?</p>
 let msg2 = <p>Did you resize the viewport? Layout and navbar, are they responsive?</p>
@@ -30,7 +31,7 @@ class Welcome extends React.Component{
                     self.setState({len: self.state.len + 1}, ()=>{
                         it.next();
                     })
-                }, 2500))
+                }, 3000))
             }
         }
         it = gen();
@@ -38,7 +39,7 @@ class Welcome extends React.Component{
             this.setState({len: 1},()=>{
                 it.next();
             })
-        },1000)
+        },2500)
     }
     componentWillUnmount(){
         clearTimeout(this.timer)
@@ -59,13 +60,13 @@ class Welcome extends React.Component{
                 return <Msg child = {msg} key = {i}/>
             })
             return(
-                <div id = 'welcome'>
+                <div id = 'welcome' key = {1}>
                     {messages}
                 </div>
             )
         }
         else{
-            return '';
+            return <div id = 'wel-wait' key = {2}><WaittingNotation autoStop = {true}/></div>;
         }
     }
 }
