@@ -40,12 +40,8 @@ module.exports = function(app){
                     else if(!ok){
                         return done(null, false, 'incorrect password');
                     }
-                    let _id = user._id;
-                    delete user._id;
-                    user.LastLogin = Date.now();
-                    user.LoginCount += 1;
-                    db.collection('users').updateOne({_id},{$set: user});
-                    done(null, {_id, Username: user.Username, Email: user.Email, Avartar: user.Avartar});
+                    db.collection('users').updateOne({_id: user._id},{$set: {LastLogin: Date.now()}, $inc: {LoginCount: 1}});
+                    done(null, {_id: user._id, Username: user.Username, Email: user.Email, Avartar: user.Avartar, Verified: user.Verified});
                 })
             }
            return done(null, false, 'not registered');
@@ -87,7 +83,8 @@ module.exports = function(app){
                     Avartar: Avartar,
                     StartJoining: Date.now(),
                     LastLogin: Date.now(),
-                    LoginCount: 1
+                    LoginCount: 1,
+                    Verified: 1
                 };
                 db.collection('users').insertOne(user,(err, doc) =>{
                     if(err){
@@ -131,7 +128,8 @@ module.exports = function(app){
                     Avartar,
                     StartJoining: Date.now(),
                     LastLogin: Date.now(),
-                    LoginCount: 1
+                    LoginCount: 1,
+                    Verified: 1
                 };
                 db.collection('users').insertOne(user,(err, doc) =>{
                     if(err){
