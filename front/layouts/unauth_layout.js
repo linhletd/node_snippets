@@ -4,8 +4,12 @@ import LoginPage from '../pages/login_pages.js';
 import RegisterPage from '../pages/register_page.js';
 import ForgotPasswordPage from '../pages/forgot_pwd_page.js';
 import {connect} from 'react-redux';
-
+import SignupVerify from '../pages/signup_verify';
 class UnauthLayout extends React.Component{
+    constructor(){
+        super();
+        this.data = {}
+    }
     componentDidMount(){
         let footer = document.getElementById('footer')
         footer.style.width = '100vw';
@@ -27,15 +31,17 @@ class UnauthLayout extends React.Component{
             <div id = "unauth-layout">
                 <Switch>
                     <Route exact path = '/auth/login'>
-                        <LoginPage/>
+                        <LoginPage handleLogin = {this.props.handleLogin} data = {this.data}/>
                     </Route>
                     <Route exact path = '/auth/register'>
-                        <RegisterPage handleLogin = {this.props.handleLogin}/>         
+                        <RegisterPage data = {this.data}/>         
                     </Route>
                     <Route exact path = '/auth/reset-request'>
                         <ForgotPasswordPage/>         
                     </Route>
-                    <Redirect to = '/auth/login'/>
+                    <Route exact path = '/auth/verify'>
+                        {this.data ? <SignupVerify data = {this.data}/> : <Redirect to = '/auth/login'/>}
+                    </Route>
                 </Switch>
             </div>
         )
