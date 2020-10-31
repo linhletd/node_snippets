@@ -5,10 +5,12 @@ const useHelmet = require('../secure/helmet');
 const dotenv = require('dotenv').config();
 const express = require('express');
 // const formidable = require('formidable');
+let Middleware = require('./middleware');
 
 const useUnauthRoute = require('../routes/unauth_routes');
-const useAuthRoute = require('../routes/auth_routes')
+const useAuthRoute = require('../routes/auth_routes');
 module.exports = function config(app){
+    let customMiddleware = new Middleware(app);
     app.get('/favicon.ico', (req, res, next)=>{
         return res.sendFile(process.cwd() + '/statics/image/icon.png')
     })
@@ -30,13 +32,12 @@ module.exports = function config(app){
     app.get('/term-privacy', (req, res) =>{
         res.sendFile(process.cwd() + '/statics/html/term_privacy.html');
     })
-    // app.use(morgan('dev'));
     useUnauthRoute(app);
     useAuthRoute(app);
 
 
     /*****************************************/
-    app.use((req, res) => {
+    app.use(customMiddleware.setInitialCookie,(req, res) => {
         res.sendFile(process.cwd() + '/index.html');
     });
 
