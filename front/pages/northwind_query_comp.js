@@ -2,6 +2,7 @@ import React from 'react';
 import  Guide from './guide_comp'
 import {stringify} from 'query-string';
 import WaittingNotation from '../ui/waitting_notation';
+import Prism from '../../statics/js/prism'
 const Table = (props) =>{
     let {data} = props;
     let title = Object.keys(data[0]);
@@ -115,14 +116,19 @@ class NorthWinQuery extends React.Component{
         function *gen(){
             let data;
             if((a || start === self.code.firstChild) && (b || start === self.code.lastChild)){
-                let message = {
-                    language: 'sql',
-                    code: start.nodeValue,
-                    immediateClose: false,
-                }
                 self.test = true;
                 self.available = false;
-                data = yield self.worker.postMessage(JSON.stringify(message));
+                if(self.worker){
+                    let message = {
+                        language: 'sql',
+                        code: start.nodeValue,
+                        immediateClose: false,
+                    }
+                    data = yield self.worker.postMessage(JSON.stringify(message));
+                }
+                else{
+                    data = Prism.highlight(start.nodeValue, Prism.languages.sql, 'sql')
+                }
                 self.test = false;
                 self.it = null;
             }
@@ -161,13 +167,18 @@ class NorthWinQuery extends React.Component{
                         _add(cur.nextSibling)
                     }
                 })(frag.firstChild);
-                let message = {
-                    language: 'sql',
-                    code: text,
-                    immediateClose: false,
+                if(self.worker){
+                    let message = {
+                        language: 'sql',
+                        code: text,
+                        immediateClose: false,
+                    }
+                    self.available = false;
+                    self.worker.postMessage(JSON.stringify(message));
                 }
-                self.available = false;
-                self.worker.postMessage(JSON.stringify(message));
+                else{
+                    self.handleWorkerMessage({data: Prism.highlight(text, Prism.languages.sql, 'sql')})
+                }
             }
         }
         this.it = gen();
@@ -242,7 +253,7 @@ class NorthWinQuery extends React.Component{
     }
     handleWorkerMessage = (e) =>{
         if(this.test){
-            this.it.next(e.data);
+            this.worker && this.it.next(e.data);
             this.available = true;
             return;
         }
@@ -260,6 +271,22 @@ class NorthWinQuery extends React.Component{
         this.available = true; 
     }
     handleKeyDown = (e) =>{
+        if(e.code === 'Space'){
+            let r = document.getSelection().rangeCount && document.getSelection().getRangeAt(0);
+            if(r){
+                let {startContainer: start, startOffset: startOff} = r;
+                if(r.collapsed && start.nodeName === '#text' && start.parentNode.nodeName === 'SPAN' && startOff === start.nodeValue.length){
+                    e.preventDefault();
+                    let text = document.createTextNode(' ');
+                    r.setStartAfter(start.parentNode);
+                    r.collapse(true);
+                    r.insertNode(text);
+                    r.setStart(text, 1);
+                    r.collapse(true);
+                    return;
+                }
+            }
+        }
         if(e.key === 'z' && e.ctrlKey || !this.available){
             e.preventDefault();
             return;
@@ -317,7 +344,10 @@ class NorthWinQuery extends React.Component{
     }
     componentDidMount(){
         this.code = document.getElementById('sql_editor');
-        this.worker = new Worker('/js/Prism.js');
+        if(window.Worker){
+            this.worker = new Worker('/js/Prism.js');
+            this.worker.onmessage = this.handleWorkerMessage;
+        }
         this.code.ondragstart = (e) =>{
             e.preventDefault();
         }
@@ -327,7 +357,6 @@ class NorthWinQuery extends React.Component{
         this.code.onpaste = this.handlePasteData;
         this.code.onkeydown = this.handleKeyDown;
         this.code.oninput = this.handleInput;
-        this.worker.onmessage = this.handleWorkerMessage;
         this.editor = document.getElementById('sql_editor');
         this.guide = document.getElementById('sql_guide');
         this.diagram = document.getElementById('diagram_ctn');
@@ -336,14 +365,16 @@ class NorthWinQuery extends React.Component{
         this.focusIntoEditor();
     }
     componentWillUnmount(){
-        this.worker.terminate();
+        this.worker && this.worker.terminate();
     }
     getPreviewData = () =>{
-        this.state.data && this.setState({data: null});
-        this.opt.firstChild.disabled = true;
-        let query = `?${stringify({query: this.editor.innerText})}`
         if(this.editor.innerText.length){
-            this.setWaitState();
+            this.state.data ? this.setState({data: null},()=>{
+                this.setWaitState();
+            }): this.setWaitState();
+            this.opt.firstChild.disabled = true;
+            let query = `?${stringify({query: this.editor.innerText})}`
+            
             fetch('/sql_query/preview' + query,{
                 method: 'GET'
             })
