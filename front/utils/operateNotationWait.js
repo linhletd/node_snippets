@@ -17,7 +17,7 @@ function runNotation(parNode){
                 cur = parNode.firstChild;
             }
             run(cur)
-        },800)
+        },400)
     })(parNode.firstChild)
 };
 function stopRunNotation(){
