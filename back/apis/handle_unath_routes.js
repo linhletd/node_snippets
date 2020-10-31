@@ -10,11 +10,11 @@ module.exports = function(app){
     let client = app.client;
     let auth = require('../auths/auth')(app);
     let db = client.db(process.env.MG_DB_NAME);
+    let users = db.collection('users');
     let apis = {
         register: (req, res, next)=>{
             console.log(req.body)
             let Email = req.body.regist_email;
-            let users = db.collection('users');
             users.findOne({Email}, async (err, user) =>{
                 if(err){
                     return res.json({err: 'error occurs'});
@@ -25,43 +25,42 @@ module.exports = function(app){
                 else{
                     let Username = encodeHTML(req.body.regist_name),
                         StartJoining = Date.now(),
-                        LastLogin = StartJoining,
-                        LoginCount = 1,
                         Avartar = assignIcon(Email),
+                        Verified = 0,
                         Password = await bcrypt.hash(req.body.regist_password, 10).catch((err) =>{
                             return err
                         });
-                        if(typeof Password == 'object'){
-                            let err = Password;
-                            return res.json({err: 'error occurs'});
-                        }
+                    if(typeof Password == 'object'){
+                        let err = Password;
+                        return res.json({err: 'error occurs'});
+                    }
                     return users.insertOne({
                         Email,
                         Username,
                         Password,
                         StartJoining,
-                        LastLogin,
-                        LoginCount,
-                        Avartar
+                        LoginCount: 0,
+                        Avartar,
+                        Verified
                     },(err, doc) =>{
                         if(err) return res.json({err: 'error occurs'});
+                        sendEmail({to: Email, name: Username, type: 'verify'}).then((info) =>{
+                            console.log(info);
+                        }).catch((err) => {console.log(err.message)});
                         let user = {_id: doc.insertedId, Username, Email, Avartar};
-                        req.logIn(user,(err) =>{
-                            if(err) return res.json({err: 'error occurs'});
-                            let obj = JSON.stringify(user);
-                            let userCookie = Buffer.from(obj).toString('base64');
-                            res.cookie('InVzZXIi', userCookie, {httpOnly: false, sameSite: 'strict'});
-                            res.json({
-                                result: 'ok',
-                                user
-                            })
-                        })
+                        res.json({user});
+                        // req.logIn(user,(err) =>{
+                        //     if(err) return res.json({err: 'error occurs'});
+                        //     let obj = JSON.stringify(user);
+                        //     let userCookie = Buffer.from(obj).toString('base64');
+                        //     res.cookie('InVzZXIi', userCookie, {httpOnly: false, sameSite: 'strict'});
+                        //     res.json({
+                        //         result: 'ok',
+                        //         user
+                        //     })
+                        // })
                     })    
                 }
-                // sendEmail(Email,'verify').then((info) =>{
-                //     console.log(info);
-                //     res.redirect(302,'/user/verified');
-                // }).catch((err) => next(err))
 
             })
         },
@@ -76,6 +75,9 @@ module.exports = function(app){
                 else if(!user){
                     return res.status(401).json({err: info})
                 }
+                else if(user && user.Verified === 0){
+                    return res.json({user})
+                }
                 req.logIn(user,(err) =>{
                     if(err){
                         return next(err);
@@ -83,6 +85,9 @@ module.exports = function(app){
                     let obj = JSON.stringify(user);
                     let userCookie = Buffer.from(obj).toString('base64');
                     res.cookie('InVzZXIi', userCookie, {httpOnly: false, sameSite: 'strict'});
+                    if(req.header('Accept') === 'application/json'){
+                        return res.json({user})
+                    }
                     res.writeHead(200,{'Content-Type': 'text/html'});
                     res.end(`<script>
                                     if(window.BroadcastChannel){
@@ -97,13 +102,55 @@ module.exports = function(app){
                 });
             })(req, res, next)
         }),
-        verifyToken: (req, res, next) => {
-            let payload = getPayloadFromToken(req.params.token);
-            if(!payload || payload.iat < Date.now()){
+        invokeToken: (req, res, next) =>{
+            try{
+                console.log(req.body, 'invoke')
+                sendEmail(req.body).then((info) =>{
+                    console.log(info);
+                }).catch((err) => {console.log(err.message)});
+                return res.json({status: 'ok'})
+            }
+            catch{
+                return res.json({err: 'err'})
+            }
+        },
+        verifyToken: (req, res, next) =>{
+            if(!req.query.token) return next();
+            let payload = getPayloadFromToken(req.query.token);
+            if(!payload){
                 return res.json({err: 'invalid or expired token'});
             }
-            if(payload.type === 'verify_account'){
-                //
+            else{
+                switch(payload.type){
+                    case 'verify':{
+                        users.findOneAndUpdate({Email: payload.sub},
+                            {$set: {Verified: 1, LastLogin: Date.now(), LoginCount: 1}},
+                            {
+                                upsert: false,
+                                returnNewDocument: false,
+                                projection: {
+                                    Username: 1,
+                                    Avartar: 1,
+                                    _id: 1,
+                                    Email: 1,
+                                    Verified: 1
+                                }
+                            },
+                            (err, {value: user}) =>{
+                            if(user.Verified){
+                                return res.redirect('/auth/login');
+                            }
+                            delete user.Verified;
+                            req.logIn(user, (err) =>{
+                                if(err) return next(err);
+                                let obj = JSON.stringify(user);
+                                let userCookie = Buffer.from(obj).toString('base64');
+                                res.cookie('InVzZXIi', userCookie, {httpOnly: false, sameSite: 'strict'});
+                                res.redirect('/')
+                            })
+                        })
+                    }
+                }
             }
         },
 
