@@ -9,6 +9,16 @@ class App extends React.Component{
     constructor(props){
         super(props);
         this.handleLoginEvent();
+        this.timer = undefined;
+    }
+    componentDidMount(){
+        //keep glitch awake for a while
+        this.timer = setInterval(()=>{
+            fetch('/awake',{method: 'get'})
+        }, 270000)
+    }
+    componentWillUnmount(){
+        clearInterval(this.timer)
     }
     handleLoginEvent = (data) =>{
         let handle = (userData) =>{
