@@ -748,17 +748,11 @@ class EditorApp extends React.Component{
         let formData = new FormData();
         formData.append('file', blob);
         formData.append('upload_preset', 'a9wxjomb')
-        fetch(url,{
+        return fetch(url,{
             method: 'POST',
             body: formData
         })
         .then(res => res.json())
-        .then(data =>{
-
-        })
-        .catch((e) =>{
-
-        })
     }
     handleImage = (blob) =>{
         let {img} = this.toolbarState;
@@ -772,16 +766,7 @@ class EditorApp extends React.Component{
             blob = img.files[0];
         }
         !name && (name = 'default');
-        let url = 'https://api.cloudinary.com/v1_1/demo/image/upload';
-        let formData = new FormData();
-        formData.append('file', blob);
-        formData.append('upload_preset', 'docs_upload_example_us_preset')
-        fetch(url,{
-            method: 'POST',
-            body: formData
-        })
-        .then(res => res.json())
-        .then(data =>{
+        this.upImgToCDN(blob).then(data =>{
             if(data.url){
                 this.traveler.insertImage(this.currentRange, data.url, name);
             }
