@@ -157,7 +157,7 @@ class SubDiscussLayout extends React.Component{
         let path = '/discuss/data/titles';
         let {socket} = this.props;
         let url = path;
-        if(socket && socket.id){
+        if(socket && socket.id && socket.readyState === 1){
             url = path + `?s=${socket.id}`;
         }
         else{
