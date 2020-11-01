@@ -15,13 +15,15 @@ import EditorGuide from '../pages/editor_guide_comp';
 import Welcome from '../pages/welcome_comp';
 import {Redirect, Route, Switch, withRouter} from 'react-router-dom';
 import fetchReq from '../utils/xhr.js';
-let worker = new Worker('/js/worker.bundle.js');
 
 class AuthLayout extends React.Component{
     constructor(props){
         super();
         this.left = React.createRef();
         this.right = React.createRef();
+        if(window.Worker){
+            this.worker = new Worker('/js/worker.bundle.js');
+        }
     }
     shouldComponentUpdate(nextProps){
         let newSocket = nextProps.socket;
@@ -59,11 +61,26 @@ class AuthLayout extends React.Component{
         }
     }
     detectMustAlternativeWs = () =>{
-        this.props.socket.onclose = (e) =>{
-            worker.postMessage('');
+        let {worker} = this;
+        if(worker){
+            this.props.socket.onclose = (e) =>{
+                worker.postMessage('');
+            }
+            worker.onmessage = (e) =>{
+                this.createAlternativeWs();
+            }
         }
-        worker.onmessage = (e) =>{
-            this.createAlternativeWs();
+        else{
+            let lastTime = (new Date()).getTime();
+            let checkTime = 5000;
+            let delay = 2000;
+            let itv = setInterval(()=>{
+                let currentTime = (new Date()).getTime();
+                if(currentTime - lastTime > checkTime + delay){
+                    this.createAlternativeWs();
+                    clearInterval(itv);
+                }
+            }, checkTime)
         }
         window.ononline = ()=>{
             this.createAlternativeWs();
