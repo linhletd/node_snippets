@@ -88,7 +88,7 @@ class PostNewTopic extends React.Component {
         this.content = document.getElementById('topic_editor').querySelector('.editor_area');
         this.content.addEventListener('input', this.checkPostValidated);
         this.title.oninput = this.checkPostValidated;
-        this.title.focus();
+        innerWidth >= 600 && this.title.focus();
         this.postButton.current.disabled = true;
     }
     shouldComponentUpdate(){
