@@ -1314,8 +1314,13 @@ td, thead{
     margin-bottom: 10px;
     cursor: pointer;
 }
-.concise_tpc:not([class~=nolink]):hover, .selected_title{
-    background-color: rgba(74, 243, 220, 0.179);
+
+.selected_title{
+    background-color: rgba(74, 243, 220, 0.185);
+    border-radius: 5px;
+}
+.concise_tpc:not([class~=nolink]):hover{
+    background-color: rgba(186, 243, 202, 0.179);
     border-radius: 5px;
 }
 .topic_title{
