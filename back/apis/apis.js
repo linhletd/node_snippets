@@ -57,7 +57,8 @@ module.exports = function(app){
             let socketId = req.query.s;
             if(socketId){
                 let discuss = app.discussSet;
-                discuss.add(app.idMap.get(socketId));
+                let ws = app.idMap.get(socketId)
+                ws && discuss.add(ws);
             }
             let cursor = topics.aggregate([
                 {
@@ -109,7 +110,7 @@ module.exports = function(app){
             let topicMap = app.topicMap;
             if(socketId){
                 let ws = app.idMap.get(socketId);
-                if(ws.topic){
+                if(ws && ws.topic){
                     let s = app.topicMap.get(ws.topic);
                     if(s.size === 1){
                         app.topicMap.delete(ws.topic);
