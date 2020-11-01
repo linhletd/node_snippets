@@ -20,7 +20,7 @@ class TopicTitle extends React.Component{
         if(topic.Comment !== undefined){
             let tag = topic.Category[0] === 'C' ? 'tag code_tag' : topic.Category[0] === 'L' ? 'tag life_tag' : topic.Category[0] === 'O' ? 'tag other_tag' : '';
             return (
-                <div className = {`concise_tpc${this.props.handleSelectTopic ? '' : ' nolink'}`} id = {`list${topic._id}`} onClick = {this.props.handleSelectTopic}>
+                <div className = {`concise_tpc${this.props.handleSelectTopic ? '' : ' nolink'}`} id = {this.props.handleSelectTopic ? `list${topic._id}` : topic._id} onClick = {this.props.handleSelectTopic}>
                     <UserStatus childClass = 'user_small' status = {{_id: topic.Author}} noName = {!authorName ? true : false}/>
                     <div>
                         <div className = 'topic_title'>{topic.Title}</div>
