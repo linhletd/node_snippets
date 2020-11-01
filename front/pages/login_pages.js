@@ -11,7 +11,9 @@ class LoginPage extends React.Component{
         this.focus = React.createRef();
     }
     componentDidMount(){
-        this.focus.current.focus();
+        if(innerWidth >= 600){
+            this.focus.current.focus();
+        }
     }
     localLogin = (e) =>{
         e.preventDefault();
