@@ -122,7 +122,7 @@ class Topic extends React.Component{
             }
         }
         let {socket} = this.props;
-        if(socket && socket.id){
+        if(socket && socket.id && socket.readyState === 1){
             _getTopic(socket.id)
         }
         else if(match && match[1]){
