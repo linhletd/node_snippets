@@ -31,6 +31,7 @@ class AuthLayout extends React.Component{
             this.copyFromOldToNewSocket(newSocket, this.props.socket);
             this.handleIncomingMsg(newSocket);
             this.getInitialUsersStatus();
+            this.detectMustAlternativeWs(newSocket);
         }
         return false;
     }
@@ -60,30 +61,31 @@ class AuthLayout extends React.Component{
             this.props.updateStore({type: 'OPENSOCKET', data: ws});
         }
     }
-    detectMustAlternativeWs = () =>{
+    detectMustAlternativeWs = (socket) =>{
         let {worker} = this;
-        if(worker){
-            this.props.socket.onclose = (e) =>{
+        socket.onclose = (e) =>{
+            if(worker){
                 worker.postMessage('');
-            }
-            worker.onmessage = (e) =>{
-                this.createAlternativeWs();
-            }
-        }
-        else{
-            let lastTime = (new Date()).getTime();
-            let checkTime = 5000;
-            let delay = 2000;
-            let itv = setInterval(()=>{
-                let currentTime = (new Date()).getTime();
-                if(currentTime - lastTime > checkTime + delay){
+                worker.onmessage = (e) =>{
                     this.createAlternativeWs();
-                    clearInterval(itv);
                 }
-            }, checkTime)
-        }
-        window.ononline = ()=>{
-            this.createAlternativeWs();
+            }
+            else{
+                let lastTime = (new Date()).getTime();
+                let checkTime = 5000;
+                let delay = 2000;
+                let itv = setInterval(()=>{
+                    let currentTime = (new Date()).getTime();
+                    if(currentTime - lastTime > checkTime + delay){
+                        this.createAlternativeWs();
+                        clearInterval(itv);
+                    }
+                }, checkTime)
+            }
+            this.props.updateStore({
+                type: 'UPDATEUSERSTATUS',
+                data:{_id: this.props.user._id, isOnline: false}
+            })
         }
     }
     handleIncomingMsg = (socket) =>{
@@ -95,6 +97,10 @@ class AuthLayout extends React.Component{
             let {type, payload} = parsedMsg;
             (()=>{
                 switch(type){
+                    case 'err':
+                        return ()=>{
+                            console.log('ws server err');
+                        }
                     case 'ws id':
                         socket.id = payload;
                         return () =>{}
@@ -179,7 +185,16 @@ class AuthLayout extends React.Component{
     componentDidMount(){
         this.getInitialUsersStatus();
         this.handleIncomingMsg();
-        this.detectMustAlternativeWs();
+        this.detectMustAlternativeWs(this.props.socket);
+        window.ononline = ()=>{
+            this.createAlternativeWs();
+        }
+        window.onoffline = ()=>{
+            this.props.updateStore({
+                type: 'UPDATEUSERSTATUS',
+                data:{_id: this.props.user._id, isOnline: false}
+            })
+        }
         this.flashCtn = document.getElementById('flash_popup');
         
     }
