@@ -17,11 +17,11 @@ class PoongGame extends React.Component{
         }
         else if(innerWidth < 1199){
             this.wratio = 0.9;
-            this.width = Math.floor((innerWidth - 240 -10)/innerWidth * 100 * this.wratio);
+            this.width = Math.floor((innerWidth - 240 - 20)/innerWidth * 100 * this.wratio);
         }
         else{
             this.wratio = 0.9;
-            this.width = Math.floor((innerWidth - 240 * 2 -10)/innerWidth * 100 * this.wratio);
+            this.width = Math.floor((innerWidth - 240 * 2 - 20)/innerWidth * 100 * this.wratio);
         }
         this.height = this.width * this.hwratio;
         this.xmin = 0; //left
@@ -177,7 +177,7 @@ class PoongGame extends React.Component{
         if(playerId === this.mainPlayer){
             setTimeout(()=>{
                 this.bulletGo.bind(this, key)();
-            }, 150)
+            }, 190)
         }
         else{
             this.bulletGo.bind(this, key)();
