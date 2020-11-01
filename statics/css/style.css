@@ -5,6 +5,7 @@ body *:not(.editor_area *){
 }
 #root, #app, body{
     width: 100%;
+    margin: 0px 0px;
 }
 input{
     padding-left: 3px;
@@ -294,8 +295,6 @@ input:hover,
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    width: 100%;
-    height: 100%;
 }
 .global_popup{
     position: fixed;
@@ -768,13 +767,18 @@ input:hover,
     margin-bottom: 10px;
 }
 #player_board>div{
-    display: flex;
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 7px;
+    margin-top: 3px;
 }
 #player_board .score_status{
     display: flex;
 }
-#player_board .score_status span:last-child{
-    margin-left: 5px;
+.score_status{
+    width: 130px;
+    display: inline-flex;
+    justify-content: space-between;
 }
 .ibullet{
     width: 10px;
@@ -1380,16 +1384,17 @@ td, thead{
     font-size: 0.9em;
     opacity: 0.8;
 }
-.reply>div>div{
+.reply>div:last-child>div{
     cursor: pointer;
 }
-.reply>div>div:hover{
+.reply>div:last-child>div:hover{
     opacity: 0.5;
 }
 .cor{
     display: grid;
-    grid-template-columns: auto auto auto;
-    column-gap: 5px;
+    grid-template-columns: auto 1fr 50px;
+    column-gap: 7px;
+    width: 100%
 }
 .cor>button{
     border-radius: 5px;
@@ -1398,7 +1403,8 @@ td, thead{
     padding-left: 5px;
     padding-right: 5px;
     padding-bottom: 2px;
-    background-color: rgb(97, 228, 215)
+    background-color: rgb(97, 228, 215);
+    align-self: center;
 
 }
 .cor>button:focus{
@@ -1408,31 +1414,25 @@ td, thead{
     cursor: pointer;
     color: rgb(53, 53, 155);
 }
-.cor, .cored{
+.cored{
     width: 100%;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 7px;
+    align-items: start;
 }
 
-.cored{
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: flex-start;
-    width: 100%;
-}
 .cored>div:last-child *{
     display: inline;
 }
 .cored>div:last-child{
-    margin-left: 7px;
     border-radius: 10px;
     min-height: 30px;
     padding: 4px 4px;
     padding-right: 6px;
     min-width: 170px;
-    max-width: calc(100% - 120px);
+    width: max-content;
+    max-width: 100%;
     display: inline-block;
     overflow-wrap: break-word;
     background-color: rgba(255, 182, 193, 0.15);
@@ -1470,8 +1470,7 @@ td, thead{
 .tag_board{
     position: relative;
     min-width: 150px;
-    width: 300px;
-    max-width: 70%;
+    max-width: 100%;
     min-height: 100%;
 }
 .tag_list{
@@ -1805,7 +1804,7 @@ table{
     height: 100%
 }
 #poong_popup .poong_popup{
-    min-width: 200px;
+    min-width: 250px;
     min-height: 40%;
     padding: 5px 5px;
     background-color: #ffed6656;
@@ -2087,6 +2086,7 @@ button:disabled{
     }
     #app_body{
         grid-area: 2/1/3/2;
+        width: calc(100vw - 240px - 20px)/*scrollbar width*/
     }
     .medium_hide{
         display: none;
@@ -2136,6 +2136,7 @@ button:disabled{
     }
     #app_body{
         grid-area: 2/1/3/2;
+        width: 100%
     }
     footer{
         grid-template-columns: 1fr;
@@ -2162,6 +2163,7 @@ button:disabled{
     }
     #app_body{
         grid-area: 2/2/3/3;
+        width: calc(100vw - 2*240px - 20px)/*scrollbar width*/
     }
     footer{
         grid-template-columns: 240px 1fr 240px;
