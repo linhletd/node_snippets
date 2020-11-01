@@ -64,6 +64,9 @@ class PrimaryHeader extends React.Component{
         this.person = undefined;
         this.bell = undefined;
     }
+    handleclickHead(){
+        window.scrollTo(0, 0);
+    }
     shouldComponentUpdate(nextProps){
         if(this.pseudo && nextProps.location.pathname !== this.props.location.pathname){
             this.pseudo.click();
@@ -240,7 +243,7 @@ class PrimaryHeader extends React.Component{
             )
         }
         return (
-            <div id = 'app_header' ref = {this.header}>
+            <div id = 'app_header' ref = {this.header} onClick = {this.handleclickHead}>
                 <Users handleClickUsers = {this.handleClickUsers}/>
                 <div className = 'hdr_ico'><NavLink exact to = '/' activeClassName = 'active'><i className="fa fa-home" onClick = {this.handleCLickLink}></i></NavLink></div>
                 <div className = 'hdr_ico'><NavLink to = '/discuss' activeClassName = 'active'><i className="fa fa-newspaper-o" onClick = {this.handleCLickLink}></i></NavLink></div>
