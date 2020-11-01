@@ -335,12 +335,14 @@ class NorthWinQuery extends React.Component{
     }
     focusIntoEditor(){
         this.editor.innerHTML = '<span class="token keyword">select</span> <span class="token operator">*</span> <span class="token keyword">from</span> categories';
-        let r = new Range();
-        r.setStart(this.editor.lastChild, this.editor.lastChild.nodeValue.length);
-        r.collapse(true);
-        let sel = document.getSelection();
-        sel.removeAllRanges();
-        sel.addRange(r);
+        if(innerWidth >= 600){
+            let r = new Range();
+            r.setStart(this.editor.lastChild, this.editor.lastChild.nodeValue.length);
+            r.collapse(true);
+            let sel = document.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(r);
+        }
     }
     componentDidMount(){
         this.code = document.getElementById('sql_editor');
@@ -362,9 +364,7 @@ class NorthWinQuery extends React.Component{
         this.diagram = document.getElementById('diagram_ctn');
         this.toggle = document.getElementById('sql_toggle');
         this.opt = document.getElementById('sql_opt');
-        if(innerWidth >= 600){
-            this.focusIntoEditor();
-        }
+        this.focusIntoEditor();
     }
     componentWillUnmount(){
         this.worker && this.worker.terminate();
