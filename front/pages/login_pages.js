@@ -8,12 +8,6 @@ class LoginPage extends React.Component{
             email: '',
             password: ''
         };
-        this.focus = React.createRef();
-    }
-    componentDidMount(){
-        if(innerWidth >= 600){
-            this.focus.current.focus();
-        }
     }
     localLogin = (e) =>{
         e.preventDefault();
@@ -107,7 +101,7 @@ class LoginPage extends React.Component{
                 <p>You must login to use this app</p>
                 <form id = "login_form">
                     {validity[0] ? <p className = 'validate'>{validity[0]}</p> : ''}
-                    <input ref = {this.focus} type = "email" name = "login_email" placeholder = 'Email' value = {email} onChange = {this.handleInputChange} required = {true}/>
+                    <input autoFocus = {innerWidth >= 600} type = "email" name = "login_email" placeholder = 'Email' value = {email} onChange = {this.handleInputChange} required = {true}/>
                     {validity[1] ? <p className = 'validate'>{validity[1]}</p> : ''}
                     <input type = "password" name = "login_password" placeholder = 'Password' value = {password} onChange = {this.handleInputChange} required = {true}/>
                     {validity[2] ? <p className = 'validate'>{validity[2]}</p> : ''}

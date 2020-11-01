@@ -8,10 +8,6 @@ class RegisterPage extends React.Component{
         this.state = {
             validity: []
         };
-        this.focus = React.createRef();
-    }
-    componentDidMount(){
-        this.focus.current.focus();
     }
     handleRegist = (e)=>{
         e.preventDefault();
@@ -76,7 +72,7 @@ class RegisterPage extends React.Component{
                 <p>Register information</p>
                 <form id = "regist_form" autoComplete = "off">
                     {validity[0] ? <p className = 'validate'>{validity[0]}</p> : ''}
-                    <input ref = {this.focus} type = "text" name = "regist_name" placeholder = "Name" required = {true}/>
+                    <input autoFocus = {true} type = "text" name = "regist_name" placeholder = "Name" required = {true}/>
                     {validity[1] ? <p className = 'validate'>{validity[1]}</p> : ''}
                     <input type = "email" name ="regist_email" placeholder = "Email" required = {true}/>
                     {validity[2] ? <p className = 'validate'>{validity[2]}</p> : ''}
