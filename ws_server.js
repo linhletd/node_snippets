@@ -148,653 +148,669 @@ module.exports = function applyWebsocket(server, app){
         ws.on('message', function incoming(message){
             let {type, payload} = JSON.parse(message);
             (()=>{
-                switch(type){
-                    case 'invite':
-                        return ()=>{
-                            utils.needClearCurrentGameRef(this)
-                            let {_id, inviteId} = payload;
-                            this.inviteId = inviteId;
-                            let msg = {
-                                type: 'invite',
-                                payload:{
-                                    socketId: this.id,
-                                    originatorId: this.owner,
-                                    inviteId
+                try{
+                    switch(type){
+                        case 'invite':
+                            return ()=>{
+                                utils.needClearCurrentGameRef(this)
+                                let {_id, inviteId} = payload;
+                                this.inviteId = inviteId;
+                                let msg = JSON.stringify({
+                                    type: 'invite',
+                                    payload:{
+                                        socketId: this.id,
+                                        originatorId: this.owner,
+                                        inviteId
+                                    }
+                                })
+                                let friend = ownerMap.get(_id);
+                                if(friend){
+                                    friend.forEach((socket) =>{
+                                        socket.send(msg)
+                                    })
+                                }
+                                else{
+                                    ws.send(JSON.stringify({
+                                        type: 'offline',
+                                        payload: {_id}
+                                    }))
                                 }
                             }
-                            ownerMap.get(_id).forEach((socket) =>{
-                                socket.send(JSON.stringify(msg))
-                            })
-                        }
-                    case 'accept':
-                        return ()=>{
-                            let {socketId: sid, declined, inviteId} = payload;
-                            let {owner:_id, id} = this;
-                            let partnerSocket = idMap.get(sid);
-                            if(!partnerSocket || partnerSocket.inviteId !== inviteId){
-                                return utils.needReceiveLeave(inviteId)
-                            }
-                            utils.needClearCurrentGameRef(this)
-                            this.ref.game = partnerSocket;
-                            this.inviteId = inviteId;
-                            partnerSocket.ref.game = this;
-                            let msg = {
-                                type: 'accept',
-                                payload: {_id, inviteId}
-                            }
-                            partnerSocket.send(JSON.stringify(msg));
-                            declined.length && declined.map(({socketId: id, inviteId}) => {
+                        case 'accept':
+                            return ()=>{
+                                let {socketId: sid, declined, inviteId} = payload;
+                                let {owner:_id, id} = this;
+                                let partnerSocket = idMap.get(sid);
+                                if(!partnerSocket || partnerSocket.inviteId !== inviteId){
+                                    return utils.needReceiveLeave(inviteId)
+                                }
+                                utils.needClearCurrentGameRef(this)
+                                this.ref.game = partnerSocket;
+                                this.inviteId = inviteId;
+                                partnerSocket.ref.game = this;
                                 let msg = {
-                                    type: 'decline',
-                                    payload: {_id: this.owner, reason: 'playing with somebody', inviteId}
+                                    type: 'accept',
+                                    payload: {_id, inviteId}
                                 }
-                                idMap.get(id).send(JSON.stringify(msg));
-                            })
-                            utils.discardSomeWhere(_id, id);
-                        }
-                    case 'decline':
-                        return ()=>{
-                            let {socketId, inviteId} = payload, {id, owner: _id} = this;
-                            utils.discardSomeWhere(_id, id);
-                            let intendPartner = idMap.get(socketId);
-                            if(intendPartner && intendPartner.inviteId === inviteId){
-                                let msg = {
-                                    type: 'decline',
-                                    payload: {_id, reason: 'can not play now', inviteId}
-                                }
-                                intendPartner.send(JSON.stringify(msg));
+                                partnerSocket.send(JSON.stringify(msg));
+                                declined.length && declined.map(({socketId: id, inviteId}) => {
+                                    let msg = {
+                                        type: 'decline',
+                                        payload: {_id: this.owner, reason: 'playing with somebody', inviteId}
+                                    }
+                                    idMap.get(id).send(JSON.stringify(msg));
+                                })
+                                utils.discardSomeWhere(_id, id);
                             }
-
-                        }
-                    case 'cancel': case 'leave':
-                        return ()=>{
-                            let inviteId = this.inviteId;
-                            if(type === 'cancel' && !this.ref.game) {
-                                let {_id} = payload;
-                                ownerMap.get(_id).forEach((socket) =>{
-                                    socket.send(JSON.stringify({
+                        case 'decline':
+                            return ()=>{
+                                let {socketId, inviteId} = payload, {id, owner: _id} = this;
+                                utils.discardSomeWhere(_id, id);
+                                let intendPartner = idMap.get(socketId);
+                                if(intendPartner && intendPartner.inviteId === inviteId){
+                                    let msg = {
+                                        type: 'decline',
+                                        payload: {_id, reason: 'can not play now', inviteId}
+                                    }
+                                    intendPartner.send(JSON.stringify(msg));
+                                }
+    
+                            }
+                        case 'cancel': case 'leave':
+                            return ()=>{
+                                let inviteId = this.inviteId;
+                                if(type === 'cancel' && !this.ref.game) {
+                                    let {_id} = payload;
+                                    let player = ownerMap.get(_id);
+                                    let msg = JSON.stringify({
                                         type: 'cancel',
                                         payload: {inviteId}
-                                    }))
+                                    });
+                                    player && player.forEach((socket) =>{
+                                        socket.send(msg)
+                                    })
+                                }
+                                utils.needClearCurrentGameRef(this)
+                            }
+                        case 'go': case 'shoot': case 'continue':
+                            return () =>{
+                                this.ref.game && this.ref.game.send(message);
+                            }
+                        case 'xdiscuss':
+                            return ()=>{
+                                discussSet.delete(ws)
+                            }
+                        case 'otopic':
+                            return () =>{
+                                ws.topic = payload;
+                                let topic;
+                                if((topic = topicMap.get(payload))){
+                                    topic.add(ws);
+                                }
+                                else{
+                                    topic = new Set([ws]);
+                                    topicMap.set(payload, topic);
+                                }
+                            }
+                        case 'xtopic':
+                            return () =>{
+                                if(ws.topic){
+                                    let topic = topicMap.get(ws.topic);
+                                    topic.size === 1 ? topicMap.delete(ws.topic) : topic.delete(ws);//topic may not registered fastly enough
+                                    delete ws.topic;
+                                }
+                            }
+                        case 'upvote':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload)}, {
+                                $addToSet: {UpVotes: ws.owner}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'topicbar',
+                                            _id: payload,
+                                            payload: {
+                                                upvoted: true,
+                                                downvoted: false,
+                                                user: ws.owner
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                        let msg2 = JSON.stringify({
+                                            type: 'topictitle',
+                                            _id: payload,
+                                            payload: {
+                                                UpVote: 1,
+                                            }
+                                        });
+                                        idMap.forEach((sock) =>{
+                                            sock.send(msg2)
+                                        }) 
+                                    }
                                 })
                             }
-                            utils.needClearCurrentGameRef(this)
-                        }
-                    case 'go': case 'shoot': case 'continue':
-                        return () =>{
-                            this.ref.game && this.ref.game.send(message);
-                        }
-                    case 'xdiscuss':
-                        return ()=>{
-                            discussSet.delete(ws)
-                        }
-                    case 'otopic':
-                        return () =>{
-                            ws.topic = payload;
-                            let topic;
-                            if((topic = topicMap.get(payload))){
-                                topic.add(ws);
+                        case 'unupvote':
+                            return () =>{
+                                topics.updateOne({_id: ObjectId(payload)}, {
+                                    $pull: {UpVotes: ws.owner}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'topicbar',
+                                            _id: payload,
+                                            payload: {
+                                                upvoted: false,
+                                                downvoted: false,
+                                                user: ws.owner
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                        let msg2 = JSON.stringify({
+                                            type: 'topictitle',
+                                            _id: payload,
+                                            payload: {
+                                                UpVote: -1,
+                                            }
+                                        });
+                                        idMap.forEach((sock) =>{
+                                            sock.send(msg2)
+                                        })
+                                        
+                                    }
+                                })
                             }
-                            else{
-                                topic = new Set([ws]);
-                                topicMap.set(payload, topic);
+                        case 'toupvote':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload)}, {
+                                    $push: {UpVotes: ws.owner},
+                                    $pull: {DownVotes: ws.owner}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'topicbar',
+                                            _id: payload,
+                                            payload: {
+                                                upvoted: true,
+                                                downvoted: false,
+                                                user: ws.owner
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                        let msg2 = JSON.stringify({
+                                            type: 'topictitle',
+                                            _id: payload,
+                                            payload: {
+                                                UpVote: 1,
+                                                DownVote: -1
+                                            }
+                                        });
+                                        idMap.forEach((sock) =>{
+                                            sock.send(msg2)
+                                        })
+                                    }
+                                })
                             }
-                        }
-                    case 'xtopic':
-                        return () =>{
-                            if(ws.topic){
-                                let topic = topicMap.get(ws.topic);
-                                topic.size === 1 ? topicMap.delete(ws.topic) : topic.delete(ws);//topic may not registered fastly enough
-                                delete ws.topic;
+                        case 'downvote':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload)}, {
+                                $addToSet: {DownVotes: ws.owner}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'topicbar',
+                                            _id: payload,
+                                            payload: {
+                                                upvoted: false,
+                                                downvoted: true,
+                                                user: ws.owner
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                        let msg2 = JSON.stringify({
+                                            type: 'topictitle',
+                                            _id: payload,
+                                            payload: {
+                                                DownVote: 1
+                                            }
+                                        });
+                                        idMap.forEach((sock) =>{
+                                            sock.send(msg2)
+                                        })
+                                    }
+                                })
                             }
-                        }
-                    case 'upvote':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload)}, {
-                            $addToSet: {UpVotes: ws.owner}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'topicbar',
-                                        _id: payload,
-                                        payload: {
-                                            upvoted: true,
-                                            downvoted: false,
-                                            user: ws.owner
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                    let msg2 = JSON.stringify({
-                                        type: 'topictitle',
-                                        _id: payload,
-                                        payload: {
-                                            UpVote: 1,
-                                        }
-                                    });
-                                    idMap.forEach((sock) =>{
-                                        sock.send(msg2)
-                                    }) 
-                                }
-                            })
-                        }
-                    case 'unupvote':
-                        return () =>{
-                            topics.updateOne({_id: ObjectId(payload)}, {
-                                $pull: {UpVotes: ws.owner}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'topicbar',
-                                        _id: payload,
-                                        payload: {
-                                            upvoted: false,
-                                            downvoted: false,
-                                            user: ws.owner
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                    let msg2 = JSON.stringify({
-                                        type: 'topictitle',
-                                        _id: payload,
-                                        payload: {
-                                            UpVote: -1,
-                                        }
-                                    });
-                                    idMap.forEach((sock) =>{
-                                        sock.send(msg2)
-                                    })
-                                    
-                                }
-                            })
-                        }
-                    case 'toupvote':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload)}, {
-                                $push: {UpVotes: ws.owner},
-                                $pull: {DownVotes: ws.owner}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'topicbar',
-                                        _id: payload,
-                                        payload: {
-                                            upvoted: true,
-                                            downvoted: false,
-                                            user: ws.owner
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                    let msg2 = JSON.stringify({
-                                        type: 'topictitle',
-                                        _id: payload,
-                                        payload: {
-                                            UpVote: 1,
-                                            DownVote: -1
-                                        }
-                                    });
-                                    idMap.forEach((sock) =>{
-                                        sock.send(msg2)
-                                    })
-                                }
-                            })
-                        }
-                    case 'downvote':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload)}, {
-                            $addToSet: {DownVotes: ws.owner}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'topicbar',
-                                        _id: payload,
-                                        payload: {
-                                            upvoted: false,
-                                            downvoted: true,
-                                            user: ws.owner
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                    let msg2 = JSON.stringify({
-                                        type: 'topictitle',
-                                        _id: payload,
-                                        payload: {
-                                            DownVote: 1
-                                        }
-                                    });
-                                    idMap.forEach((sock) =>{
-                                        sock.send(msg2)
-                                    })
-                                }
-                            })
-                        }
-                    case 'undownvote':
-                        return () =>{
-                            topics.updateOne({_id: ObjectId(payload)}, {
-                                $pull: {DownVotes: ws.owner}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'topicbar',
-                                        _id: payload,
-                                        payload: {
-                                            upvoted: false,
-                                            downvoted: false,
-                                            user: ws.owner
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                    let msg2 = JSON.stringify({
-                                        type: 'topictitle',
-                                        _id: payload,
-                                        payload: {
-                                            DownVote: -1
-                                        }
-                                    });
-                                    idMap.forEach((sock) =>{
-                                        sock.send(msg2)
-                                    })
-                                } 
-                            })
-                        }
-                    case 'todownvote':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload)}, {
-                                $addToSet: {DownVotes: ws.owner},
-                                $pull: {UpVotes: ws.owner}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'topicbar',
-                                        _id: payload,
-                                        payload: {
-                                            upvoted: false,
-                                            downvoted: true,
-                                            user: ws.owner
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                    let msg2 = JSON.stringify({
-                                        type: 'topictitle',
-                                        _id: payload,
-                                        payload: {
-                                            DownVote: 1,
-                                            UpVote: -1
-                                        }
-                                    });
-                                    idMap.forEach((sock) =>{
-                                        sock.send(msg2)
-                                    })
-                                }
-                            })
-                        }
-                    case 'comment':
-                        return ()=>{
-                            let {topicId, content} = payload;
-                            let newComment = {
-                                _id: ObjectId(),
-                                Content: content,
-                                PostTime: Date.now(),
-                                PostedBy: ws.owner,
-                                UpVotes: [],
-                                DownVotes: [],
-                                Replies: []
+                        case 'undownvote':
+                            return () =>{
+                                topics.updateOne({_id: ObjectId(payload)}, {
+                                    $pull: {DownVotes: ws.owner}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'topicbar',
+                                            _id: payload,
+                                            payload: {
+                                                upvoted: false,
+                                                downvoted: false,
+                                                user: ws.owner
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                        let msg2 = JSON.stringify({
+                                            type: 'topictitle',
+                                            _id: payload,
+                                            payload: {
+                                                DownVote: -1
+                                            }
+                                        });
+                                        idMap.forEach((sock) =>{
+                                            sock.send(msg2)
+                                        })
+                                    } 
+                                })
                             }
-                            topics.updateOne(
-                                {_id: ObjectId(topicId)},
+                        case 'todownvote':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload)}, {
+                                    $addToSet: {DownVotes: ws.owner},
+                                    $pull: {UpVotes: ws.owner}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'topicbar',
+                                            _id: payload,
+                                            payload: {
+                                                upvoted: false,
+                                                downvoted: true,
+                                                user: ws.owner
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                        let msg2 = JSON.stringify({
+                                            type: 'topictitle',
+                                            _id: payload,
+                                            payload: {
+                                                DownVote: 1,
+                                                UpVote: -1
+                                            }
+                                        });
+                                        idMap.forEach((sock) =>{
+                                            sock.send(msg2)
+                                        })
+                                    }
+                                })
+                            }
+                        case 'comment':
+                            return ()=>{
+                                let {topicId, content} = payload;
+                                let newComment = {
+                                    _id: ObjectId(),
+                                    Content: content,
+                                    PostTime: Date.now(),
+                                    PostedBy: ws.owner,
+                                    UpVotes: [],
+                                    DownVotes: [],
+                                    Replies: []
+                                }
+                                topics.updateOne(
+                                    {_id: ObjectId(topicId)},
+                                    {
+                                        $push: {Comments: newComment},
+                                        $inc: {Comment: 1}
+                                    },
+                                    {upsert: false}
+                                ,(err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'comment',
+                                            _id: topicId,
+                                            payload: newComment
+                                        })
+                                        topicMap.get(topicId).forEach(sock =>{
+                                            sock.send(msg1)
+                                        })
+                                        let msg2 = JSON.stringify({
+                                            type: 'topictitle',
+                                            _id: topicId,
+                                            payload: {
+                                                Comment: 1,
+                                            }
+                                        })
+                                        idMap.forEach((sock) =>{
+                                            sock.send(msg2);
+                                        })
+                                    }
+                                })
+                            }
+                        case 'c_up':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},
+                                {$addToSet: {'Comments.$.UpVotes': ws.owner}},(err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'cmtbar',
+                                            _id: payload.commentId,
+                                            payload: {
+                                                user: ws.owner,
+                                                upvoted: true,
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }
+                        case 'c_toup':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},{
+                                $addToSet: {'Comments.$.UpVotes': ws.owner},
+                                $pull: {'Comments.$.DownVotes': ws.owner},
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'cmtbar',
+                                            _id: payload.commentId,
+                                            payload: {
+                                                user: ws.owner,
+                                                upvoted: true,
+                                                downvoted: false
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }
+                        case 'c_unup':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},
+                                {$pull: {'Comments.$.UpVotes': ws.owner}}, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'cmtbar',
+                                            _id: payload.commentId,
+                                            payload: {
+                                                user: ws.owner,
+                                                upvoted: false
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }
+                        case 'c_down':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},
+                                {$addToSet: {'Comments.$.DownVotes': ws.owner}}, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'cmtbar',
+                                            _id: payload.commentId,
+                                            payload: {
+                                                user: ws.owner,
+                                                downvoted: true
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }
+                        case 'c_todown':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},{
+                                $addToSet: {'Comments.$.DownVotes': ws.owner},
+                                $pull: {'Comments.$.UpVotes': ws.owner}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'cmtbar',
+                                            _id: payload.commentId,
+                                            payload: {
+                                                user: ws.owner,
+                                                downvoted: true,
+                                                upvoted: false
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }
+                        case 'c_undown':
+                            return ()=>{
+                                topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},{
+                                $pull: {'Comments.$.Downvotes': ws.owner}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'cmtbar',
+                                            _id: payload.commentId,
+                                            payload: {
+                                                user: ws.owner,
+                                                downvoted: false,
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }
+                        case 'reply':
+                            return () =>{
+                                let {commentId, topicId, content} = payload;
+                                let newRep = {
+                                    _id: ObjectId(),
+                                    Content: content,
+                                    PostTime: Date.now(),
+                                    PostedBy: ws.owner,
+                                    UpVotes: [],
+                                    DownVotes: []
+                                }
+                                topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},{
+                                    $push: {'Comments.$.Replies': newRep},
+                                    $inc: {'Comment': 1}
+                                }, (err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'reply',
+                                            _id: commentId,
+                                            payload: newRep
+                                        })
+                                        topicMap.get(topicId).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                        let msg2 = JSON.stringify({
+                                            type: 'topictitle',
+                                            _id: topicId,
+                                            payload: {
+                                                Comment: 1
+                                            }
+                                        })
+                                        idMap.forEach(sock =>{
+                                            sock.send(msg2);
+                                        })
+                                    }
+                                })
+                            }
+                        case 'r_up':
+                            return ()=>{
+                                let {topicId, commentId, replyId} = payload;
+                                topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
+                                {$addToSet: {'Comments.$.Replies.$[elem].UpVotes': ws.owner}},
+                                {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
+                                ,(err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'repbar',
+                                            _id: replyId,
+                                            payload: {
+                                                cmtId: commentId,
+                                                user: ws.owner,
+                                                upvoted: true,
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }
+                        case 'r_toup':
+                            return ()=>{
+                                let {topicId, commentId, replyId} = payload;
+                                topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
                                 {
-                                    $push: {Comments: newComment},
-                                    $inc: {Comment: 1}
+                                    $addToSet: {'Comments.$.Replies.$[elem].UpVotes': ws.owner},
+                                    $pull: {'Comments.$.Replies.$[elem].DownVotes': ws.owner}
                                 },
-                                {upsert: false}
-                            ,(err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'comment',
-                                        _id: topicId,
-                                        payload: newComment
-                                    })
-                                    topicMap.get(topicId).forEach(sock =>{
-                                        sock.send(msg1)
-                                    })
-                                    let msg2 = JSON.stringify({
-                                        type: 'topictitle',
-                                        _id: topicId,
-                                        payload: {
-                                            Comment: 1,
-                                        }
-                                    })
-                                    idMap.forEach((sock) =>{
-                                        sock.send(msg2);
-                                    })
-                                }
-                            })
-                        }
-                    case 'c_up':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},
-                            {$addToSet: {'Comments.$.UpVotes': ws.owner}},(err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'cmtbar',
-                                        _id: payload.commentId,
-                                        payload: {
-                                            user: ws.owner,
-                                            upvoted: true,
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'c_toup':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},{
-                            $addToSet: {'Comments.$.UpVotes': ws.owner},
-                            $pull: {'Comments.$.DownVotes': ws.owner},
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'cmtbar',
-                                        _id: payload.commentId,
-                                        payload: {
-                                            user: ws.owner,
-                                            upvoted: true,
-                                            downvoted: false
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'c_unup':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},
-                            {$pull: {'Comments.$.UpVotes': ws.owner}}, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'cmtbar',
-                                        _id: payload.commentId,
-                                        payload: {
-                                            user: ws.owner,
-                                            upvoted: false
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'c_down':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},
-                            {$addToSet: {'Comments.$.DownVotes': ws.owner}}, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'cmtbar',
-                                        _id: payload.commentId,
-                                        payload: {
-                                            user: ws.owner,
-                                            downvoted: true
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'c_todown':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},{
-                            $addToSet: {'Comments.$.DownVotes': ws.owner},
-                            $pull: {'Comments.$.UpVotes': ws.owner}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'cmtbar',
-                                        _id: payload.commentId,
-                                        payload: {
-                                            user: ws.owner,
-                                            downvoted: true,
-                                            upvoted: false
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'c_undown':
-                        return ()=>{
-                            topics.updateOne({_id: ObjectId(payload.topicId), 'Comments._id': ObjectId(payload.commentId)},{
-                            $pull: {'Comments.$.Downvotes': ws.owner}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'cmtbar',
-                                        _id: payload.commentId,
-                                        payload: {
-                                            user: ws.owner,
-                                            downvoted: false,
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'reply':
-                        return () =>{
-                            let {commentId, topicId, content} = payload;
-                            let newRep = {
-                                _id: ObjectId(),
-                                Content: content,
-                                PostTime: Date.now(),
-                                PostedBy: ws.owner,
-                                UpVotes: [],
-                                DownVotes: []
+                                {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
+                                ,(err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'repbar',
+                                            _id: replyId,
+                                            payload: {
+                                                cmtId: commentId,
+                                                user: ws.owner,
+                                                upvoted: true,
+                                                downvoted: false
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
                             }
-                            topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},{
-                                $push: {'Comments.$.Replies': newRep},
-                                $inc: {'Comment': 1}
-                            }, (err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'reply',
-                                        _id: commentId,
-                                        payload: newRep
-                                    })
-                                    topicMap.get(topicId).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                    let msg2 = JSON.stringify({
-                                        type: 'topictitle',
-                                        _id: topicId,
-                                        payload: {
-                                            Comment: 1
-                                        }
-                                    })
-                                    idMap.forEach(sock =>{
-                                        sock.send(msg2);
-                                    })
-                                }
-                            })
-                        }
-                    case 'r_up':
-                        return ()=>{
-                            let {topicId, commentId, replyId} = payload;
-                            topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
-                            {$addToSet: {'Comments.$.Replies.$[elem].UpVotes': ws.owner}},
-                            {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
-                            ,(err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'repbar',
-                                        _id: replyId,
-                                        payload: {
-                                            cmtId: commentId,
-                                            user: ws.owner,
-                                            upvoted: true,
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'r_toup':
-                        return ()=>{
-                            let {topicId, commentId, replyId} = payload;
-                            topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
-                            {
-                                $addToSet: {'Comments.$.Replies.$[elem].UpVotes': ws.owner},
-                                $pull: {'Comments.$.Replies.$[elem].DownVotes': ws.owner}
-                            },
-                            {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
-                            ,(err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'repbar',
-                                        _id: replyId,
-                                        payload: {
-                                            cmtId: commentId,
-                                            user: ws.owner,
-                                            upvoted: true,
-                                            downvoted: false
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'r_unup':
-                        return ()=>{
-                            let {topicId, commentId, replyId} = payload;
-                            topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
-                            {
-                                $pull: {'Comments.$.Replies.$[elem].UpVotes': ws.owner}
-                            },
-                            {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
-                            ,(err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'repbar',
-                                        _id: replyId,
-                                        payload: {
-                                            cmtId: commentId,
-                                            user: ws.owner,
-                                            upvoted: false
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        } 
-                    case 'r_down':
-                        return ()=>{
-                            let {topicId, commentId, replyId} = payload;
-                            topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
-                            {
-                                $addToSet: {'Comments.$.Replies.$[elem].DownVotes': ws.owner}
-                            },
-                            {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
-                            ,(err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'repbar',
-                                        _id: replyId,
-                                        payload: {
-                                            cmtId: commentId,
-                                            user: ws.owner,
-                                            downvoted: true
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }   
-                    case 'r_todown':
-                        return ()=>{
-                            let {topicId, commentId, replyId} = payload;
-                            topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
-                            {
-                                $addToSet: {'Comments.$.Replies.$[elem].DownVotes': ws.owner},
-                                $pull: {'Comments.$.Replies.$[elem].UpVotes': ws.owner}
-                            },
-                            {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
-                            ,(err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'repbar',
-                                        _id: replyId,
-                                        payload: {
-                                            cmtId: commentId,
-                                            user: ws.owner,
-                                            downvoted: true,
-                                            upvoted: false
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }
-                    case 'r_undown':
-                        return ()=>{
-                            let {topicId, commentId, replyId} = payload;
-                            topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
-                            {
-                                $pull: {'Comments.$.Replies.$[elem].DownVotes': ws.owner}
-                            },
-                            {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
-                            ,(err) =>{
-                                if(!err){
-                                    let msg1 = JSON.stringify({
-                                        type: 'repbar',
-                                        _id: replyId,
-                                        payload: {
-                                            cmtId: commentId,
-                                            user: ws.owner,
-                                            downvoted: false,
-                                        }
-                                    });
-                                    topicMap.get(ws.topic).forEach((sock) =>{
-                                        sock.send(msg1)
-                                    });
-                                }
-                            })
-                        }                                                  
-                    default:
-                        return ()=>{
-
-                        }
+                        case 'r_unup':
+                            return ()=>{
+                                let {topicId, commentId, replyId} = payload;
+                                topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
+                                {
+                                    $pull: {'Comments.$.Replies.$[elem].UpVotes': ws.owner}
+                                },
+                                {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
+                                ,(err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'repbar',
+                                            _id: replyId,
+                                            payload: {
+                                                cmtId: commentId,
+                                                user: ws.owner,
+                                                upvoted: false
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            } 
+                        case 'r_down':
+                            return ()=>{
+                                let {topicId, commentId, replyId} = payload;
+                                topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
+                                {
+                                    $addToSet: {'Comments.$.Replies.$[elem].DownVotes': ws.owner}
+                                },
+                                {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
+                                ,(err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'repbar',
+                                            _id: replyId,
+                                            payload: {
+                                                cmtId: commentId,
+                                                user: ws.owner,
+                                                downvoted: true
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }   
+                        case 'r_todown':
+                            return ()=>{
+                                let {topicId, commentId, replyId} = payload;
+                                topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
+                                {
+                                    $addToSet: {'Comments.$.Replies.$[elem].DownVotes': ws.owner},
+                                    $pull: {'Comments.$.Replies.$[elem].UpVotes': ws.owner}
+                                },
+                                {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
+                                ,(err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'repbar',
+                                            _id: replyId,
+                                            payload: {
+                                                cmtId: commentId,
+                                                user: ws.owner,
+                                                downvoted: true,
+                                                upvoted: false
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }
+                        case 'r_undown':
+                            return ()=>{
+                                let {topicId, commentId, replyId} = payload;
+                                topics.updateOne({_id: ObjectId(topicId), 'Comments._id': ObjectId(commentId)},
+                                {
+                                    $pull: {'Comments.$.Replies.$[elem].DownVotes': ws.owner}
+                                },
+                                {arrayFilters: [{'elem._id': ObjectId(replyId)}]}
+                                ,(err) =>{
+                                    if(!err){
+                                        let msg1 = JSON.stringify({
+                                            type: 'repbar',
+                                            _id: replyId,
+                                            payload: {
+                                                cmtId: commentId,
+                                                user: ws.owner,
+                                                downvoted: false,
+                                            }
+                                        });
+                                        topicMap.get(ws.topic).forEach((sock) =>{
+                                            sock.send(msg1)
+                                        });
+                                    }
+                                })
+                            }                                                  
+                        default:
+                            return ()=>{
+    
+                            }
+                    }
+                }
+                catch{
+                    ws.send(JSON.stringify({type: 'err'}))
                 }
             })()()
 
