@@ -361,8 +361,10 @@ class NorthWinQuery extends React.Component{
         this.guide = document.getElementById('sql_guide');
         this.diagram = document.getElementById('diagram_ctn');
         this.toggle = document.getElementById('sql_toggle');
-        this.opt = document.getElementById('sql_opt')
-        this.focusIntoEditor();
+        this.opt = document.getElementById('sql_opt');
+        if(innerWidth >= 600){
+            this.focusIntoEditor();
+        }
     }
     componentWillUnmount(){
         this.worker && this.worker.terminate();
