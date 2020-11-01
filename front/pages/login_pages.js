@@ -11,7 +11,7 @@ class LoginPage extends React.Component{
     }
     localLogin = (e) =>{
         e.preventDefault();
-        e.target.disabled = true;
+        let target = e.target;
         let body = {};
         let validity = [0];
         document.getElementById('login_form').querySelectorAll('input').forEach(node =>{
@@ -29,6 +29,7 @@ class LoginPage extends React.Component{
             });
             return;
         }
+        target.disabled = true;
         fetch('/auth/login',{
             method: 'POST',
             headers: {
@@ -42,6 +43,7 @@ class LoginPage extends React.Component{
             return {err: e.message}
         })
         .then(data =>{
+            target.disabled = false;
             if(!data) return;
             let {user, err} = data;
             if(user && user.Verified !== 0){

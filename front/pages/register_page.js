@@ -11,7 +11,7 @@ class RegisterPage extends React.Component{
     }
     handleRegist = (e)=>{
         e.preventDefault();
-        e.target.disabled = true;
+        let target = e.target;
         let body = {};
         let validity = [0];
         let inputs = [...document.getElementById('regist_form').querySelectorAll('input')]
@@ -33,6 +33,7 @@ class RegisterPage extends React.Component{
             });
             return;
         }
+        target.disabled = true;
         fetchReq('/auth/register', {
             method: 'post',
             headers: {
@@ -43,6 +44,7 @@ class RegisterPage extends React.Component{
             return {err: e.message}
         })
         .then(({err, user}) =>{
+            target.disabled = false;
             if(err){
                 validity = [];
                if(err === 'Already registered'){
