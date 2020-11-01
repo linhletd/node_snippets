@@ -2,8 +2,10 @@ const uuid = require('uuid');
 class CustomMiddleware{
     constructor(app){
         this.app = app;
+        this.ensureAuthenticated = this.ensureAuthenticated.bind(this);
+        this.ensureSQLConnected = this.ensureSQLConnected.bind(this);
     }
-    ensureAuthenticated = (req, res, next) =>{
+    ensureAuthenticated(req, res, next){
         let sockets = this.app.sessionMap.get(req.sessionID);
         if(req.user){
             sockets ? sockets.forEach(sock => {
@@ -23,7 +25,7 @@ class CustomMiddleware{
             res.cookie('aW50ZW50VVJM', intent, {httpOnly: false, sameSite: 'strict', maxAge: 10000});
         return res.redirect('/auth/login');
     }
-    ensureSQLConnected = (req, res, next)=>{
+    ensureSQLConnected(req, res, next){
         if(this.app.conn){
             return next();
         }
