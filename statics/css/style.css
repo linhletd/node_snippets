@@ -6,6 +6,10 @@ body *:not(.editor_area *){
 #root, #app, body{
     width: 100%;
 }
+input{
+    padding-left: 3px;
+    padding-right: 3px;
+}
 /* width */
 body *::-webkit-scrollbar {
     width: 6px;
@@ -90,13 +94,15 @@ footer{
 }
 /**/
 @keyframes welcome{
-    0% {opacity: 0;}
-    100% {opacity: 1;}
+    0% {opacity: 0; row-gap: 60px;}
+    100% {opacity: 1; row-gap: 0px;}
 }
 #login_page, #regist_page{
+    display: grid;
+    grid-template-columns: 1fr;
     padding: 4px;
     max-width: 260px;
-    animation: welcome 5s forwards;
+    animation: welcome 2s forwards;
 }
 #login_page>#signup{
     display: grid;
@@ -1653,6 +1659,8 @@ td, thead{
     height: 100%;
     width: 175px;
     margin: 0px 0px;
+    padding-left: 3px;
+    padding-right: 3px;
 }
 #display_result{
     display: flex;
