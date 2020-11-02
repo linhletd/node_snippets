@@ -65,6 +65,9 @@ class BrowseUserPage extends React.Component{
         this.setState(state, cb)
     }
     shouldComponentUpdate(nextProps, nextState){
+        if(!this.props.usersStatus || nextProps.usersStatus.size !== this.props.usersStatus.size){
+            return true
+        }
         if(this.props.mainProps.InputComp){
             return true;
         }
