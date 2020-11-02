@@ -505,8 +505,11 @@ input:hover,
 .pre_data{
     width: 100%;
     overflow: auto;
+    display: flex;
+    justify-content: center;
 }
 .pre_data table{
+    width: 95%;
     font-size: 0.9em;
 }
 .pre_data thead td{
