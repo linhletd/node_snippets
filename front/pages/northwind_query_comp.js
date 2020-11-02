@@ -377,7 +377,7 @@ class NorthWinQuery extends React.Component{
             this.opt.firstChild.disabled = true;
             let query = `?${stringify({query: this.editor.innerText})}`
             
-            fetch('/sql_query/preview' + query,{
+            fetch('/sql/preview' + query,{
                 method: 'GET'
             })
             .then((res) =>{
@@ -405,7 +405,7 @@ class NorthWinQuery extends React.Component{
         this.state.data && this.setState({data: null});
         let query = `?${stringify({query: this.editor.innerText, format: 'json'})}`
         let link = document.createElement('a');
-        link.href = '/sql_query/download' + query;
+        link.href = '/sql/download' + query;
         link.download = 'data.json';
         link.click();
     } 
@@ -417,7 +417,7 @@ class NorthWinQuery extends React.Component{
         this.state.data && this.setState({data: null});
         let query = `?${stringify({query: this.editor.innerText, format: 'csv'})}`
         let link = document.createElement('a');
-        link.href = '/sql_query/download' + query;
+        link.href = '/sql/download' + query;
         link.download = 'data.csv';
         link.click();
     }
