@@ -38,7 +38,11 @@ class TopicList extends React.Component{
             )
         }
         else{
-            return <WaittingNotation autoStop = {true}/>
+            return (
+                <div className = 'list_wait'>
+                    <WaittingNotation autoStop = {true}/>
+                </div>
+            ) 
         }
     }
 }
@@ -360,7 +364,7 @@ class SubDiscussLayout extends React.Component{
                         <Route exact path = '/discuss'>
                             <PostNewTopic/>
                         </Route>
-                        <Route path = '/discuss/detail'>
+                        <Route exact path = '/discuss/detail'>
                             <TopicDetail/>
                             {topicPlus}
                         </Route>
