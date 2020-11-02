@@ -438,7 +438,7 @@ input:hover,
     font-size: 0.9em;
 }
 #sql_query{
-    width: calc(100% - 20px);
+    width: calc(100%);
     min-height: 100vh;
     position: relative;
     display: flex;
@@ -491,12 +491,12 @@ input:hover,
     cursor: pointer;
     position: fixed;
     align-self: flex-start;
-    width: 60px;
+    width: 70px;
     height: 30px;
     background-color: hsl(300, 87%, 75%);
-    top: 35px;
+    top: 36px;
     z-index: 10;
-    transform: translateX(-30px) rotate(-45deg);
+    transform: translateX(-28px) rotate(-45deg);
     padding-top: 10px;
     text-align: center;
     color: white;
@@ -2158,10 +2158,10 @@ button:disabled{
     }
     #sql_toggle{
         font-size: 0.8em;
-        width: 48px;
+        width: 50px;
         height: 25px;
-        top: 25px;
-        transform: translateX(-25px) rotate(-45deg);
+        top: 26px;
+        transform: translateX(-17px) rotate(-45deg);
         padding-top: 8px;
     }
 }
