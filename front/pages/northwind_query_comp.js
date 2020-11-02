@@ -347,7 +347,7 @@ class NorthWinQuery extends React.Component{
     componentDidMount(){
         this.code = document.getElementById('sql_editor');
         if(window.Worker){
-            this.worker = new Worker('/js/Prism.js');
+            this.worker = new Worker('/js/prism.js');
             this.worker.onmessage = this.handleWorkerMessage;
         }
         this.code.ondragstart = (e) =>{
