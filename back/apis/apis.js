@@ -107,10 +107,9 @@ module.exports = function(app){
         getTopicContentById: function(req, res, next){
             let _id = req.params.topic_id;
             let socketId = req.query.s;
-            let topicMap = app.topicMap;
-            if(socketId){
-                let ws = app.idMap.get(socketId);
-                if(ws && ws.topic){
+            let topicMap = app.topicMap, ws;
+            if(socketId && (ws = app.idMap.get(socketId))){
+                if(ws.topic){
                     let s = app.topicMap.get(ws.topic);
                     if(s.size === 1){
                         app.topicMap.delete(ws.topic);
@@ -131,12 +130,13 @@ module.exports = function(app){
             }
             topics.findOne({_id: ObjectId(_id)}, (err, topic) =>{
                 if(err) return res.json({err: err.message});
+                if(!topic) return res.json({err: 'not found'})
                 res.json(topic);
             })
 
         },
         getUserSignal: function(req, res, next){
-            let cursor = users.find({})
+            let cursor = users.find({Verified: 1})
             .project({
                 Username: 1,
                 Avartar: 1,
