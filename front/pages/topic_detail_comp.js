@@ -61,7 +61,7 @@ class Bar extends React.Component{
     handleClickComment = () =>{
         let input = document.querySelector('.comment_input');
         focusOnInput(input);
-        input.scrollIntoView({behavior: "smooth", block: "end", inline: "nearest"})
+        input.scrollIntoView({behavior: "smooth", block: "start", inline: "nearest"})
     }
     render(){
         let {barInfo} = this.props;
@@ -93,32 +93,40 @@ class Topic extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            topic: null
+            topic: null,
+            err: null
         }
     }
     getTopicContent = (nextProps) =>{
         let {search} = nextProps ? nextProps.location : this.props.location;
         let match = search.match(/\?id=(\w{24})\b/);
+        if(!match){
+            return this.props.history.replace('/discuss')
+        }
         let _getTopic = (socketId) =>{
-            try{
-                let id = match[1];
-                if(id && (!this.state.topic || id !== this.state.topic._id)){
-                    let path = '/discuss/data/content/' + id;
-                    let url = socketId ? path + `?s=${socketId}`: path;
-                    fetchReq(url, {method: 'get'})
-                    .then((topic) => {
-                        this.setState({topic}, () =>{
+            let id = match[1];
+            if(id && (!this.state.topic || id !== this.state.topic._id)){
+                let path = '/discuss/data/content/' + id;
+                let url = socketId ? path + `?s=${socketId}`: path;
+                fetchReq(url, {method: 'get'})
+                .then((topic) => {
+                    console.log(topic)
+                    if(topic && topic.Content){
+                        this.setState({topic, err: null}, () =>{
                             document.getElementById('content_ctn').innerHTML = topic.Content;
-                            window.scrollTo(0, 0)
+                            window.scrollTo(0, 0);
                         })
-                    })
-                }
-                else{
-                    throw new Error('error')
-                }
+                    }
+                    else{
+                        this.setState({
+                            topic: null,
+                            err: topic.err
+                        })
+                    }
+                })
             }
-            catch(e){
-                this.props.history.replace('/discuss')
+            else{
+                throw new Error('error')
             }
         }
         let {socket} = this.props;
@@ -150,7 +158,7 @@ class Topic extends React.Component{
             this.getTopicContent();
             this.state.topic = null;
         }
-        if(nextState.topic !== this.state.topic){
+        if(nextState.topic !== this.state.topic || nextState.err !== this.state.err){
             return true;
         }
         if(nextProps.location.search !== this.props.location.search){
@@ -162,7 +170,7 @@ class Topic extends React.Component{
         return false;
     }
     render(){
-        let {topic} = this.state;
+        let {topic, err} = this.state;
         if(topic){
             this.context.topic = topic;
             let barInfo = {};
@@ -181,6 +189,9 @@ class Topic extends React.Component{
                     <CommentSection topic = {topic}/>
                 </div>
             );
+        }
+        else if(err){
+            return <p id = 'topic_err' className = 'fb_msg'>{err}</p>
         }
         else{
             return (
