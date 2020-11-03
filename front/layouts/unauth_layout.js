@@ -42,6 +42,7 @@ class UnauthLayout extends React.Component{
                     <Route exact path = '/auth/verify'>
                         {this.data ? <SignupVerify data = {this.data}/> : <Redirect to = '/auth/login'/>}
                     </Route>
+                    <Redirect to = '/auth/login'/>
                 </Switch>
             </div>
         )
