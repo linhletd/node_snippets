@@ -105,6 +105,15 @@ footer{
     max-width: 260px;
     animation: welcome 2s forwards;
 }
+#login_page p, #regist_page p{
+    margin-bottom: 0px;
+}
+#login_page .wait_ctn, #regist_page .wait_ctn{
+    width: 140px;
+    margin-bottom: 3px;
+    margin-top: 3px;
+    justify-self: center;
+}
 #login_page>#signup{
     display: grid;
     grid-template-columns: repeat(2, 1fr);
