@@ -1,17 +1,21 @@
 import React from 'react';
-import {Link, withRouter} from 'react-router-dom'
+import {Link, withRouter} from 'react-router-dom';
+import WaittingNotation from '../ui/waitting_notation';
+import WaitingNotation from '../ui/waitting_notation';
 class LoginPage extends React.Component{
     constructor(){
         super();
         this.state = {
             validity: [],
             email: '',
-            password: ''
+            password: '',
+            waiting: false
         };
     }
     localLogin = (e) =>{
         e.preventDefault();
         let target = e.target;
+        target.disabled = true;
         let body = {};
         let validity = [0];
         document.getElementById('login_form').querySelectorAll('input').forEach(node =>{
@@ -27,9 +31,10 @@ class LoginPage extends React.Component{
             this.setState({
                 validity
             });
+            target.disabled = false;
             return;
         }
-        target.disabled = true;
+        this.setState({waiting: true});
         fetch('/auth/login',{
             method: 'POST',
             headers: {
@@ -44,7 +49,12 @@ class LoginPage extends React.Component{
         })
         .then(data =>{
             target.disabled = false;
-            if(!data) return;
+            if(!data){
+                this.setState({
+                    waiting: false
+                })
+                return;
+            }
             let {user, err} = data;
             if(user && user.Verified !== 0){
                 this.props.handleLogin(user);
@@ -60,17 +70,20 @@ class LoginPage extends React.Component{
                     this.setState({
                         validity: [0, 0, msg],
                         password:'',
+                        waiting: false
                     })
                 }
                 else if(msg === 'not registered'){
                     this.setState({
                         validity: [0, msg, 0],
                         password:'',
+                        waiting: false
                     })
                 }
                 else{
                     this.setState({
-                        validity: [msg, 0, 0]
+                        validity: [msg, 0, 0],
+                        waiting: false
                     })
                 }
             }
@@ -109,6 +122,7 @@ class LoginPage extends React.Component{
                     {validity[2] ? <p className = 'validate'>{validity[2]}</p> : ''}
                 </form>
                 <button onClick = {this.localLogin} className = 's_btn'>Submit</button>
+                {this.state.waiting ? <WaittingNotation autoStop = {true}/> : ''}
                 <div id = 'signup'>
                     <Link to = {`/auth/reset-request`}>Forgot password?</Link>
                     <Link to = {`/auth/register`}>Sign up an account</Link>

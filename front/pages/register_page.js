@@ -1,17 +1,22 @@
 import React from 'react';
 import fetchReq from '../utils/xhr';
-import {Redirect, withRouter} from 'react-router-dom';
+import {withRouter} from 'react-router-dom';
+import WaitingNotation from '../ui/waitting_notation';
 
 class RegisterPage extends React.Component{
     constructor(props){
         super();
         this.state = {
-            validity: []
+            validity: [],
+            waiting: false
         };
+        this.pw1 = React.createRef();
+        this.pw2 = React.createRef();
     }
     handleRegist = (e)=>{
         e.preventDefault();
         let target = e.target;
+        target.disabled = true;
         let body = {};
         let validity = [0];
         let inputs = [...document.getElementById('regist_form').querySelectorAll('input')]
@@ -31,9 +36,12 @@ class RegisterPage extends React.Component{
             this.setState({
                 validity
             });
+            target.disabled = false;
             return;
         }
-        target.disabled = true;
+        this.setState({
+            waiting: true
+        })
         fetchReq('/auth/register', {
             method: 'post',
             headers: {
@@ -46,18 +54,22 @@ class RegisterPage extends React.Component{
         .then(({err, user}) =>{
             target.disabled = false;
             if(err){
+                this.pw1.current.value = '';
+                this.pw2.current.value = '';
                 validity = [];
                if(err === 'Already registered'){
                    validity = [];
                    validity[2] = err;
                    this.setState({
-                       validity
+                       validity,
+                       waiting: false
                    });
                 }
                 else{
                     validity[0] = err;
                     this.setState({
-                        validity
+                        validity,
+                        waiting: false
                     })
                 }
             }
@@ -78,12 +90,13 @@ class RegisterPage extends React.Component{
                     {validity[1] ? <p className = 'validate'>{validity[1]}</p> : ''}
                     <input type = "email" name ="regist_email" placeholder = "Email" required = {true}/>
                     {validity[2] ? <p className = 'validate'>{validity[2]}</p> : ''}
-                    <input type = "password" name = "regist_password" placeholder = 'Password' required = {true}/>
+                    <input ref = {this.pw1} type = "password" name = "regist_password" placeholder = 'Password' required = {true}/>
                     {validity[3] ? <p className = 'validate'>{validity[3]}</p> : ''}
-                    <input type = "password" name = "regist_confirm" placeholder = 'Confirm Password' required = {true}/>
+                    <input ref = {this.pw2} type = "password" name = "regist_confirm" placeholder = 'Confirm Password' required = {true}/>
                     {validity[4] ? <p className = 'validate'>{validity[4]}</p> : ''}
                 </form>
                 <button onClick = {this.handleRegist} className = 's_btn'>Submit</button>
+                {this.state.waiting ? <WaitingNotation autoStop = {true}/> : ''}
             </div>
         )
     }
