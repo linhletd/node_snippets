@@ -13,7 +13,6 @@ module.exports = function(app){
     let users = db.collection('users');
     let apis = {
         register: (req, res, next)=>{
-            console.log(req.body)
             let Email = req.body.regist_email;
             users.findOne({Email}, async (err, user) =>{
                 if(err){
@@ -44,9 +43,7 @@ module.exports = function(app){
                         Verified
                     },(err, doc) =>{
                         if(err) return res.json({err: 'error occurs'});
-                        sendEmail({to: Email, name: Username, type: 'verify'}).then((info) =>{
-                            console.log(info);
-                        }).catch((err) => {console.log(err.message)});
+                        sendEmail({to: Email, name: Username, type: 'verify'}).catch((err) => {console.log(err.message)});
                         let user = {_id: doc.insertedId, Username, Email, Avartar};
                         res.json({user});
                         // req.logIn(user,(err) =>{
@@ -104,10 +101,7 @@ module.exports = function(app){
         }),
         invokeToken: (req, res, next) =>{
             try{
-                console.log(req.body, 'invoke')
-                sendEmail(req.body).then((info) =>{
-                    console.log(info);
-                }).catch((err) => {console.log(err.message)});
+                sendEmail(req.body).catch((err) => {console.log(err.message)});
                 return res.json({status: 'ok'})
             }
             catch{
