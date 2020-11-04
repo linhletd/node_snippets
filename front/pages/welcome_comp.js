@@ -9,7 +9,7 @@ let msg4 = <p>Did you notice that this website is also very interactive or real 
 let msg5 = <div>
     <p>If you feel my app is worth your visiting, i recommend you enjoy all features before check further info below</p>
     <div id = 'ext_info'>
-        <a href = '/cv' target = '_blank' download><button>Download My CV</button></a>
+        <a href = 'https://cdn.glitch.com/98ae46d2-1b7d-4b66-95fc-6de6240cc473%2Flinhletd_cv.pdf?v=1604449785925' target = '_blank'><button>Download My CV</button></a>
         <a href = 'https://github.com/linhletd/node_snippets.git' target = '_blank'><button><i className="fa fa-github"></i><span>&nbsp;&nbsp;App Repository</span></button></a>
     </div>
 </div>
