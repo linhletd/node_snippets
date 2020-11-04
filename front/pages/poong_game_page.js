@@ -36,6 +36,7 @@ class PoongGame extends React.Component{
         this.bulletSpeed = 30; //ms
         this.playerSpeed = 100;
         this.bulletsStock = 10;
+        this.shootDelay = 160;
         this.startGame(props);
     }
     startGame(props){
@@ -177,7 +178,7 @@ class PoongGame extends React.Component{
         if(playerId === this.mainPlayer){
             setTimeout(()=>{
                 this.bulletGo.bind(this, key)();
-            }, 190)
+            }, this.shootDelay)
         }
         else{
             this.bulletGo.bind(this, key)();
