@@ -43,9 +43,12 @@ module.exports = function(app){
                         Verified
                     },(err, doc) =>{
                         if(err) return res.json({err: 'error occurs'});
-                        sendEmail({to: Email, name: Username, type: 'verify'}).catch((err) => {console.log(err.message)});
-                        let user = {_id: doc.insertedId, Username, Email, Avartar};
-                        res.json({user});
+                        sendEmail({to: Email, name: Username, type: 'verify'})
+                        .catch((err) => {console.log(err.message)})
+                        .then(() =>{
+                            let user = {_id: doc.insertedId, Username, Email, Avartar};
+                            res.json({user});
+                        })
                         // req.logIn(user,(err) =>{
                         //     if(err) return res.json({err: 'error occurs'});
                         //     let obj = JSON.stringify(user);
