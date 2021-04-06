@@ -7,8 +7,8 @@ class LoginPage extends React.Component{
         super();
         this.state = {
             validity: [],
-            email: '',
-            password: '',
+            email: 'linhletd.glitch@gmail.com',
+            password: '123',
             waiting: false
         };
     }
