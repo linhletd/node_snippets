@@ -1,7 +1,6 @@
 import React from 'react';
 import {Link, withRouter} from 'react-router-dom';
-import WaittingNotation from '../ui/waitting_notation';
-import WaitingNotation from '../ui/waitting_notation';
+// import WaitingNotation from '../ui/waitting_notation';
 class LoginPage extends React.Component{
     constructor(){
         super();
@@ -114,22 +113,22 @@ class LoginPage extends React.Component{
         return(
             <div id = "login_page">
                 <p>You must login to use this app</p>
-                <form id = "login_form">
-                    {validity[0] ? <p className = 'validate'>{validity[0]}</p> : ''}
-                    <input autoFocus = {innerWidth >= 600} type = "email" name = "login_email" placeholder = 'Email' value = {email} onChange = {this.handleInputChange} required = {true}/>
-                    {validity[1] ? <p className = 'validate'>{validity[1]}</p> : ''}
-                    <input type = "password" name = "login_password" placeholder = 'Password' value = {password} onChange = {this.handleInputChange} required = {true}/>
-                    {validity[2] ? <p className = 'validate'>{validity[2]}</p> : ''}
+                <form id = "login_form" className='col'>
+                    {validity[0] ? <p className = 'validate col'>{validity[0]}</p> : ''}
+                    <input className='col' autoFocus = {innerWidth >= 600} type = "email" name = "login_email" placeholder = 'Email' value = {email} onChange = {this.handleInputChange} required = {true}/>
+                    {validity[1] ? <p className = 'validate col'>{validity[1]}</p> : ''}
+                    <input className='col' type = "password" name = "login_password" placeholder = 'Password' value = {password} onChange = {this.handleInputChange} required = {true}/>
+                    {validity[2] ? <p className = 'validate col'>{validity[2]}</p> : ''}
                 </form>
                 <button onClick = {this.localLogin} className = 's_btn'>Submit</button>
-                {this.state.waiting ? <WaittingNotation autoStop = {true}/> : ''}
+                {/* {this.state.waiting ? <WaittingNotation autoStop = {true}/> : ''} */}
                 <div id = 'signup'>
                     <Link to = {`/auth/reset-request`}>Forgot password?</Link>
                     <Link to = {`/auth/register`}>Sign up an account</Link>
                 </div>
-                <div id = 'social_login'>
+                <div className='col gy-3 border-primary'>
                     <a href = '/auth/github' onClick = {this.ghLogin} className ="github btn"><i className="fa fa-github fa-fw"></i>Login with Github</a>
-                    <a href = '/auth/fb' onClick = {this.fbLogin} className ="fb btn" disabled = {true}><i className="fa fa-facebook fa-fw"></i>Login with Facebook</a>
+                    <a href = '/auth/fb' onClick = {this.fbLogin} className ="fb btn" style={{marginTop: '10px'}} disabled = {true}><i className="fa fa-facebook fa-fw"></i>Login with Facebook</a>
                 </div>
             </div>
             

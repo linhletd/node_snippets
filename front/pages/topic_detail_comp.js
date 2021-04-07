@@ -182,7 +182,7 @@ class Topic extends React.Component{
             }
             this.context.bar = barInfo;
             return (
-                <div id = 'topic_ctn' key = {1}>
+                <div id = 'topic_ctn'>
                     <TopicTitle authorName = {true} topic = {{_id: topic._id}}/>
                     <div id = 'content_ctn' className = 'editor_area'/>
                     <Bar barInfo = {barInfo} topic = {topic}/>

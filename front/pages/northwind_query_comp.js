@@ -459,8 +459,8 @@ class NorthWinQuery extends React.Component{
                     <img src = '/image/northwind_diagram.png' alt = 'northwind database diagram'/>
                 </div>
                 <Guide data = {this.guide}/>
-                <pre id = 'sql_editor' contentEditable = {true}></pre>
-                <div id = 'sql_opt'>
+                <pre id = 'sql_editor' contentEditable = {true}  style = {{marginBottom: '20px'}}></pre>
+                <div id = 'sql_opt' >
                     <button onClick = {this.getPreviewData}><i className="fa fa-table"></i><span>Preview</span></button>
                     <button onClick = {this.jsonDownload}><i className="fa fa-download"></i>.json</button>
                     <button onClick = {this.csvDownload}><i className="fa fa-download"></i>.csv</button>

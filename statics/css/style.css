@@ -126,12 +126,11 @@ footer{
   width: 100%;
   padding: 5px;
   border-radius: 4px;
-  margin: 5px 0;
   opacity: 0.85;
-  display: inline-block;
   font-size: 15px;
-  line-height: 18px;
+  margin-bottom: 10px;
   text-decoration: none;
+  height: 30px;
 }
 .btn{
   border: none;
@@ -170,7 +169,7 @@ input:hover,
     align-items: center;
     justify-content: center;
     width: 100%;
-    min-height: 85vh;
+    min-height: 80vh;
 }
 #main_app{
     width: 100%;
@@ -1002,7 +1001,7 @@ input:hover,
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 20px;
 }
 .editor_area *{
     min-height: 1,1em;
@@ -1242,11 +1241,10 @@ td, thead{
 
 #topic_ctn{
     width: 95%;
-    max-width: 670px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 40px;
     border-color: pink;
 }
 #topic_err{
@@ -1324,11 +1322,11 @@ td, thead{
     opacity: 0.6;
 }
 #browse_topic{
-    padding-top: 5px;
+    padding: 5px;
     width: 95%;
-    max-width: 600px;
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr;
+    row-gap: 15px;
     border-left: orchid 5px solid;
 }
 .list_wait{

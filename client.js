@@ -4,7 +4,7 @@ import {connect, Provider} from 'react-redux';
 import {BrowserRouter, withRouter} from 'react-router-dom';
 import store from './front/redux/store.js';
 import AuthLayout from './front/layouts/auth_layout.js';
-import UnauthLayout from './front/layouts/unauth_layout.js'
+import UnauthLayout from './front/layouts/unauth_layout.js';
 class App extends React.Component{
     constructor(props){
         super(props);

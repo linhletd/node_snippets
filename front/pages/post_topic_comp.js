@@ -99,8 +99,8 @@ class PostNewTopic extends React.Component {
     }
     render(){
         return (
-            <div id = 'post_topic'>
-                <div id = 'post_head'>
+            <div id = 'post_topic' style={{marginBottom: '20px'}}>
+                <div id = 'post_head' style={{marginBottom: '10px'}}>
                     <p>Title</p>
                     <div id = 'post_title' contentEditable = {true}/>
                 </div>
